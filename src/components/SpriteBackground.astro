@@ -1,0 +1,591 @@
+---
+// SpriteBackground.astro
+// Animated PMD sprite sheet characters walking around the page background.
+// Canvas-based rendering with a state machine per sprite.
+// Sprites persist across pages/refreshes via localStorage.
+---
+
+<div id="sprite-background" aria-hidden="true"></div>
+
+<div id="sprite-controls">
+  <span id="sprite-controls-title">background controls</span>
+  <div id="sprite-controls-row">
+    <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
+    <button id="sprite-swap-btn" title="Replace oldest Pokémon">⟳ Swap</button>
+    <button id="sprite-toggle-btn" title="Toggle Pokémon visibility">👁 Hide</button>
+  </div>
+</div>
+
+<style is:global>
+  #sprite-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  #sprite-background canvas {
+    position: absolute;
+    image-rendering: pixelated;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  #sprite-controls {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  #sprite-controls-title {
+    font-size: 0.65rem;
+    color: rgba(245, 208, 0, 0.5);
+    letter-spacing: 0.05em;
+    padding-left: 0.1rem;
+  }
+
+  #sprite-controls-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  #sprite-dex-input {
+    width: 5rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid rgba(245, 208, 0, 0.5);
+    border-radius: 6px;
+    background: rgba(26, 26, 26, 0.9);
+    color: #f5d000;
+    font-family: 'Fusion Pixel 12px Monospaced KR', monospace;
+    font-size: 0.8rem;
+    outline: none;
+  }
+
+  #sprite-dex-input::placeholder {
+    color: rgba(245, 208, 0, 0.45);
+  }
+
+  #sprite-dex-input:focus {
+    border-color: #f5d000;
+  }
+
+  #sprite-swap-btn {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid rgba(245, 208, 0, 0.5);
+    border-radius: 6px;
+    background: rgba(26, 26, 26, 0.9);
+    color: #f5d000;
+    font-family: 'Fusion Pixel 12px Monospaced KR', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  #sprite-swap-btn:hover {
+    background: #f5d000;
+    color: #1a1a1a;
+    border-color: #f5d000;
+  }
+
+  #sprite-toggle-btn {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid rgba(245, 208, 0, 0.5);
+    border-radius: 6px;
+    background: rgba(26, 26, 26, 0.9);
+    color: #f5d000;
+    font-family: 'Fusion Pixel 12px Monospaced KR', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  #sprite-toggle-btn:hover {
+    background: #f5d000;
+    color: #1a1a1a;
+    border-color: #f5d000;
+  }
+
+  /* Hide number input spinners */
+  #sprite-dex-input::-webkit-inner-spin-button,
+  #sprite-dex-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  #sprite-dex-input[type=number] {
+    -moz-appearance: textfield;
+  }
+</style>
+
+<script>
+  // ── Config ──────────────────────────────────────────────
+  const SCALE = 1;
+  const FRAME_MS = 150;
+  const MOVE_SPEED = 35;
+  const SPRITE_COUNT_MIN = 6;
+  const SPRITE_COUNT_MAX = 8;
+  const IDLE_CHANCE = 0.002;
+  const IDLE_MS_MIN = 2000;
+  const IDLE_MS_MAX = 4000;
+  const SLEEP_TIMEOUT = 150000;    // 2.5 min of no interaction
+  const ATTACK_MS = 1000;
+  const STORAGE_KEY = 'pmd-sprites';
+  const VISIBILITY_KEY = 'pmd-sprites-visible';
+  const MAX_DEX_NUMBER = 1025;     // Total sprite folders (approx)
+
+  // Curated Pokémon IDs known to have good sprites
+  const POKEMON_IDS = [
+    1, 4, 7, 25, 37, 39, 52, 54, 58, 94, 131, 133, 143, 150, 151,
+    152, 155, 158, 175, 196, 197, 252, 255, 258, 300, 387, 390,
+    393, 448, 570, 572, 403, 447, 334, 302, 352, 442, 479,
+  ];
+
+  const ACTIONS = ['Walk', 'Idle', 'Sleep', 'Attack'] as const;
+  type Action = (typeof ACTIONS)[number];
+  type SpriteState = 'walking' | 'idle' | 'sleeping' | 'attacking';
+
+  // Direction rows: 0=S, 1=SE, 2=E, 3=NE, 4=N, 5=NW, 6=W, 7=SW
+  const ANGLE_TO_ROW = [2, 1, 0, 7, 6, 5, 4, 3];
+
+  interface FrameInfo { w: number; h: number; count: number }
+
+  interface SpriteEntity {
+    pokemonId: number;
+    spawnOrder: number;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    x: number; y: number;
+    vx: number; vy: number;
+    state: SpriteState;
+    stateEnd: number;
+    frame: number;
+    lastFrame: number;
+    direction: number;
+    sheets: Record<Action, HTMLImageElement | null>;
+    frameInfo: Record<Action, FrameInfo | null>;
+  }
+
+  interface SavedSprite {
+    pokemonId: number;
+    spawnOrder: number;
+    x: number;
+    y: number;
+  }
+
+  // ── Helpers ─────────────────────────────────────────────
+  function spriteUrl(id: number, action: string): string {
+    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/${action}-Anim.png`;
+  }
+
+  function animDataUrl(id: number): string {
+    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/AnimData.xml`;
+  }
+
+  function loadImage(url: string): Promise<HTMLImageElement | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
+  async function fetchAnimData(id: number): Promise<Record<string, { w: number; h: number }>> {
+    try {
+      const res = await fetch(animDataUrl(id));
+      const text = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/xml');
+      const anims = doc.querySelectorAll('Anim');
+      const result: Record<string, { w: number; h: number }> = {};
+      anims.forEach((anim) => {
+        const name = anim.querySelector('Name')?.textContent ?? '';
+        const w = parseInt(anim.querySelector('FrameWidth')?.textContent ?? '0', 10);
+        const h = parseInt(anim.querySelector('FrameHeight')?.textContent ?? '0', 10);
+        if (name && w > 0 && h > 0) result[name] = { w, h };
+      });
+      return result;
+    } catch {
+      return {};
+    }
+  }
+
+  function calcFrameInfo(img: HTMLImageElement, dims: { w: number; h: number } | undefined): FrameInfo {
+    if (dims && dims.w > 0 && dims.h > 0) {
+      const count = Math.max(1, Math.floor(img.naturalWidth / dims.w));
+      return { w: dims.w, h: dims.h, count };
+    }
+    const h = Math.floor(img.naturalHeight / 8);
+    const w = h;
+    const count = Math.max(1, Math.floor(img.naturalWidth / w));
+    return { w, h, count };
+  }
+
+  function velocityToRow(vx: number, vy: number): number {
+    const deg = ((Math.atan2(vy, vx) * 180) / Math.PI + 360) % 360;
+    return ANGLE_TO_ROW[Math.round(deg / 45) % 8];
+  }
+
+  function randomVelocity(x: number, y: number): { vx: number; vy: number } {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    let vx = (Math.random() - 0.5) * 2;
+    let vy = (Math.random() - 0.5) * 2;
+    if (x < 100) vx = Math.abs(vx);
+    else if (x > W - 100) vx = -Math.abs(vx);
+    if (y < 100) vy = Math.abs(vy);
+    else if (y > H - 100) vy = -Math.abs(vy);
+    const mag = Math.sqrt(vx * vx + vy * vy) || 1;
+    return { vx: (vx / mag) * MOVE_SPEED, vy: (vy / mag) * MOVE_SPEED };
+  }
+
+  function randRange(a: number, b: number): number {
+    return a + Math.random() * (b - a);
+  }
+
+  function getHeaderBottom(): number {
+    return document.querySelector('header')?.getBoundingClientRect().bottom ?? 60;
+  }
+
+  // ── Persistence ─────────────────────────────────────────
+  function saveSprites() {
+    const data: SavedSprite[] = sprites.map((s) => ({
+      pokemonId: s.pokemonId,
+      spawnOrder: s.spawnOrder,
+      x: Math.round(s.x),
+      y: Math.round(s.y),
+    }));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  }
+
+  function loadSavedSprites(): SavedSprite[] | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw) as SavedSprite[];
+      if (!Array.isArray(data) || data.length === 0) return null;
+      return data;
+    } catch { return null; }
+  }
+
+  // ── Globals ─────────────────────────────────────────────
+  const sprites: SpriteEntity[] = [];
+  let spawnCounter = 0;
+  let lastInteraction = performance.now();
+  let allAsleep = false;
+
+  function onUserActivity() {
+    lastInteraction = performance.now();
+  }
+  document.addEventListener('mousemove', onUserActivity);
+  document.addEventListener('keydown', onUserActivity);
+  document.addEventListener('scroll', onUserActivity);
+
+  // Save positions on page unload so they persist
+  window.addEventListener('beforeunload', saveSprites);
+
+  // ── Sprite Creation ─────────────────────────────────────
+  async function createSprite(
+    container: HTMLElement,
+    pokemonId: number,
+    startX?: number,
+    startY?: number,
+    order?: number,
+  ): Promise<SpriteEntity | null> {
+    const [animDims, ...results] = await Promise.all([
+      fetchAnimData(pokemonId),
+      ...ACTIONS.map((a) => loadImage(spriteUrl(pokemonId, a))),
+    ]);
+
+    const sheets: Record<Action, HTMLImageElement | null> = {
+      Walk: results[0], Idle: results[1], Sleep: results[2], Attack: results[3],
+    };
+    if (!sheets.Walk) return null;
+
+    const frameInfo: Record<Action, FrameInfo | null> = {
+      Walk: calcFrameInfo(sheets.Walk, animDims['Walk']),
+      Idle: sheets.Idle ? calcFrameInfo(sheets.Idle, animDims['Idle']) : null,
+      Sleep: sheets.Sleep ? calcFrameInfo(sheets.Sleep, animDims['Sleep']) : null,
+      Attack: sheets.Attack ? calcFrameInfo(sheets.Attack, animDims['Attack']) : null,
+    };
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    container.appendChild(canvas);
+
+    const headerH = getHeaderBottom();
+    const x = startX ?? Math.random() * (window.innerWidth - 100) + 50;
+    const y = startY ?? Math.random() * (window.innerHeight - headerH - 80) + headerH;
+    const { vx, vy } = randomVelocity(x, y);
+
+    const assignedOrder = order ?? spawnCounter++;
+
+    const sprite: SpriteEntity = {
+      pokemonId,
+      spawnOrder: assignedOrder,
+      canvas, ctx, x, y, vx, vy,
+      state: 'walking',
+      stateEnd: 0,
+      frame: 0,
+      lastFrame: 0,
+      direction: velocityToRow(vx, vy),
+      sheets, frameInfo,
+    };
+
+    resizeCanvas(sprite, 'Walk');
+    canvas.style.left = `${x}px`;
+    canvas.style.top = `${y}px`;
+    canvas.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleSpriteClick(sprite);
+    });
+
+    return sprite;
+  }
+
+  function resizeCanvas(s: SpriteEntity, action: Action) {
+    const info = s.frameInfo[action] ?? s.frameInfo.Walk!;
+    s.canvas.width = info.w * SCALE;
+    s.canvas.height = info.h * SCALE;
+  }
+
+  // ── State Transitions ──────────────────────────────────
+  function setWalking(s: SpriteEntity) {
+    s.state = 'walking';
+    s.frame = 0;
+    const { vx, vy } = randomVelocity(s.x, s.y);
+    s.vx = vx; s.vy = vy;
+    s.direction = velocityToRow(vx, vy);
+    resizeCanvas(s, 'Walk');
+  }
+
+  function setIdle(s: SpriteEntity) {
+    s.state = 'idle';
+    s.frame = 0;
+    s.vx = 0; s.vy = 0;
+    s.direction = 0;
+    s.stateEnd = performance.now() + randRange(IDLE_MS_MIN, IDLE_MS_MAX);
+    resizeCanvas(s, s.sheets.Idle ? 'Idle' : 'Walk');
+  }
+
+  function setSleeping(s: SpriteEntity) {
+    s.state = 'sleeping';
+    s.frame = 0;
+    s.vx = 0; s.vy = 0;
+    s.direction = 0;
+    resizeCanvas(s, s.sheets.Sleep ? 'Sleep' : 'Walk');
+  }
+
+  function setAttacking(s: SpriteEntity) {
+    s.state = 'attacking';
+    s.frame = 0;
+    s.vx = 0; s.vy = 0;
+    s.direction = 0;
+    s.stateEnd = performance.now() + ATTACK_MS;
+    resizeCanvas(s, s.sheets.Attack ? 'Attack' : 'Walk');
+  }
+
+  function handleSpriteClick(s: SpriteEntity) {
+    lastInteraction = performance.now();
+    allAsleep = false;
+    if (s.state === 'sleeping') {
+      setWalking(s);
+    } else if (s.state !== 'attacking') {
+      setAttacking(s);
+    }
+  }
+
+  // ── Resolve Current Sheet ──────────────────────────────
+  function getSheet(s: SpriteEntity): { img: HTMLImageElement; info: FrameInfo } {
+    let action: Action = 'Walk';
+    if (s.state === 'idle' && s.sheets.Idle) action = 'Idle';
+    if (s.state === 'sleeping' && s.sheets.Sleep) action = 'Sleep';
+    if (s.state === 'attacking' && s.sheets.Attack) action = 'Attack';
+    return {
+      img: s.sheets[action] ?? s.sheets.Walk!,
+      info: s.frameInfo[action] ?? s.frameInfo.Walk!,
+    };
+  }
+
+  // ── Swap Logic ─────────────────────────────────────────
+  async function swapOldestSprite(requestedId?: number) {
+    const container = document.getElementById('sprite-background');
+    if (!container || sprites.length === 0) return;
+
+    // Find oldest by spawnOrder
+    let oldestIdx = 0;
+    for (let i = 1; i < sprites.length; i++) {
+      if (sprites[i].spawnOrder < sprites[oldestIdx].spawnOrder) oldestIdx = i;
+    }
+
+    // Pick new ID
+    let newId: number;
+    if (requestedId && requestedId >= 1 && requestedId <= MAX_DEX_NUMBER) {
+      newId = requestedId;
+    } else {
+      // Random from curated list, avoid duplicates if possible
+      const usedIds = new Set(sprites.map((s) => s.pokemonId));
+      const available = POKEMON_IDS.filter((id) => !usedIds.has(id));
+      const pool = available.length > 0 ? available : POKEMON_IDS;
+      newId = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // Remove old sprite
+    const old = sprites[oldestIdx];
+    old.canvas.remove();
+    sprites.splice(oldestIdx, 1);
+
+    // Create new one
+    const newSprite = await createSprite(container, newId);
+    if (newSprite) {
+      newSprite.spawnOrder = spawnCounter++;
+      sprites.push(newSprite);
+      saveSprites();
+    }
+  }
+
+  // ── Update & Render ────────────────────────────────────
+  function update(now: number, dt: number) {
+    if (now - lastInteraction > SLEEP_TIMEOUT && !allAsleep) {
+      allAsleep = true;
+      for (const s of sprites) {
+        if (s.state === 'walking' || s.state === 'idle') setSleeping(s);
+      }
+    }
+
+    for (const s of sprites) {
+      switch (s.state) {
+        case 'walking': {
+          s.x += s.vx * (dt / 1000);
+          s.y += s.vy * (dt / 1000);
+          const W = window.innerWidth;
+          const H = window.innerHeight;
+          const headerH = getHeaderBottom();
+          if (s.x < 20 || s.x > W - 80 || s.y < headerH || s.y > H - 80) {
+            s.x = Math.max(20, Math.min(W - 80, s.x));
+            s.y = Math.max(headerH, Math.min(H - 80, s.y));
+            const v = randomVelocity(s.x, s.y);
+            s.vx = v.vx; s.vy = v.vy;
+            s.direction = velocityToRow(v.vx, v.vy);
+          }
+          if (!allAsleep && Math.random() < IDLE_CHANCE) setIdle(s);
+          break;
+        }
+        case 'idle':
+          if (now >= s.stateEnd) {
+            allAsleep ? setSleeping(s) : setWalking(s);
+          }
+          break;
+        case 'attacking':
+          if (now >= s.stateEnd) setWalking(s);
+          break;
+        case 'sleeping':
+          break;
+      }
+
+      if (now - s.lastFrame >= FRAME_MS) {
+        const { info } = getSheet(s);
+        s.frame = (s.frame + 1) % info.count;
+        s.lastFrame = now;
+      }
+
+      const { img, info } = getSheet(s);
+      s.ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
+      s.ctx.drawImage(
+        img,
+        s.frame * info.w, s.direction * info.h, info.w, info.h,
+        0, 0, info.w * SCALE, info.h * SCALE,
+      );
+      s.canvas.style.left = `${s.x}px`;
+      s.canvas.style.top = `${s.y}px`;
+    }
+  }
+
+  // ── Main Loop ──────────────────────────────────────────
+  let lastTime = 0;
+  function loop(now: number) {
+    const dt = lastTime ? now - lastTime : 16;
+    lastTime = now;
+    update(now, Math.min(dt, 100));
+    requestAnimationFrame(loop);
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  async function init() {
+    const container = document.getElementById('sprite-background');
+    if (!container) return;
+
+    const saved = loadSavedSprites();
+
+    if (saved) {
+      // Restore persisted sprites
+      const headerH = getHeaderBottom();
+      for (const s of saved) {
+        // Clamp positions to current viewport
+        const x = Math.max(20, Math.min(window.innerWidth - 80, s.x));
+        const y = Math.max(headerH, Math.min(window.innerHeight - 80, s.y));
+        const sprite = await createSprite(container, s.pokemonId, x, y, s.spawnOrder);
+        if (sprite) sprites.push(sprite);
+      }
+      // Set spawn counter past all existing orders
+      spawnCounter = Math.max(...sprites.map((s) => s.spawnOrder)) + 1;
+    } else {
+      // First visit — random spawn
+      const count = SPRITE_COUNT_MIN + Math.floor(Math.random() * (SPRITE_COUNT_MAX - SPRITE_COUNT_MIN + 1));
+      const shuffled = [...POKEMON_IDS].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, count + 6);
+
+      let loaded = 0;
+      for (const id of selected) {
+        if (loaded >= count) break;
+        const sprite = await createSprite(container, id);
+        if (sprite) {
+          sprite.spawnOrder = spawnCounter++;
+          sprites.push(sprite);
+          loaded++;
+        }
+      }
+      saveSprites();
+    }
+
+    if (sprites.length > 0) requestAnimationFrame(loop);
+
+    // ── Wire up swap UI ──────────────────────────────────
+    const btn = document.getElementById('sprite-swap-btn');
+    const input = document.getElementById('sprite-dex-input') as HTMLInputElement | null;
+    btn?.addEventListener('click', () => {
+      const val = input?.value ? parseInt(input.value, 10) : undefined;
+      if (input) input.value = '';
+      swapOldestSprite(val);
+    });
+
+    // ── Wire up toggle UI ────────────────────────────────
+    const toggleBtn = document.getElementById('sprite-toggle-btn');
+    const isHidden = localStorage.getItem(VISIBILITY_KEY) === 'hidden';
+    if (isHidden) {
+      container.style.display = 'none';
+      if (toggleBtn) toggleBtn.textContent = '👁 Show';
+    }
+    toggleBtn?.addEventListener('click', () => {
+      const nowHidden = container.style.display === 'none';
+      container.style.display = nowHidden ? '' : 'none';
+      localStorage.setItem(VISIBILITY_KEY, nowHidden ? 'visible' : 'hidden');
+      if (toggleBtn) toggleBtn.textContent = nowHidden ? '👁 Hide' : '👁 Show';
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

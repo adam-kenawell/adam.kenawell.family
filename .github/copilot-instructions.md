@@ -17,7 +17,29 @@ Personal website for Adam Kenawell (Data Engineer at Ford), hosted on **GitHub P
 | Production build | `npm run build` |
 | Preview build locally | `npm run preview` |
 | Sync content collections | `npx astro sync` |
-| Deploy to GitHub Pages | Push to the configured publish branch |
+| Deploy to GitHub Pages | Push to `main` (triggers GitHub Actions automatically) |
+
+## Publishing Changes (GitHub Actions CI/CD)
+
+The site is deployed automatically via GitHub Actions. The workflow lives at `.github/workflows/deploy.yml`.
+
+**Process to make and publish changes:**
+1. Make code changes locally (edit `.astro`, `.md`, config files, etc.)
+2. Build locally to verify: `npx astro build`
+3. Stage, commit, and push in one step:
+   ```
+   git add -A && git commit -m "<descriptive message>" && git push
+   ```
+4. GitHub Actions automatically triggers on push to `main`:
+   - Checks out code → installs Node 22 → runs `npm ci` → runs `npm run build` → uploads `./dist` as artifact → deploys to GitHub Pages
+5. Site is live at `https://adam-kenawell.github.io/adam.kenawell.family/` within ~1–2 minutes
+
+**Key details:**
+- GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in the repo Settings → Pages
+- The workflow uses `actions/upload-pages-artifact@v3` and `actions/deploy-pages@v4`
+- Concurrency is configured to prevent overlapping deploys (`cancel-in-progress: false`)
+- `workflow_dispatch` is enabled so deploys can also be triggered manually from the Actions tab
+- The `base` in `astro.config.mjs` is set to `'/adam.kenawell.family/'` to match the repo-name-based GitHub Pages URL
 
 ## Project Structure
 ```
