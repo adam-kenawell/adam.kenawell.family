@@ -4,16 +4,17 @@ interface Props {
 }
 
 const { showNav = true } = Astro.props;
+const base = import.meta.env.BASE_URL;
 ---
 
 <header>
-  <a class="name-btn" href="/">Adam Kenawell</a>
+  <a class="name-btn" href={base}>Adam Kenawell</a>
   <nav>
     {showNav && (
       <>
-        <a class="nav-link" href="/blog">Blog</a>
-        <a class="nav-link" href="/resume">Resume</a>
-        <a class="nav-link" href="/projects">Projects</a>
+        <a class="nav-link" href={`${base}blog`}>Blog</a>
+        <a class="nav-link" href={`${base}resume`}>Resume</a>
+        <a class="nav-link" href={`${base}projects`}>Projects</a>
       </>
     )}
     <a class="github-link" href="https://github.com/adam-kenawell" target="_blank" rel="noopener">GitHub ↗</a>

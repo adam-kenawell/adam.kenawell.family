@@ -6,6 +6,7 @@ import { getCollection } from 'astro:content';
 const posts = (await getCollection('blog')).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime()
 );
+const base = import.meta.env.BASE_URL;
 ---
 
 <Layout title="Blog — Adam Kenawell">
@@ -14,7 +15,7 @@ const posts = (await getCollection('blog')).sort(
 
     <div class="post-list">
       {posts.map((post) => (
-        <a class="post-card" href={`/blog/${post.id}`}>
+        <a class="post-card" href={`${base}blog/${post.id}`}>
           <time>{post.data.date.toISOString().slice(0, 10)}</time>
           <h2>{post.data.title}</h2>
           <p>{post.data.excerpt}</p>

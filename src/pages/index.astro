@@ -2,10 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 
+const base = import.meta.env.BASE_URL;
+
 const cards = [
-  { title: 'Blog', href: '/blog' },
-  { title: 'Resume', href: '/resume' },
-  { title: 'Projects', href: '/projects' },
+  { title: 'Blog', href: `${base}blog` },
+  { title: 'Resume', href: `${base}resume` },
+  { title: 'Projects', href: `${base}projects` },
 ];
 ---
 
