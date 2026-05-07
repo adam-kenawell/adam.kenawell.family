@@ -1,0 +1,104 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout title={`${post.data.title} — Adam Kenawell`}>
+  <div class="page">
+    <Header />
+
+    <article>
+      <time>{post.data.date.toISOString().slice(0, 10)}</time>
+      <h1>{post.data.title}</h1>
+      <div class="content">
+        <Content />
+      </div>
+    </article>
+
+    <footer>
+      <span>&copy; 2026 Adam Kenawell</span>
+    </footer>
+  </div>
+</Layout>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  article {
+    flex: 1;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  article time {
+    font-size: 0.75rem;
+    opacity: 0.5;
+  }
+
+  article h1 {
+    font-size: 1.4rem;
+    margin: 0.5rem 0 1.5rem;
+  }
+
+  .content {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    opacity: 0.85;
+  }
+
+  .content :global(h2) {
+    font-size: 1.1rem;
+    margin: 2rem 0 0.75rem;
+  }
+
+  .content :global(h3) {
+    font-size: 1rem;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  .content :global(p) {
+    margin-bottom: 1rem;
+  }
+
+  .content :global(ul), .content :global(ol) {
+    margin: 0.5rem 0 1rem 1.5rem;
+  }
+
+  .content :global(li) {
+    margin-bottom: 0.3rem;
+  }
+
+  .content :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .content :global(strong) {
+    color: #f5d000;
+  }
+
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+</style>

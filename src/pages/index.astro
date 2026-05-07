@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+
+const cards = [
+  { title: 'Blog', href: '/blog' },
+  { title: 'Resume', href: '/resume' },
+  { title: 'Projects', href: '/projects' },
+];
+---
+
+<Layout title="Adam Kenawell">
+  <div class="page">
+    <Header showNav={false} />
+
+    <main>
+      {cards.map((card) => (
+        <a class="card" href={card.href}>
+          <span>{card.title}</span>
+        </a>
+      ))}
+    </main>
+
+    <footer>
+      <span>&copy; 2026 Adam Kenawell</span>
+    </footer>
+  </div>
+</Layout>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 200px;
+    height: 200px;
+    border: 2px solid rgba(245, 208, 0, 0.5);
+    background-color: rgba(255, 255, 255, 0.06);
+    font-size: 1.25rem;
+    letter-spacing: 0.05em;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s, color 0.2s, transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .card:hover {
+    background-color: #f5d000;
+    color: #1a1a1a;
+    border-color: #f5d000;
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(245, 208, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+</style>

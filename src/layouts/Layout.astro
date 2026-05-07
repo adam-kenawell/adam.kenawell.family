@@ -1,0 +1,49 @@
+---
+import '@fontsource/fusion-pixel-12px-monospaced-kr';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: 'Fusion Pixel 12px Monospaced KR', monospace;
+    background-color: #1a1a1a;
+    color: #f5d000;
+  }
+
+  a {
+    color: #f5d000;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #fff;
+  }
+</style>
