@@ -2,10 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 
-const projects = [
-  { title: 'adam.kenawell.family', description: 'This personal website — built with Astro and hosted on GitHub Pages.', tech: ['Astro', 'CSS', 'GitHub Pages'], url: 'https://github.com/adam-kenawell/adam.kenawell.family' },
-  { title: 'Project Alpha', description: 'A placeholder project showcasing full-stack development skills.', tech: ['TypeScript', 'Node.js', 'React'], url: '#' },
-  { title: 'Project Beta', description: 'Another placeholder — maybe a CLI tool, maybe a game, who knows.', tech: ['Python', 'Linux'], url: '#' },
+// Add projects here as objects with title, description, tech[], and url.
+const projects: { title: string; description: string; tech: string[]; url: string }[] = [
+  // Example:
+  // { title: 'My Project', description: 'A cool thing I built.', tech: ['Astro', 'TypeScript'], url: 'https://github.com/...' },
 ];
 ---
 
@@ -14,17 +14,24 @@ const projects = [
     <Header />
 
     <main>
-      {projects.map((project) => (
-        <a class="project-card" href={project.url} target="_blank" rel="noopener">
-          <h2>{project.title}</h2>
-          <p>{project.description}</p>
-          <div class="tech-tags">
-            {project.tech.map((t) => (
-              <span class="tag">{t}</span>
-            ))}
-          </div>
-        </a>
-      ))}
+      {projects.length > 0 ? (
+        projects.map((project) => (
+          <a class="project-card" href={project.url} target="_blank" rel="noopener">
+            <h2>{project.title}</h2>
+            <p>{project.description}</p>
+            <div class="tech-tags">
+              {project.tech.map((t) => (
+                <span class="tag">{t}</span>
+              ))}
+            </div>
+          </a>
+        ))
+      ) : (
+        <div class="empty-state">
+          <p>nothing to see here!</p>
+          <p class="sub">looks like someone's been slacking on their projects! 🫠</p>
+        </div>
+      )}
     </main>
 
     <footer>
@@ -106,6 +113,23 @@ const projects = [
     .project-card {
       padding: 1.1rem;
     }
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    opacity: 0.7;
+  }
+
+  .empty-state p {
+    font-size: 1.2rem;
+  }
+
+  .empty-state .sub {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    opacity: 0.6;
   }
 
   footer {

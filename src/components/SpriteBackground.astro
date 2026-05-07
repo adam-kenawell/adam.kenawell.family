@@ -8,7 +8,7 @@
 <div id="sprite-background" aria-hidden="true"></div>
 
 <div id="sprite-controls">
-  <span id="sprite-controls-title">background controls</span>
+  <span id="sprite-controls-title">pokemon controls</span>
   <div id="sprite-controls-row">
     <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
     <button id="sprite-swap-btn" title="Replace oldest Pokémon">⟳ Swap</button>
@@ -48,7 +48,7 @@
     font-size: 0.65rem;
     color: rgba(245, 208, 0, 0.5);
     letter-spacing: 0.05em;
-    padding-left: 0.1rem;
+    text-align: center;
   }
 
   #sprite-controls-row {
@@ -58,8 +58,8 @@
   }
 
   #sprite-dex-input {
-    width: 5rem;
-    padding: 0.3rem 0.5rem;
+    width: 3.5rem;
+    padding: 0.3rem 0.35rem;
     border: 1px solid rgba(245, 208, 0, 0.5);
     border-radius: 6px;
     background: rgba(26, 26, 26, 0.9);
@@ -577,13 +577,13 @@
     const isHidden = localStorage.getItem(VISIBILITY_KEY) === 'hidden';
     if (isHidden) {
       container.style.display = 'none';
-      if (toggleBtn) toggleBtn.textContent = '👁 Show';
+      if (toggleBtn) toggleBtn.textContent = '� Show';
     }
     toggleBtn?.addEventListener('click', () => {
       const nowHidden = container.style.display === 'none';
       container.style.display = nowHidden ? '' : 'none';
       localStorage.setItem(VISIBILITY_KEY, nowHidden ? 'visible' : 'hidden');
-      if (toggleBtn) toggleBtn.textContent = nowHidden ? '👁 Hide' : '👁 Show';
+      if (toggleBtn) toggleBtn.textContent = nowHidden ? '👁 Hide' : '� Show';
     });
 
     // ── Click-to-attack via proximity detection ──────────
