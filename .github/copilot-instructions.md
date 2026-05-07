@@ -24,15 +24,17 @@ Personal website for Adam Kenawell (Data Engineer at Ford), hosted on **GitHub P
 The site is deployed automatically via GitHub Actions. The workflow lives at `.github/workflows/deploy.yml`.
 
 **Process to make and publish changes:**
-1. Make code changes locally (edit `.astro`, `.md`, config files, etc.)
-2. Build locally to verify: `npx astro build`
-3. Stage, commit, and push in one step:
-   ```
-   git add -A && git commit -m "<descriptive message>" && git push
-   ```
-4. GitHub Actions automatically triggers on push to `main`:
+1. Start the dev server at the beginning of a session: `npm run dev` (background)
+2. Make code changes — dev server hot-reloads automatically
+3. Adam previews at `http://localhost:4321/` and gives feedback
+4. Iterate until Adam is satisfied
+5. **Only at the end of the session** (when Adam says to push/deploy):
+   - Verify: `npx astro build`
+   - Push: `git add -A && git commit -m "<descriptive message>" && git push`
+6. GitHub Actions automatically triggers on push to `main`:
    - Checks out code → installs Node 22 → runs `npm ci` → runs `npm run build` → uploads `./dist` as artifact → deploys to GitHub Pages
-5. Site is live at `https://adam.kenawell.family` within ~1–2 minutes
+7. Site is live at `https://adam.kenawell.family` within ~1–2 minutes
+8. **Avoid multiple git pushes per session** — batch all changes into one push at the end
 
 **Key details:**
 - GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in the repo Settings → Pages

@@ -36,11 +36,14 @@ Running log of notable decisions, constraints, and context across sessions.
 
 ### Deployment — GitHub Actions CI/CD
 - Site deploys automatically when code is pushed to `main`. Workflow at `.github/workflows/deploy.yml`.
-- **Agent workflow to publish changes:**
-  1. Make edits to source files
-  2. Verify with `npx astro build` (must exit 0, currently builds 10 pages)
-  3. Run `git add -A && git commit -m "<message>" && git push` to deploy
-  4. GitHub Actions picks up the push → builds → deploys to GitHub Pages (~1–2 min)
+- **Agent workflow during a session:**
+  1. Start the dev server at the beginning: `npm run dev` (background process)
+  2. Make edits — the dev server hot-reloads automatically
+  3. Adam previews at `http://localhost:4321/` and gives feedback
+  4. Iterate until Adam is satisfied
+  5. **Only at the end of the session** (when Adam says to push/deploy): verify with `npx astro build`, then `git add -A && git commit -m "<message>" && git push`
+  6. GitHub Actions picks up the push → builds → deploys to GitHub Pages (~1-2 min)
+  7. Avoid multiple git pushes per session — batch all changes into one push at the end
 - GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in repo Settings → Pages.
 - `base` in `astro.config.mjs` is `'/'` — custom domain `adam.kenawell.family`. All internal links use `import.meta.env.BASE_URL` to prefix paths correctly.
 - Git remote uses a PAT for auth under the `adam-kenawell` account (not the Ford `akenawel_ford` account).

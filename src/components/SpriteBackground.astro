@@ -8,11 +8,11 @@
 <div id="sprite-background" aria-hidden="true"></div>
 
 <div id="sprite-controls">
-  <span id="sprite-controls-title">pokemon controls</span>
+  <span id="sprite-controls-title">Pok&#233;mon Controls</span>
   <div id="sprite-controls-row">
     <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
     <button id="sprite-swap-btn" title="Replace oldest Pokémon">⟳ Swap</button>
-    <button id="sprite-toggle-btn" title="Toggle Pokémon visibility">👁 Hide</button>
+    <button id="sprite-toggle-btn" title="Toggle Pokémon visibility">Hide</button>
   </div>
 </div>
 
@@ -577,13 +577,13 @@
     const isHidden = localStorage.getItem(VISIBILITY_KEY) === 'hidden';
     if (isHidden) {
       container.style.display = 'none';
-      if (toggleBtn) toggleBtn.textContent = '� Show';
+      if (toggleBtn) toggleBtn.textContent = 'Show';
     }
     toggleBtn?.addEventListener('click', () => {
       const nowHidden = container.style.display === 'none';
       container.style.display = nowHidden ? '' : 'none';
       localStorage.setItem(VISIBILITY_KEY, nowHidden ? 'visible' : 'hidden');
-      if (toggleBtn) toggleBtn.textContent = nowHidden ? '👁 Hide' : '� Show';
+      if (toggleBtn) toggleBtn.textContent = nowHidden ? 'Hide' : 'Show';
     });
 
     // ── Click-to-attack via proximity detection ──────────
