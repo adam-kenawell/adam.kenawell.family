@@ -31,8 +31,7 @@
   #sprite-background canvas {
     position: absolute;
     image-rendering: pixelated;
-    pointer-events: auto;
-    cursor: pointer;
+    pointer-events: none;
   }
 
   #sprite-controls {
@@ -129,6 +128,7 @@
   // ── Config ──────────────────────────────────────────────
   const SCALE = 1;
   const FRAME_MS = 150;
+  const ATTACK_FRAME_MS = 40;
   const MOVE_SPEED = 35;
   const SPRITE_COUNT_MIN = 6;
   const SPRITE_COUNT_MAX = 8;
@@ -137,6 +137,7 @@
   const IDLE_MS_MAX = 4000;
   const SLEEP_TIMEOUT = 150000;    // 2.5 min of no interaction
   const ATTACK_MS = 1000;
+  const HIT_RADIUS = 40;          // Click detection radius around sprite center
   const STORAGE_KEY = 'pmd-sprites';
   const VISIBILITY_KEY = 'pmd-sprites-visible';
   const MAX_DEX_NUMBER = 1025;     // Total sprite folders (approx)
@@ -344,10 +345,6 @@
     resizeCanvas(sprite, 'Walk');
     canvas.style.left = `${x}px`;
     canvas.style.top = `${y}px`;
-    canvas.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handleSpriteClick(sprite);
-    });
 
     return sprite;
   }
@@ -372,7 +369,6 @@
     s.state = 'idle';
     s.frame = 0;
     s.vx = 0; s.vy = 0;
-    s.direction = 0;
     s.stateEnd = performance.now() + randRange(IDLE_MS_MIN, IDLE_MS_MAX);
     resizeCanvas(s, s.sheets.Idle ? 'Idle' : 'Walk');
   }
@@ -390,7 +386,6 @@
     s.frame = 0;
     s.vx = 0; s.vy = 0;
     s.direction = 0;
-    s.stateEnd = performance.now() + ATTACK_MS;
     resizeCanvas(s, s.sheets.Attack ? 'Attack' : 'Walk');
   }
 
@@ -486,15 +481,20 @@
           }
           break;
         case 'attacking':
-          if (now >= s.stateEnd) setWalking(s);
           break;
         case 'sleeping':
           break;
       }
 
-      if (now - s.lastFrame >= FRAME_MS) {
+      const frameMs = s.state === 'attacking' ? ATTACK_FRAME_MS : FRAME_MS;
+      if (now - s.lastFrame >= frameMs) {
         const { info } = getSheet(s);
-        s.frame = (s.frame + 1) % info.count;
+        const nextFrame = s.frame + 1;
+        if (s.state === 'attacking' && nextFrame >= info.count) {
+          setWalking(s);
+        } else {
+          s.frame = nextFrame % info.count;
+        }
         s.lastFrame = now;
       }
 
@@ -505,8 +505,12 @@
         s.frame * info.w, s.direction * info.h, info.w, info.h,
         0, 0, info.w * SCALE, info.h * SCALE,
       );
-      s.canvas.style.left = `${s.x}px`;
-      s.canvas.style.top = `${s.y}px`;
+      // Offset position so sprite stays centered when action frame size differs from Walk
+      const walkInfo = s.frameInfo.Walk!;
+      const offsetX = ((walkInfo.w - info.w) * SCALE) / 2;
+      const offsetY = ((walkInfo.h - info.h) * SCALE) / 2;
+      s.canvas.style.left = `${s.x + offsetX}px`;
+      s.canvas.style.top = `${s.y + offsetY}px`;
     }
   }
 
@@ -580,6 +584,27 @@
       container.style.display = nowHidden ? '' : 'none';
       localStorage.setItem(VISIBILITY_KEY, nowHidden ? 'visible' : 'hidden');
       if (toggleBtn) toggleBtn.textContent = nowHidden ? '👁 Hide' : '👁 Show';
+    });
+
+    // ── Click-to-attack via proximity detection ──────────
+    document.addEventListener('click', (e) => {
+      const cx = e.clientX;
+      const cy = e.clientY;
+      let closest: SpriteEntity | null = null;
+      let closestDist = Infinity;
+      for (const s of sprites) {
+        const info = s.frameInfo.Walk!;
+        const sx = s.x + (info.w * SCALE) / 2;
+        const sy = s.y + (info.h * SCALE) / 2;
+        const dist = Math.sqrt((cx - sx) ** 2 + (cy - sy) ** 2);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = s;
+        }
+      }
+      if (closest && closestDist < HIT_RADIUS) {
+        handleSpriteClick(closest);
+      }
     });
   }
 
