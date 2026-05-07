@@ -32,14 +32,14 @@ The site is deployed automatically via GitHub Actions. The workflow lives at `.g
    ```
 4. GitHub Actions automatically triggers on push to `main`:
    - Checks out code → installs Node 22 → runs `npm ci` → runs `npm run build` → uploads `./dist` as artifact → deploys to GitHub Pages
-5. Site is live at `https://adam-kenawell.github.io/adam.kenawell.family/` within ~1–2 minutes
+5. Site is live at `https://adam.kenawell.family` within ~1–2 minutes
 
 **Key details:**
 - GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in the repo Settings → Pages
 - The workflow uses `actions/upload-pages-artifact@v3` and `actions/deploy-pages@v4`
 - Concurrency is configured to prevent overlapping deploys (`cancel-in-progress: false`)
 - `workflow_dispatch` is enabled so deploys can also be triggered manually from the Actions tab
-- The `base` in `astro.config.mjs` is set to `'/adam.kenawell.family/'` to match the repo-name-based GitHub Pages URL
+- The `base` in `astro.config.mjs` is set to `'/'` for the custom domain `adam.kenawell.family`
 
 ## Project Structure
 ```

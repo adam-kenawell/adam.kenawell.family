@@ -42,7 +42,7 @@ Running log of notable decisions, constraints, and context across sessions.
   3. Run `git add -A && git commit -m "<message>" && git push` to deploy
   4. GitHub Actions picks up the push → builds → deploys to GitHub Pages (~1–2 min)
 - GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in repo Settings → Pages.
-- `base` in `astro.config.mjs` is `'/adam.kenawell.family/'` — all internal links must use `import.meta.env.BASE_URL` to prefix paths correctly.
+- `base` in `astro.config.mjs` is `'/'` — custom domain `adam.kenawell.family`. All internal links use `import.meta.env.BASE_URL` to prefix paths correctly.
 - Git remote uses a PAT for auth under the `adam-kenawell` account (not the Ford `akenawel_ford` account).
 
 ### Mobile Responsiveness
