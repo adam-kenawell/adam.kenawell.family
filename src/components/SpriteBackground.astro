@@ -7,14 +7,7 @@
 
 <div id="sprite-background" aria-hidden="true" transition:persist></div>
 
-<div id="sprite-controls" transition:persist>
-  <span id="sprite-controls-title" role="button" tabindex="0">Pok&#233;mon Controls</span>
-  <div id="sprite-controls-row" class="hidden">
-    <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
-    <button id="sprite-swap-btn" title="Spawn a new Pokémon">⟳ Spawn</button>
-    <button id="sprite-toggle-btn" title="Toggle Pokémon visibility">Hide</button>
-  </div>
-</div>
+
 
 <style is:global>
   #sprite-background {
@@ -64,120 +57,9 @@
     0%, 70% { opacity: 1; }
     100% { opacity: 0; }
   }
-
-  #sprite-controls {
-    position: fixed;
-    bottom: 1rem;
-    left: 1rem;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  #sprite-controls-title {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    text-align: center;
-    cursor: pointer;
-    user-select: none;
-    transition: color 0.2s;
-  }
-
-  #sprite-controls-title:hover {
-    color: var(--text);
-  }
-
-  #sprite-controls-row.hidden {
-    display: none;
-  }
-
-  #sprite-controls-row {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-  }
-
-  #sprite-dex-input {
-    width: 3.5rem;
-    padding: 0.3rem 0.35rem;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
-    background: var(--bg-card);
-    color: var(--text);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
-    font-size: 0.8rem;
-    outline: none;
-  }
-
-  #sprite-dex-input::placeholder {
-    color: var(--text-faint);
-  }
-
-  #sprite-dex-input:focus {
-    border-color: var(--accent);
-  }
-
-  #sprite-swap-btn {
-    padding: 0.3rem 0.65rem;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
-    background: var(--bg-card);
-    color: var(--accent);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-  }
-
-  #sprite-swap-btn:hover {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-  }
-
-  #sprite-toggle-btn {
-    padding: 0.3rem 0.65rem;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
-    background: var(--bg-card);
-    color: var(--accent);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-  }
-
-  #sprite-toggle-btn:hover {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-  }
-
-  /* Hide number input spinners */
-  #sprite-dex-input::-webkit-inner-spin-button,
-  #sprite-dex-input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  #sprite-dex-input[type=number] {
-    -moz-appearance: textfield;
-  }
 </style>
 
 <script>
-  // ── Controls Toggle ─────────────────────────────────────
-  const controlsTitle = document.getElementById('sprite-controls-title')!;
-  const controlsRow = document.getElementById('sprite-controls-row')!;
-  const spriteControls = document.getElementById('sprite-controls')!;
-  controlsTitle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    controlsRow.classList.toggle('hidden');
-  });
-  spriteControls.addEventListener('click', (e) => e.stopPropagation());
-  document.addEventListener('click', () => controlsRow.classList.add('hidden'));
-
   // ── Config ──────────────────────────────────────────────
   const SCALE = 1;
   const FRAME_MS = 150;
@@ -600,36 +482,7 @@
 
     if (sprites.length > 0) requestAnimationFrame(loop);
 
-    // ── Wire up swap UI ──────────────────────────────────
-    const btn = document.getElementById('sprite-swap-btn') as HTMLButtonElement | null;
-    const input = document.getElementById('sprite-dex-input') as HTMLInputElement | null;
-    let spawning = false;
-    btn?.addEventListener('click', async () => {
-      if (spawning) return;
-      spawning = true;
-      btn.disabled = true;
-      btn.style.opacity = '0.5';
-      const val = input?.value ? parseInt(input.value, 10) : undefined;
-      if (input) input.value = '';
-      await swapOldestSprite(val);
-      btn.disabled = false;
-      btn.style.opacity = '';
-      spawning = false;
-    });
-
-    // ── Wire up toggle UI ────────────────────────────────
-    const toggleBtn = document.getElementById('sprite-toggle-btn');
-    const isHidden = localStorage.getItem(VISIBILITY_KEY) === 'hidden';
-    if (isHidden) {
-      container.style.display = 'none';
-      if (toggleBtn) toggleBtn.textContent = 'Show';
-    }
-    toggleBtn?.addEventListener('click', () => {
-      const nowHidden = container.style.display === 'none';
-      container.style.display = nowHidden ? '' : 'none';
-      localStorage.setItem(VISIBILITY_KEY, nowHidden ? 'visible' : 'hidden');
-      if (toggleBtn) toggleBtn.textContent = nowHidden ? 'Hide' : 'Show';
-    });
+    wireControls();
 
     // ── Click-to-attack via proximity detection ──────────
     document.addEventListener('click', (e) => {
@@ -658,4 +511,45 @@
   } else {
     init();
   }
+
+  // ── Wire up sprite controls (survives view transitions) ──
+  let spawning = false;
+  function wireControls() {
+    const container = document.getElementById('sprite-background');
+    const btn = document.getElementById('sprite-swap-btn') as HTMLButtonElement | null;
+    const input = document.getElementById('sprite-dex-input') as HTMLInputElement | null;
+    const toggleBtn = document.getElementById('sprite-toggle-btn');
+
+    if (btn) {
+      btn.onclick = async () => {
+        if (spawning) return;
+        spawning = true;
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        const val = input?.value ? parseInt(input.value, 10) : undefined;
+        if (input) input.value = '';
+        await swapOldestSprite(val);
+        btn.disabled = false;
+        btn.style.opacity = '';
+        spawning = false;
+      };
+    }
+
+    if (toggleBtn && container) {
+      const isHidden = localStorage.getItem(VISIBILITY_KEY) === 'hidden';
+      if (isHidden) {
+        container.style.display = 'none';
+        toggleBtn.textContent = 'Show';
+      }
+      toggleBtn.onclick = () => {
+        const nowHidden = container.style.display === 'none';
+        container.style.display = nowHidden ? '' : 'none';
+        localStorage.setItem(VISIBILITY_KEY, nowHidden ? 'visible' : 'hidden');
+        toggleBtn.textContent = nowHidden ? 'Hide' : 'Show';
+      };
+    }
+  }
+
+  wireControls();
+  document.addEventListener('astro:after-swap', wireControls);
 </script>

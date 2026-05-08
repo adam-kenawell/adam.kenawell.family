@@ -74,3 +74,18 @@ Running log of notable decisions, constraints, and context across sessions.
 - **Persistence:** Theme mode and accent RGB saved to `localStorage`. Inline `<script is:inline>` in `<head>` applies saved theme before first paint (no flash). `astro:after-swap` listener reapplies on view transitions.
 - **Click-outside-to-close:** Both Theme and Pokémon Controls panels close when clicking anywhere outside. Uses `stopPropagation` on panel internals so interacting with controls doesn't dismiss them.
 - **Files modified:** `Layout.astro`, `ThemeControls.astro` (new), `Header.astro`, `Footer.astro`, `SpriteBackground.astro`, `index.astro`, `about.astro`, `resume.astro`, `projects.astro`, `blog.astro`, `[slug].astro`, `local-llm-stack.astro`, `pokepaste-visualizer.astro`.
+
+---
+
+## Session 7 — 2026-05-08 — Settings Dropdown Consolidation & Header Restructure
+
+- **Settings dropdown:** Merged Pokémon Controls and Theme into a single ⚙ settings dropdown in the header. Two collapsible groups ("Pokémon Controls" and "Theme") expand/collapse independently inside the dropdown.
+- **Header restructure:** Three-part flex layout: `.left-group` (avatar button + name + About Me) | `.nav-links` inside `.right-group` (Blog/Resumé/Projects/GitHub/LinkedIn/Coffee, scrollable) | `.settings-wrapper` (outside overflow, prevents dropdown clipping).
+- **Overflow clipping lesson (critical):** `overflow-x: auto` on a parent clips absolutely-positioned children (dropdowns). Settings wrapper must NEVER be inside an overflow container. This bug caused hours of debugging — the dropdown was toggling correctly but was invisible due to clipping.
+- **Avatar button:** Wrapped Electivire sprite canvas in a styled `<button class="avatar-btn">` with accent border, hover glow, and lift effect. Shrunk from 40px to 32px (26px mobile).
+- **ThemeControls.astro gutted:** Removed all HTML and CSS. Now JS-only — contains `applyTheme()`, `initThemeControls()`, and `ACCENT_COLORS` array. UI elements live in Header.astro.
+- **SpriteBackground.astro cleaned:** Removed `#sprite-controls` HTML div and all its CSS. Removed controls toggle JS. Controls now live in Header.astro settings dropdown. Component only has background canvas + sprite engine JS.
+- **Footer.astro simplified:** Removed "Buy me a coffee" link (moved to header nav). Now just copyright line.
+- **Color swatch CSS fix:** Swatches are created dynamically via `document.createElement()` in ThemeControls JS, so they don't get Astro's scoped `data-astro-cid-xxx` attributes. Fixed by using `:global()` selectors for `.color-grid` and `.color-swatch` in Header.astro.
+- **Script timing fix:** Settings toggle uses `<script is:inline>` (not regular `<script>`) to ensure DOM elements exist when listeners attach. Regular Astro scripts are hoisted to `<head>` as ES modules and may run before the body is parsed.
+- **Inline onclick approach:** Settings button uses `onclick` attribute as the most reliable method — no script timing, no DOM readiness issues, no module hoisting problems.

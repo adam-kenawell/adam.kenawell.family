@@ -11,7 +11,9 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 <header>
   <div class="left-group">
     <div class="avatar-wrapper">
-      <canvas id="avatar-sprite" width="40" height="40" title="Click me!"></canvas>
+      <button class="avatar-btn" id="avatar-btn" title="Click me!">
+        <canvas id="avatar-sprite" width="32" height="32"></canvas>
+      </button>
       <div id="status-bubble" class="status-bubble hidden">
         <div class="status-arrow"></div>
         <p class="status-text">fixing data pipelines and pretending to be a web developer</p>
@@ -20,20 +22,52 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     <a class="name-btn" href={base}>Adam Kenawell</a>
     <a class:list={['nav-link', 'about-link', { active: currentPath === '/about' }]} href={`${base}about`}>About Me</a>
   </div>
-  <nav>
-    {showNav && (
-      <>
-        <a class:list={['nav-link', { active: currentPath.startsWith('/blog') }]} href={`${base}blog`}>Blog</a>
-        <a class:list={['nav-link', { active: currentPath === '/resume' }]} href={`${base}resume`}>R&#233;sum&#233;</a>
-        <a class:list={['nav-link', { active: currentPath === '/projects' }]} href={`${base}projects`}>Projects</a>
-      </>
-    )}
-    <a class="github-link" href="https://github.com/adam-kenawell" target="_blank" rel="noopener">GitHub ↗</a>
-    <a class="github-link" href="https://www.linkedin.com/in/adam-kenawell/" target="_blank" rel="noopener">LinkedIn ↗</a>
-  </nav>
-</header>
-
-<style>
+  <div class="right-group">
+    <div class="nav-links">
+      {showNav && (
+        <>
+          <a class:list={['nav-link', { active: currentPath.startsWith('/blog') }]} href={`${base}blog`}>Blog</a>
+          <a class:list={['nav-link', { active: currentPath === '/resume' }]} href={`${base}resume`}>Resum&#233;</a>
+          <a class:list={['nav-link', { active: currentPath === '/projects' }]} href={`${base}projects`}>Projects</a>
+        </>
+      )}
+      <a class="github-link" href="https://github.com/adam-kenawell" target="_blank" rel="noopener">GitHub ↗</a>
+      <a class="github-link" href="https://www.linkedin.com/in/adam-kenawell/" target="_blank" rel="noopener">LinkedIn ↗</a>
+      <a class="github-link coffee-link" href="https://buymeacoffee.com/adam.kenawell" target="_blank" rel="noopener noreferrer">Buy me a coffee!</a>
+    </div>
+    <div class="settings-wrapper">
+      <button class="settings-btn" id="settings-btn" title="Settings">⚙</button>
+      <div class="settings-dropdown" id="settings-dropdown" style="display:none;">
+        <div class="settings-group">
+          <span class="settings-group-title" id="pokemon-title" role="button" tabindex="0">Pok&#233;mon Controls</span>
+          <div class="settings-group-content" id="pokemon-content" style="display:none;">
+            <div class="settings-row" id="sprite-controls-row">
+              <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
+              <button id="sprite-swap-btn" class="settings-action-btn" title="Spawn a new Pokémon">⟳ Spawn</button>
+              <button id="sprite-toggle-btn" class="settings-action-btn" title="Toggle Pokémon visibility">Hide</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-group">
+          <span class="settings-group-title" id="theme-title" role="button" tabindex="0">Theme</span>
+          <div class="settings-group-content" id="theme-content" style="display:none;">
+            <div class="settings-section">
+              <span class="settings-label">Mode</span>
+              <div class="mode-toggle">
+                <button id="mode-dark" class="mode-btn active" title="Dark mode">Dark</button>
+                <button id="mode-light" class="mode-btn" title="Light mode">Light</button>
+              </div>
+            </div>
+            <div class="settings-section">
+              <span class="settings-label">Accent</span>
+              <div class="color-grid" id="color-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header><style>
   header {
     position: sticky;
     top: 0;
@@ -76,18 +110,24 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.25);
   }
 
-  nav {
+  .right-group {
     display: flex;
-    gap: 0.75rem;
     align-items: center;
+    gap: 0.75rem;
     flex-shrink: 1;
     min-width: 0;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
 
-  nav::-webkit-scrollbar {
+  .nav-links::-webkit-scrollbar {
     display: none;
   }
 
@@ -134,13 +174,29 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
   .avatar-wrapper {
     position: relative;
     flex-shrink: 0;
+  }
+
+  .avatar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 6px;
+    padding: 0.2rem;
     cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+  }
+
+  .avatar-btn:hover {
+    background-color: rgba(var(--accent-rgb), 0.15);
+    transform: translateY(-2px);
   }
 
   #avatar-sprite {
     display: block;
     image-rendering: pixelated;
-    height: 40px;
+    height: 32px;
     width: auto;
   }
 
@@ -182,6 +238,212 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     margin: 0;
   }
 
+  .coffee-link {
+    border-color: rgba(var(--accent-rgb), 0.3);
+    font-size: 0.7rem;
+  }
+
+  .settings-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .settings-btn {
+    font-size: 1.1rem;
+    background: none;
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    color: var(--accent);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+  }
+
+  .settings-btn:hover {
+    background-color: var(--accent);
+    color: var(--bg);
+    transform: translateY(-2px);
+  }
+
+  .settings-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 210px;
+    padding: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    animation: bubble-in 0.15s ease-out;
+  }
+
+  .settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.15);
+    padding-bottom: 0.5rem;
+  }
+
+  .settings-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .settings-group-title {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+    padding: 0.15rem 0;
+  }
+
+  .settings-group-title:hover {
+    color: var(--accent);
+  }
+
+  .settings-group-content {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 0.25rem;
+    width: 100%;
+  }
+
+  .settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+  }
+
+  .settings-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .settings-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  #sprite-dex-input {
+    width: 3.5rem;
+    padding: 0.3rem 0.35rem;
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.8rem;
+    outline: none;
+  }
+
+  #sprite-dex-input::placeholder {
+    color: var(--text-faint);
+  }
+
+  #sprite-dex-input:focus {
+    border-color: var(--accent);
+  }
+
+  .settings-action-btn {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--accent);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .settings-action-btn:hover {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .mode-toggle {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .mode-btn:hover {
+    color: var(--text);
+    border-color: rgba(var(--accent-rgb), 0.6);
+  }
+
+  .mode-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  :global(.color-grid) {
+    display: grid;
+    grid-template-columns: repeat(5, 24px);
+    gap: 0.35rem;
+    justify-content: start;
+  }
+
+  :global(.color-swatch) {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    padding: 0;
+    background: none;
+    appearance: none;
+  }
+
+  :global(.color-swatch:hover) {
+    transform: scale(1.2);
+  }
+
+  :global(.color-swatch.active) {
+    border-color: var(--text);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
+  }
+
+  /* Hide number input spinners */
+  #sprite-dex-input::-webkit-inner-spin-button,
+  #sprite-dex-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  #sprite-dex-input[type=number] {
+    -moz-appearance: textfield;
+  }
+
   @keyframes bubble-in {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
@@ -199,7 +461,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     }
 
     #avatar-sprite {
-      height: 32px;
+      height: 26px;
     }
 
     .status-bubble {
@@ -225,8 +487,21 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       font-size: 0.55rem;
     }
 
-    nav {
+    .right-group {
       gap: 0.4rem;
+    }
+
+    .nav-links {
+      gap: 0.4rem;
+    }
+
+    .settings-dropdown {
+      min-width: 180px;
+    }
+
+    .color-swatch {
+      width: 20px;
+      height: 20px;
     }
   }
 </style>
@@ -247,10 +522,13 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     if (!ctx) return;
 
     // Toggle status bubble
-    canvas.addEventListener('click', (e) => {
-      e.stopPropagation();
-      bubble.classList.toggle('hidden');
-    });
+    const avatarBtn = document.getElementById('avatar-btn');
+    if (avatarBtn) {
+      avatarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        bubble.classList.toggle('hidden');
+      });
+    }
     document.addEventListener('click', () => bubble.classList.add('hidden'));
 
     const img = new Image();
@@ -346,4 +624,53 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
   // Run on initial load and after view transitions
   initAvatar();
   document.addEventListener('astro:after-swap', initAvatar);
+</script>
+
+<script is:inline>
+  (function() {
+    function toggle(el) {
+      el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function setup() {
+      var settingsBtn = document.getElementById('settings-btn');
+      var dropdown = document.getElementById('settings-dropdown');
+      var pokemonTitle = document.getElementById('pokemon-title');
+      var pokemonContent = document.getElementById('pokemon-content');
+      var themeTitle = document.getElementById('theme-title');
+      var themeContent = document.getElementById('theme-content');
+
+      if (!settingsBtn || !dropdown) return;
+
+      settingsBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggle(dropdown);
+      });
+
+      if (pokemonTitle && pokemonContent) {
+        pokemonTitle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toggle(pokemonContent);
+        });
+      }
+
+      if (themeTitle && themeContent) {
+        themeTitle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toggle(themeContent);
+        });
+      }
+
+      dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
+
+    document.addEventListener('click', function() {
+      var dd = document.getElementById('settings-dropdown');
+      if (dd) dd.style.display = 'none';
+    });
+
+    // Run now and on every Astro page swap
+    setup();
+    document.addEventListener('astro:after-swap', setup);
+  })();
 </script>

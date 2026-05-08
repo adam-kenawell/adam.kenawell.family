@@ -1,164 +1,11 @@
 ---
 // ThemeControls.astro
-// Collapsible theme picker: dark/light mode toggle + 20 accent color swatches.
-// Positioned bottom-right, mirrors the style of Pokémon Controls.
-// Persists via localStorage and survives page transitions.
+// Theme JS only — UI lives in Header.astro settings dropdown.
 ---
 
-<div id="theme-controls" transition:persist>
-  <span id="theme-controls-title" role="button" tabindex="0">Theme</span>
-  <div id="theme-controls-panel" class="hidden">
-    <div class="theme-section">
-      <span class="theme-label">Mode</span>
-      <div class="mode-toggle">
-        <button id="mode-dark" class="mode-btn active" title="Dark mode">Dark</button>
-        <button id="mode-light" class="mode-btn" title="Light mode">Light</button>
-      </div>
-    </div>
-    <div class="theme-section">
-      <span class="theme-label">Accent</span>
-      <div class="color-grid" id="color-grid"></div>
-    </div>
-  </div>
-</div>
-
-<style is:global>
-  #theme-controls {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
-  }
-
-  #theme-controls-title {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    text-align: center;
-    cursor: pointer;
-    user-select: none;
-    transition: color 0.2s;
-  }
-
-  [data-theme="light"] #theme-controls-title {
-    color: var(--text-muted);
-  }
-
-  #theme-controls-title:hover {
-    color: var(--text);
-  }
-
-  [data-theme="light"] #theme-controls-title:hover {
-    color: var(--text);
-  }
-
-  #theme-controls-panel.hidden {
-    display: none;
-  }
-
-  #theme-controls-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    padding: 0.75rem;
-    background: var(--bg-card);
-    border: 1px solid rgba(var(--accent-rgb), 0.4);
-    border-radius: 8px;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    min-width: 180px;
-  }
-
-  .theme-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .theme-label {
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .mode-toggle {
-    display: flex;
-    gap: 0.3rem;
-  }
-
-  .mode-btn {
-    flex: 1;
-    padding: 0.3rem 0.5rem;
-    border: 1px solid rgba(var(--accent-rgb), 0.4);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-muted);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
-    font-size: 0.7rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-  }
-
-  .mode-btn:hover {
-    color: var(--text);
-    border-color: rgba(var(--accent-rgb), 0.6);
-  }
-
-  .mode-btn.active {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-  }
-
-  .color-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.35rem;
-  }
-
-  .color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-    position: relative;
-  }
-
-  .color-swatch:hover {
-    transform: scale(1.2);
-  }
-
-  .color-swatch.active {
-    border-color: var(--text);
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
-  }
-
-  @media (max-width: 600px) {
-    #theme-controls {
-      bottom: 0.75rem;
-      right: 0.75rem;
-    }
-
-    .color-swatch {
-      width: 20px;
-      height: 20px;
-    }
-
-    #theme-controls-panel {
-      min-width: 150px;
-    }
-  }
-</style>
-
 <script>
-  const ACCENT_COLORS = [
+  // Lighter shades for dark backgrounds
+  const DARK_MODE_COLORS = [
     { name: 'Gold',     rgb: '245,208,0' },
     { name: 'Red',      rgb: '239,68,68' },
     { name: 'Coral',    rgb: '251,113,133' },
@@ -169,17 +16,70 @@
     { name: 'Emerald',  rgb: '16,185,129' },
     { name: 'Teal',     rgb: '20,184,166' },
     { name: 'Cyan',     rgb: '6,182,212' },
-    { name: 'Sky',      rgb: '14,165,233' },
-    { name: 'Blue',     rgb: '59,130,246' },
-    { name: 'Indigo',   rgb: '99,102,241' },
-    { name: 'Violet',   rgb: '139,92,246' },
-    { name: 'Purple',   rgb: '168,85,247' },
-    { name: 'Fuchsia',  rgb: '217,70,239' },
-    { name: 'Pink',     rgb: '236,72,153' },
-    { name: 'Rose',     rgb: '244,63,94' },
+    { name: 'Sky',      rgb: '56,189,248' },
+    { name: 'Blue',     rgb: '96,165,250' },
+    { name: 'Indigo',   rgb: '129,140,248' },
+    { name: 'Violet',   rgb: '167,139,250' },
+    { name: 'Purple',   rgb: '192,132,252' },
+    { name: 'Fuchsia',  rgb: '232,121,249' },
+    { name: 'Pink',     rgb: '244,114,182' },
+    { name: 'Rose',     rgb: '251,113,133' },
     { name: 'White',    rgb: '255,255,255' },
     { name: 'Silver',   rgb: '163,163,163' },
   ];
+
+  // Darker shades for light backgrounds
+  const LIGHT_MODE_COLORS = [
+    { name: 'Gold',     rgb: '161,98,7' },
+    { name: 'Red',      rgb: '185,28,28' },
+    { name: 'Coral',    rgb: '190,18,60' },
+    { name: 'Orange',   rgb: '194,65,12' },
+    { name: 'Amber',    rgb: '180,83,9' },
+    { name: 'Lime',     rgb: '63,98,18' },
+    { name: 'Green',    rgb: '21,128,61' },
+    { name: 'Emerald',  rgb: '4,120,87' },
+    { name: 'Teal',     rgb: '15,118,110' },
+    { name: 'Cyan',     rgb: '14,116,144' },
+    { name: 'Sky',      rgb: '3,105,161' },
+    { name: 'Blue',     rgb: '29,78,216' },
+    { name: 'Indigo',   rgb: '67,56,202' },
+    { name: 'Violet',   rgb: '109,40,217' },
+    { name: 'Purple',   rgb: '126,34,206' },
+    { name: 'Fuchsia',  rgb: '162,28,175' },
+    { name: 'Pink',     rgb: '190,24,93' },
+    { name: 'Rose',     rgb: '190,18,60' },
+    { name: 'Slate',    rgb: '51,65,85' },
+    { name: 'Charcoal', rgb: '30,30,30' },
+  ];
+
+  function getColorsForMode(mode: string) {
+    return mode === 'light' ? LIGHT_MODE_COLORS : DARK_MODE_COLORS;
+  }
+
+  function buildSwatches(grid: HTMLElement, mode: string, currentAccent: string) {
+    const colors = getColorsForMode(mode);
+    grid.innerHTML = '';
+    colors.forEach((color) => {
+      const swatch = document.createElement('button');
+      swatch.className = 'color-swatch';
+      swatch.title = color.name;
+      swatch.style.backgroundColor = `rgb(${color.rgb})`;
+      swatch.dataset.rgb = color.rgb;
+
+      if (color.rgb === currentAccent) swatch.classList.add('active');
+
+      swatch.addEventListener('click', () => {
+        grid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        applyTheme(
+          localStorage.getItem('theme-mode') || 'dark',
+          color.rgb
+        );
+      });
+
+      grid.appendChild(swatch);
+    });
+  }
 
   function applyTheme(mode: string, accentRgb: string) {
     const r = document.documentElement;
@@ -210,23 +110,11 @@
   }
 
   function initThemeControls() {
-    const title = document.getElementById('theme-controls-title');
-    const panel = document.getElementById('theme-controls-panel');
     const grid = document.getElementById('color-grid');
     const darkBtn = document.getElementById('mode-dark');
     const lightBtn = document.getElementById('mode-light');
 
-    if (!title || !panel || !grid || !darkBtn || !lightBtn) return;
-
-    // Toggle panel
-    title.addEventListener('click', (e) => {
-      e.stopPropagation();
-      panel.classList.toggle('hidden');
-    });
-
-    // Close on click outside
-    panel.addEventListener('click', (e) => e.stopPropagation());
-    document.addEventListener('click', () => panel.classList.add('hidden'));
+    if (!grid || !darkBtn || !lightBtn) return;
 
     // Read saved state
     const savedMode = localStorage.getItem('theme-mode') || 'dark';
@@ -241,37 +129,21 @@
     darkBtn.addEventListener('click', () => {
       darkBtn.classList.add('active');
       lightBtn.classList.remove('active');
-      applyTheme('dark', localStorage.getItem('theme-accent') || '245,208,0');
+      const accent = localStorage.getItem('theme-accent') || '245,208,0';
+      applyTheme('dark', accent);
+      buildSwatches(grid, 'dark', accent);
     });
 
     lightBtn.addEventListener('click', () => {
       lightBtn.classList.add('active');
       darkBtn.classList.remove('active');
-      applyTheme('light', localStorage.getItem('theme-accent') || '245,208,0');
+      const accent = localStorage.getItem('theme-accent') || '161,98,7';
+      applyTheme('light', accent);
+      buildSwatches(grid, 'light', accent);
     });
 
-    // Build color swatches
-    grid.innerHTML = '';
-    ACCENT_COLORS.forEach((color) => {
-      const swatch = document.createElement('button');
-      swatch.className = 'color-swatch';
-      swatch.title = color.name;
-      swatch.style.backgroundColor = `rgb(${color.rgb})`;
-      swatch.dataset.rgb = color.rgb;
-
-      if (color.rgb === savedAccent) swatch.classList.add('active');
-
-      swatch.addEventListener('click', () => {
-        grid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-        swatch.classList.add('active');
-        applyTheme(
-          localStorage.getItem('theme-mode') || 'dark',
-          color.rgb
-        );
-      });
-
-      grid.appendChild(swatch);
-    });
+    // Build color swatches for current mode
+    buildSwatches(grid, savedMode, savedAccent);
   }
 
   initThemeControls();

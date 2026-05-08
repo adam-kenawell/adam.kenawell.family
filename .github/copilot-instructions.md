@@ -28,17 +28,18 @@ src/
     projects.astro       # Project listing with internal detail links
     projects/
       local-llm-stack.astro    # Project detail page
-      pokepaste-visualizer.astro  # PokePaste team visualizer
+      pokepaste-visualizer.astro  # PokePaste team visualizer (client-side)
     blog.astro           # Blog listing with 4 category filter tabs
     blog/
       [slug].astro       # Blog post template
+    rss.xml.ts           # RSS feed endpoint
   components/
-    Header.astro         # Sticky header (showNav prop, active page indicator)
-    Footer.astro         # Shared footer with "Buy me a coffee" link
-    SpriteBackground.astro  # Animated Pokémon sprites background
-    ThemeControls.astro  # Dark/light mode + accent color picker
+    Header.astro         # Sticky header, nav, avatar, settings dropdown, external links
+    Footer.astro         # Shared footer (copyright line)
+    SpriteBackground.astro  # Animated Pokémon sprites background (canvas + JS only)
+    ThemeControls.astro  # Theme JS only — applyTheme(), initThemeControls(), color swatches
   layouts/
-    Layout.astro         # Base layout (font, global styles, ClientRouter, theme init)
+    Layout.astro         # Base layout (font, global CSS vars, ClientRouter, theme init)
   content/
     blog/                # Markdown blog posts (content collection)
   content.config.ts      # glob() loader + Zod schema (includes category field)
@@ -90,12 +91,19 @@ color: var(--text-muted);                       /* secondary text */
 
 ## Component Patterns
 
-- **Header:** `showNav` prop (default `true`). Landing passes `showNav={false}`. "About Me" link in `.left-group` always visible.
-- **Footer:** Copyright + "Buy me a coffee" link (`buymeacoffee.com/adamkenawell`).
+- **Header (`Header.astro`):** `showNav` prop (default `true`). Landing passes `showNav={false}`. Structure: `.left-group` (avatar button + name + About Me) | `.right-group` > `.nav-links` (Blog/Resumé/Projects + GitHub/LinkedIn/Coffee) + `.settings-wrapper` (⚙ button + dropdown). Settings dropdown contains two collapsible groups: "Pokémon Controls" (dex input, spawn, hide) and "Theme" (mode toggle, color grid). **CRITICAL:** `.settings-wrapper` must stay OUTSIDE any `overflow` container or the dropdown gets clipped. The `<script is:inline>` block handles all toggle logic. Avatar is an Electivire sprite in a styled `<button>`.
+- **Footer (`Footer.astro`):** Copyright line only. "Buy me a coffee" link lives in the header now.
 - **Blog:** Content collections with `glob()` loader, Zod schema with `category: z.enum(['featured','technical','lifestyle','monthly-report'])`. 4 filter tabs with client-side JS.
-- **Sprites:** Pokémon Mystery Dungeon sprites on canvas. States: Walking → Idle → Sleeping (2.5min inactivity) → Attacking (click). CSS uses `is:global`. Controls collapsible (bottom-left), click-outside closes.
-- **ThemeControls:** Collapsible panel (bottom-right). Dark/light mode toggle + 20 accent color swatches (5x4 grid of colored circles). Click-outside closes. Persists via `localStorage`. Uses `transition:persist` across view transitions.
+- **Sprites (`SpriteBackground.astro`):** Pokémon Mystery Dungeon sprites on canvas. States: Walking → Idle → Sleeping (2.5min inactivity) → Attacking (click). CSS uses `is:global`. Controls HTML lives in Header.astro settings dropdown (not in this component). This component only has the background canvas div and the sprite engine JS.
+- **ThemeControls (`ThemeControls.astro`):** JS-only component (no HTML or CSS). Contains `applyTheme()` function, `initThemeControls()` which wires up mode buttons and builds color swatches into `#color-grid`, and the `ACCENT_COLORS` array. The actual UI elements (mode buttons, color grid div) live in Header.astro's settings dropdown. Color swatches are created dynamically via JS, so their CSS must use `:global()` selectors in Header.astro.
 - **Internal links** use `import.meta.env.BASE_URL` prefix.
+
+## Gotchas & Lessons Learned
+
+- **Overflow clipping:** Any element with `overflow-x: auto` (like `.nav-links`) will clip absolutely-positioned children (like dropdowns). Always keep dropdown containers OUTSIDE overflow parents.
+- **Astro scoped styles vs dynamic elements:** Elements created via `document.createElement()` in `<script>` blocks don't get Astro's `data-astro-cid-xxx` attribute. Their CSS must use `:global()` selectors.
+- **Astro `<script>` vs `<script is:inline>`:** Regular `<script>` tags are hoisted to `<head>` and bundled as ES modules — they run once. `<script is:inline>` renders in-place and executes immediately after the preceding HTML. Use `is:inline` for DOM manipulation that needs elements to exist.
+- **Dev server port:** If port 4321 is occupied, Astro auto-increments. Always kill stale `node.exe` processes before restarting. Adam expects to use `http://localhost:4321/`.
 
 ## Agent Behavior
 
@@ -107,11 +115,19 @@ color: var(--text-muted);                       /* secondary text */
 - **Optimization requests:** Before making changes, check `agent-context.md` for past optimization work to avoid redundancy and build on prior improvements.
 - **Session wrap-up:** At the end of each session, log any optimization or efficiency changes made to `agent-context.md`.
 
-## Key Files
+## Key Files — Quick Reference
 
-| File | Purpose |
-|------|---------|
-| `agent-context.md` | Running log of session decisions/context |
-| `.github/copilot-instructions.md` | This file — AI agent guidance |
-| `src/components/ThemeControls.astro` | Theme picker (mode + accent color) |
-| `src/layouts/Layout.astro` | CSS vars definition, theme init script |
+Use this to know where to look for specific features:
+
+| Feature / Question | File(s) to Read |
+|---|---|
+| Header layout, nav links, settings dropdown | `src/components/Header.astro` |
+| Theme system (CSS vars, dark/light mode) | `src/layouts/Layout.astro` (vars + init), `src/components/ThemeControls.astro` (JS logic), `src/components/Header.astro` (UI + CSS) |
+| Pokémon background sprites | `src/components/SpriteBackground.astro` (engine), `src/components/Header.astro` (controls UI) |
+| PokePaste team visualizer | `src/pages/projects/pokepaste-visualizer.astro` (self-contained) |
+| Blog system, categories, filtering | `src/pages/blog.astro`, `src/pages/blog/[slug].astro`, `src/content.config.ts` |
+| Landing page, taglines | `src/pages/index.astro` |
+| Resume content | `src/pages/resume.astro`, `public/Adam_Kenawell_Resume.html` (PDF) |
+| Global styles, fonts, meta tags | `src/layouts/Layout.astro` |
+| Agent decisions log | `agent-context.md` |
+| Agent rules | `.github/copilot-instructions.md` (this file) |
