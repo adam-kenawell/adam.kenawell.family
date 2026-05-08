@@ -8,8 +8,8 @@
 <div id="sprite-background" aria-hidden="true"></div>
 
 <div id="sprite-controls">
-  <span id="sprite-controls-title">Pok&#233;mon Controls</span>
-  <div id="sprite-controls-row">
+  <span id="sprite-controls-title" role="button" tabindex="0">Pok&#233;mon Controls</span>
+  <div id="sprite-controls-row" class="hidden">
     <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
     <button id="sprite-swap-btn" title="Spawn a new Pokémon">⟳ Spawn</button>
     <button id="sprite-toggle-btn" title="Toggle Pokémon visibility">Hide</button>
@@ -49,6 +49,17 @@
     color: rgba(255, 255, 255, 0.5);
     letter-spacing: 0.05em;
     text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  #sprite-controls-title:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  #sprite-controls-row.hidden {
+    display: none;
   }
 
   #sprite-controls-row {
@@ -125,6 +136,13 @@
 </style>
 
 <script>
+  // ── Controls Toggle ─────────────────────────────────────
+  const controlsTitle = document.getElementById('sprite-controls-title')!;
+  const controlsRow = document.getElementById('sprite-controls-row')!;
+  controlsTitle.addEventListener('click', () => {
+    controlsRow.classList.toggle('hidden');
+  });
+
   // ── Config ──────────────────────────────────────────────
   const SCALE = 1;
   const FRAME_MS = 150;
