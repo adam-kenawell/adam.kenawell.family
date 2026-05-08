@@ -1,95 +1,79 @@
 # Copilot Instructions — adam.kenawell.family
 
 ## Project Overview
-Personal website for Adam Kenawell (Data Engineer at Ford), hosted on **GitHub Pages**, built with **Astro v6**. The repo is owned by the `adam-kenawell` GitHub account (adam.kenawell.family@gmail.com), not the `akenawel_ford` account.
+
+Personal website for Adam Kenawell (Data Engineer at Ford), hosted on **GitHub Pages**, built with **Astro v6.3**. Repo owned by `adam-kenawell` GitHub account (not `akenawel_ford`).
 
 ## Tech Stack
-- **Framework:** Astro v6.3 (static site builder) — docs: https://docs.astro.build/en/getting-started/
-- **Hosting:** GitHub Pages — docs: https://docs.github.com/en/pages
-- **Node:** ≥22 (managed via Volta)
-- **Registry:** Project-local `.npmrc` → public `registry.npmjs.org` (bypasses Ford's internal Nexus proxy)
 
-## Developer Workflows
+- **Astro v6.3** static site · **GitHub Pages** hosting · **Node ≥22** (Volta) · Project `.npmrc` → `registry.npmjs.org`
 
-| Task | Command |
-|------|---------|
-| Start dev server | `npm run dev` |
-| Production build | `npm run build` |
-| Preview build locally | `npm run preview` |
-| Sync content collections | `npx astro sync` |
-| Deploy to GitHub Pages | Push to `main` (triggers GitHub Actions automatically) |
+## Session Workflow
 
-## Publishing Changes (GitHub Actions CI/CD)
-
-The site is deployed automatically via GitHub Actions. The workflow lives at `.github/workflows/deploy.yml`.
-
-**Process to make and publish changes:**
-1. Start the dev server at the beginning of a session: `npm run dev` (background)
-2. Make code changes — dev server hot-reloads automatically
-3. Adam previews at `http://localhost:4321/` and gives feedback
-4. Iterate until Adam is satisfied
-5. **Only at the end of the session** (when Adam says to push/deploy):
-   - Verify: `npx astro build`
-   - Push: `git add -A && git commit -m "<descriptive message>" && git push`
-6. GitHub Actions automatically triggers on push to `main`:
-   - Checks out code → installs Node 22 → runs `npm ci` → runs `npm run build` → uploads `./dist` as artifact → deploys to GitHub Pages
-7. Site is live at `https://adam.kenawell.family` within ~1–2 minutes
-8. **Avoid multiple git pushes per session** — batch all changes into one push at the end
-
-**Key details:**
-- GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in the repo Settings → Pages
-- The workflow uses `actions/upload-pages-artifact@v3` and `actions/deploy-pages@v4`
-- Concurrency is configured to prevent overlapping deploys (`cancel-in-progress: false`)
-- `workflow_dispatch` is enabled so deploys can also be triggered manually from the Actions tab
-- The `base` in `astro.config.mjs` is set to `'/'` for the custom domain `adam.kenawell.family`
+1. `npm run dev` (background) at session start
+2. Make changes — dev server hot-reloads. Adam previews at `http://localhost:4321/`
+3. Iterate until satisfied
+4. **End of session only:** `npx astro build && git add -A && git commit -m "<msg>" && git push`
+5. GitHub Actions auto-deploys to `https://adam.kenawell.family` (~1-2 min)
+6. **One push per session** — batch all changes
 
 ## Project Structure
+
 ```
 src/
-  pages/            # File-based routing
-    index.astro     # Landing page (3 cards: Blog, Resume, Projects)
+  pages/
+    index.astro          # Landing — 3 nav cards, 100 random taglines
+    about.astro          # Personal bio (6 sections + favorites grid)
+    resume.astro         # Resume (objective, 3 jobs, achievements, skills)
+    projects.astro       # Project listing with internal detail links
+    projects/
+      local-llm-stack.astro  # Project detail page
+    blog.astro           # Blog listing with 4 category filter tabs
     blog/
-      index.astro   # Blog listing page
-      [slug].astro  # Dynamic blog post pages
-    resume.astro    # Resume page (real data)
-    projects.astro  # Projects showcase
+      [slug].astro       # Blog post template
   components/
-    Header.astro    # Shared sticky header (accepts showNav prop)
+    Header.astro         # Sticky header (showNav prop, active page indicator)
+    Footer.astro         # Shared footer
+    SpriteBackground.astro  # Animated Pokémon sprites background
   layouts/
-    Layout.astro    # Base layout (imports font, global styles)
+    Layout.astro         # Base layout (font, global styles, ClientRouter)
   content/
-    blog/           # Markdown blog posts (content collection)
-  content.config.ts # Content collection config (glob loader + Zod schema)
-public/             # Static assets
-astro.config.mjs
-.npmrc              # Points to public npm registry
+    blog/                # Markdown blog posts (content collection)
+  content.config.ts      # glob() loader + Zod schema (includes category field)
 ```
 
 ## Design System
-- **Background:** `#1a1a1a` (dark charcoal, not pure black)
-- **Accent:** `#f5d000` (yellow) — used for borders, text, hover states
-- **Transparency:** Grey `rgba(255,255,255,0.06)` for card/header backgrounds (not yellow)
-- **Borders:** Yellow `rgba(245,208,0,0.5)` for card outlines
-- **3D depth:** Cards use `box-shadow`, `border-radius: 8px`, lift on hover (`translateY(-4px)`)
-- **Header:** Sticky, backdrop blur, semi-transparent `rgba(26,26,26,0.9)`
-- **Typography:** `Fusion Pixel 12px Monospaced KR` via `@fontsource/fusion-pixel-12px-monospaced-kr`
-- **Tone:** Playful yet polished and professional
-- **Layout:** Clean — no filler text; every element has purpose
+
+- **Background:** `#1a1a1a` · **Accent:** `#f5d000` (yellow) · **Body text:** `rgba(255,255,255,0.85)` (white)
+- **Card fills:** grey `rgba(255,255,255,0.06)` · **Card borders:** yellow `rgba(245,208,0,0.5)` · 3D hover lift
+- **Header:** Sticky, backdrop blur, `rgba(26,26,26,0.9)`. "Adam Kenawell" button links home.
+- **Nav links:** White `rgba(255,255,255,0.7)`, active = yellow + underline
+- **Section separators:** `border-top: 1px solid rgba(245, 208, 0, 0.2)`
+- **Font:** `Fusion Pixel 12px Proportional KR` · **Line-height:** `1.8` globally
+- **View Transitions:** `ClientRouter` from `astro:transitions`
+- **Tone:** Playful yet polished. No filler text. No emojis/m-dashes in body copy.
+- **Mobile:** `@media (max-width: 600px)` breakpoints on all pages
 
 ## Component Patterns
-- **`Header.astro`** accepts `showNav` prop (default `true`). Landing page passes `showNav={false}` since the 3 cards serve as navigation. Subpages show nav links as plain small text (not buttons) to distinguish from the GitHub button.
-- **Blog** uses Astro content collections with `glob()` loader and Zod schema. Posts are Markdown in `src/content/blog/`. Config is at `src/content.config.ts`.
-- **Resume data** is defined inline in `resume.astro` as typed arrays — experience bullets, education entries, achievements, and grouped skill tags.
 
-## Workflow & Agent Behavior
-- **Always present a plan** before executing tasks and wait for Adam's approval
-- Once approved, proceed through all steps without re-asking
+- **Header:** `showNav` prop (default `true`). Landing passes `showNav={false}`. "About Me" link in `.left-group` always visible.
+- **Blog:** Content collections with `glob()` loader, Zod schema with `category: z.enum(['featured','technical','lifestyle','monthly-report'])`. 4 filter tabs with client-side JS.
+- **Sprites:** Pokémon Mystery Dungeon sprites on canvas. States: Walking → Idle → Sleeping (2.5min inactivity) → Attacking (click). CSS uses `is:global`. Controls collapsible.
+- **Internal links** use `import.meta.env.BASE_URL` prefix.
+
+## Agent Behavior
+
+- **Present a plan** before executing, wait for approval
+- Proceed through all steps once approved
 - Persist notable decisions to `agent-context.md`
+- **Markdown hygiene:** Fix all reasonable lint errors (blank lines around headings/lists, etc.) in any markdown file created or edited.
+- **Writing tone:** First-person, conversational, genuine. Write like you're explaining something to a friend — casual but thoughtful, with natural humor and self-awareness. Avoid corporate buzzwords, filler, emojis, and m-dashes. Let personality come through. Reference: `from-pixel-one.md` and `local-llm-stack.astro`.
+- **Optimization requests:** Before making changes, check `agent-context.md` for past optimization work to avoid redundancy and build on prior improvements.
+- **Session wrap-up:** At the end of each session, log any optimization or efficiency changes made to `agent-context.md`.
 
 ## Key Files
+
 | File | Purpose |
 |------|---------|
-| `agent-instructions.md` | Source-of-truth intent and project constraints |
-| `agent-context.md` | Running log of notable decisions/context |
-| `.github/copilot-instructions.md` | This file — AI agent guidance |
+| `agent-context.md` | Running log of session decisions/context |
 | `.github/copilot-instructions.md` | This file — AI agent guidance |

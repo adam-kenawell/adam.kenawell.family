@@ -5,8 +5,6 @@ excerpt: "The full story of how a data engineer with no web dev experience built
 category: "featured"
 ---
 
-# From Pixel One: How I Built This Website
-
 If you told me a year ago that I'd be building a personal website from scratch, I probably would have laughed. I'm a data engineer. I write SQL and Python all day. HTML and CSS? That's a different department. But here we are, and I'm genuinely proud of how it turned out. Here's the full story.
 
 ## Why Build a Personal Site?
@@ -22,6 +20,7 @@ I didn't want to over-engineer this. I'm not building a SaaS product. I'm buildi
 [Astro](https://docs.astro.build) is a static site builder that ships zero JavaScript by default. You write components (similar to React or Svelte), but the output is plain HTML and CSS. No client-side framework bloat. For a content-focused site like mine, it's perfect.
 
 Key Astro features I'm using:
+
 - **File-based routing** in `src/pages/`
 - **Content collections** with a glob loader for blog posts written in Markdown
 - **View Transitions** via `ClientRouter` for smooth page crossfades
@@ -56,6 +55,7 @@ Every element has a purpose. No filler text, no stock images, no Lorem Ipsum. If
 Here's the part that makes this story a little different. I built the foundation of this site using **Openclaw**, running large language models locally on my Samsung Galaxy Book 4 Ultra (RTX 4070, 32GB RAM). No cloud APIs, no subscription fees. Just my laptop and an open-source AI stack.
 
 I used locally-hosted models for:
+
 - Scaffolding the initial project structure
 - Writing component boilerplate
 - Debugging CSS layout issues

@@ -5,6 +5,7 @@ import Footer from '../../components/Footer.astro';
 ---
 
 <Layout title="Local LLM Stack via Openclaw — Adam Kenawell">
+  <div class="page">
   <Header />
   <main>
     <section class="hero">
@@ -146,10 +147,18 @@ import Footer from '../../components/Footer.astro';
     </section>
   </main>
   <Footer />
+  </div>
 </Layout>
 
 <style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
   main {
+    flex: 1;
     max-width: 720px;
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;

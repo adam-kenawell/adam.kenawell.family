@@ -4,121 +4,90 @@ Running log of notable decisions, constraints, and context across sessions.
 
 ---
 
-## 2026-05-07 — Initial Build Session
+## Session 1 — 2026-05-07 (Morning) — Initial Build
 
-### Environment
-- **Node version:** Upgraded to Node 22 via Volta (Astro v6 requires ≥22)
-- **npm registry:** Project-local `.npmrc` points to public `registry.npmjs.org` to bypass Ford's internal Nexus proxy. The user-level `.npmrc` points to Ford Nexus — do NOT remove it, just rely on the project-local override.
-- **Project scaffolded:** Astro v6.3 minimal template. Package renamed from `deeply-doppler` to `adam.kenawell.family`.
+### Environment & Deployment
 
-### Typography
-- Adam prefers pixelated retro fonts. Chosen font: `Fusion Pixel 12px Monospaced KR` from Fontsource (`@fontsource/fusion-pixel-12px-monospaced-kr`). Imported in `Layout.astro`.
+- **Node 22** via Volta. Project `.npmrc` → public `registry.npmjs.org` (bypasses Ford Nexus proxy; do NOT remove user-level `.npmrc`).
+- **Astro v6.3** static site. Custom domain `adam.kenawell.family`. `base: '/'` in config.
+- **GitHub Actions CI/CD:** Push to `main` → auto-deploy to GitHub Pages. Workflow at `.github/workflows/deploy.yml`. Git remote uses PAT under `adam-kenawell` account (not Ford `akenawel_ford`).
+- **Session workflow:** `npm run dev` (background) → iterate → `npx astro build` → single `git push` at end of session.
 
-### Design Decisions
-- **Background color:** `#1a1a1a` (dark charcoal) — Adam wanted "slightly less black" than pure black.
-- **Transparent fills:** Use grey (`rgba(255,255,255,0.06)`) not yellow for card/header backgrounds. Adam explicitly asked for grey instead of yellow transparency.
-- **Card outlines:** Keep yellow (`rgba(245,208,0,0.5)`) borders to make cards pop.
-- **3D depth:** Cards and buttons use box shadows, border-radius, and `translateY` lift on hover. Adam said the flat look wasn't working and wanted everything to look more 3D.
-- **Header:** Sticky with backdrop blur (`rgba(26,26,26,0.9)`). Adam wanted content to scroll under the header.
+### Design System (established)
 
-### Navigation Decisions
-- Landing page shows 3 large cards (Blog, Resume, Projects) as primary navigation — no nav links in the header on this page (`showNav={false}`).
-- Subpages show nav links (Blog, Resume, Projects) in the header as **plain small text** (not buttons). Adam specifically asked to remove the button styling and make them smaller to distinguish from the GitHub button.
-- "Adam Kenawell" in top-left is always a button-styled link back to the landing page.
+- **Background:** `#1a1a1a` · **Accent:** `#f5d000` (yellow) · **Body text:** white `rgba(255,255,255,0.85)`
+- **Card fills:** grey `rgba(255,255,255,0.06)` (not yellow). **Card borders:** yellow `rgba(245,208,0,0.5)`. 3D depth via box-shadow + hover lift.
+- **Header:** Sticky, backdrop blur, `rgba(26,26,26,0.9)`. "Adam Kenawell" button always links home.
+- **Font:** `Fusion Pixel 12px Monospaced KR` (later changed to Proportional in Session 2).
+- **Mobile:** `@media (max-width: 600px)` breakpoints on all pages.
 
-### Content Collections
-- Blog uses Astro content collections with `glob()` loader. Config at `src/content.config.ts` (not project root). Uses `z` from `astro/zod` (not `astro:content`).
-- 6 sample blog posts exist in `src/content/blog/`. Individual post pages at `/blog/[slug]`.
+### Pages Created
 
-### Resume
-- Real resume data is now in `resume.astro` — experience at Ford, education (PSU + Bellevue), achievements, and grouped technical skills. Source data came from `adam-kenawell-resume-example.txt`.
-- Sections separated with `3rem` gap, uppercase headings with thick yellow underline, bullet points with ▸ and ★ markers.
+- **Landing (`index.astro`):** 3 nav cards (Blog, Resume, Projects). Header hides nav links (`showNav={false}`).
+- **Resume (`resume.astro`):** Real data — Ford experience, PSU + Bellevue education, achievements, grouped skills. ▸ and ★ bullet markers.
+- **Blog:** Content collections with `glob()` loader, config at `src/content.config.ts`, uses `z` from `astro/zod`. 6 sample posts.
 
-### Deployment — GitHub Actions CI/CD
-- Site deploys automatically when code is pushed to `main`. Workflow at `.github/workflows/deploy.yml`.
-- **Agent workflow during a session:**
-  1. Start the dev server at the beginning: `npm run dev` (background process)
-  2. Make edits — the dev server hot-reloads automatically
-  3. Adam previews at `http://localhost:4321/` and gives feedback
-  4. Iterate until Adam is satisfied
-  5. **Only at the end of the session** (when Adam says to push/deploy): verify with `npx astro build`, then `git add -A && git commit -m "<message>" && git push`
-  6. GitHub Actions picks up the push → builds → deploys to GitHub Pages (~1-2 min)
-  7. Avoid multiple git pushes per session — batch all changes into one push at the end
-- GitHub Pages source is set to **GitHub Actions** (not "Deploy from branch") in repo Settings → Pages.
-- `base` in `astro.config.mjs` is `'/'` — custom domain `adam.kenawell.family`. All internal links use `import.meta.env.BASE_URL` to prefix paths correctly.
-- Git remote uses a PAT for auth under the `adam-kenawell` account (not the Ford `akenawel_ford` account).
+### Animated Sprite Background (`SpriteBackground.astro`)
 
-### Mobile Responsiveness
-- All pages have `@media (max-width: 600px)` breakpoints added (2026-05-07).
-- Cards go full-width on mobile, font sizes reduce, padding shrinks.
-
-### Animated Sprite Background
-- `SpriteBackground.astro` renders Pokémon Mystery Dungeon sprites on a canvas behind page content.
-- **Source:** Sprite sheets loaded directly from `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/{ID}/{Action}-Anim.png`. Curated list of ~37 Pokémon IDs; 6-8 chosen randomly per load.
-- **Sprite sheets:** 8 rows (directions: S, SE, E, NE, N, NW, W, SW), N columns (frames). Frame size = sheetHeight/8 (square). Animated by cycling columns via canvas `drawImage`.
-- **Scale:** 1x (original size). Fully opaque. `image-rendering: pixelated`.
-- **Z-layering:** background (z:0) → sprites (z:1) → page content (z:2). Sprites walk behind cards/header.
-- **CSS:** Must use `is:global` on SpriteBackground style block — canvases are created dynamically and don't get Astro's scoped data attributes.
-- **Timing:** All timers use `performance.now()` (not `Date.now()`) to match `requestAnimationFrame`'s timestamp.
-- **Frame dimensions:** Fetched from each Pokémon's `AnimData.xml` — each action has different FrameWidth/FrameHeight.
-- **State machine per sprite:**
-  - **Walking** (default): moves in random direction, row = direction of travel. Small random chance each frame to transition to Idle. Bounces off screen edges.
-  - **Idle**: faces south (row 0), plays Idle sheet for 2-4 sec, then resumes Walking.
-  - **Sleeping**: after 2.5 min of no user interaction, all non-attacking sprites transition to Sleep (faces south). Clicking a sleeping sprite wakes it (→ Walking, no attack).
-  - **Attacking**: clicking a non-sleeping sprite plays Attack sheet for 1 sec, then → Walking.
-- **Sheets loaded per sprite:** Walk (required), Idle, Sleep, Attack (optional — falls back to Walk if missing).
-- **Interaction tracking:** mousemove, keydown, scroll reset the inactivity timer. Clicking a sprite also resets it.
-
-### Reference Docs
-- Astro: [https://docs.astro.build/en/getting-started/](https://docs.astro.build/en/getting-started/)
-- GitHub Pages: [https://docs.github.com/en/pages](https://docs.github.com/en/pages)
+- Pokémon Mystery Dungeon sprites from PMDCollab GitHub. ~37 curated IDs, 6-8 random per load.
+- Sprite sheets: 8 directional rows, N frame columns. Frame size from `AnimData.xml`. `image-rendering: pixelated`.
+- Z-layering: background(0) → sprites(1) → content(2). CSS uses `is:global`.
+- State machine: Walking → Idle (random chance) → Sleeping (2.5min inactivity) → Attacking (click). All timers use `performance.now()`.
+- Sheets per sprite: Walk (required), Idle, Sleep, Attack (optional fallback to Walk).
 
 ---
 
-## 2026-05-07 — About Me Page & Style Refresh Session
+## Session 2 — 2026-05-07 (Afternoon) — About Me, Style Refresh, Projects & Blog
 
-### About Me Page (`src/pages/about.astro`)
-- New page with detailed personal biography sections: My Childhood, My Faith, Growing Up, College, Life After College, Current Day.
-- Favorites grid at the bottom with small cards (Disc, Pokemon, Pokemon Typing, Coffee Order, Season, Activity) plus a full-width quote card.
-- Current Day mentions Pokémon Champions (VGC entry point) and ends with a clickable yellow link to the blog.
-- Tone: genuine, somewhat professional, thoughtful. No emojis or m-dashes in body text. Section titles use `<h2>` with yellow top border separators.
+### About Me Page (`about.astro`)
 
-### Header Updates (`src/components/Header.astro`)
-- "About Me" link added next to the "Adam Kenawell" button in a `.left-group` wrapper (always visible, regardless of `showNav`).
-- Nav links (Blog, Résumé, Projects, About Me) changed to white text (`rgba(255,255,255,0.7)`) instead of yellow, to add variety.
-- Active page indicator: current page's nav link gets yellow color + underline via `class:list` and `Astro.url.pathname` comparison.
+- Bio sections: My Childhood, My Faith, Growing Up, College, Life After College, Current Day. Favorites grid with spec cards + full-width quote card.
+- Tone: genuine, professional, no emojis/m-dashes. Links to blog from Current Day section. Uses `import.meta.env.BASE_URL` for paths.
 
-### Resume Updates (`src/pages/resume.astro`)
-- Added "Objective" section header at top.
-- Body text changed to white (`rgba(255,255,255,0.85)`) throughout.
-- Section separators changed from yellow bottom border to subtle yellow top border (matching About Me).
-- Experience expanded to 3 positions: Agentic AI Data Engineer (Ford, current), Data Engineering Intern (Ford, 2021), Bioinformatics Intern (Hillman Cancer Ctr, 2019-2020). Each has exactly 3 bullets.
-- Achievements converted to objects with `name` + `period`. Ordered by date (newest first), period displayed in gray on right. Title text (left of em dash) is yellow.
-- Technical skills trimmed to 5 per group. Added Data Pipeline Design, Root Cause Analysis, Bioinformatics from experience context.
+### Header Updates
 
-### Typography Change
-- Switched from `Fusion Pixel 12px Monospaced KR` to `Fusion Pixel 12px Proportional KR` for better readability on longer text. Installed `@fontsource/fusion-pixel-12px-proportional-kr`.
-- Font family updated in `Layout.astro` and `SpriteBackground.astro` controls.
+- "About Me" link in `.left-group` next to name button (always visible). Nav links white (`rgba(255,255,255,0.7)`), active = yellow + underline via `Astro.url.pathname`.
 
-### Pokémon Controls (`SpriteBackground.astro`)
-- "Swap" button renamed to "Spawn".
-- Controls title text changed to white. Button text kept yellow (matches other buttons, looks clickable).
-- Font family references updated to proportional variant.
+### Resume Overhaul
 
-### Landing Page (`src/pages/index.astro`)
-- Card text changed to white (turns dark on yellow hover).
-- Added tagline: "Data Engineer · Builder · Lifelong Learner" in soft white above cards.
-- Hover glow: added warm yellow `box-shadow` glow effect on card hover.
+- Added Objective section. 3 positions (Agentic AI Data Engineer, DE Intern, Bioinformatics Intern) with 3 bullets each. Achievements as `{name, period}` objects. Skills trimmed to 5/group. Yellow top-border separators.
 
-### Global Improvements
-- **View Transitions:** Added `ClientRouter` from `astro:transitions` in Layout.astro for smooth page crossfades.
-- **Shared Footer:** Created `src/components/Footer.astro` ("© 2026 Adam Kenawell · Built with Astro"). Replaced inline footers on all pages.
-- **Standardized line-height:** Global `line-height: 1.8` set on body in Layout.astro. Removed per-page overrides.
-- **White text pattern:** Body/paragraph text is `rgba(255,255,255,0.85)` across all pages. Headers/accents remain yellow. This adds variety to the black+yellow palette.
+### Typography & Global Style
 
-### Design System Updates
-- **Body text:** `rgba(255, 255, 255, 0.85)` (white) for paragraphs, list items, card content
-- **Nav links:** `rgba(255, 255, 255, 0.7)` default, white on hover, yellow+underline when active
-- **Section separators:** `border-top: 1px solid rgba(245, 208, 0, 0.2)` above h2 elements
-- **Font:** `Fusion Pixel 12px Proportional KR` (proportional, not monospaced)
-- **Line-height:** `1.8` globally
+- **Font switched** to `Fusion Pixel 12px Proportional KR` for readability. Updated in Layout.astro + SpriteBackground.astro.
+- **View Transitions:** `ClientRouter` from `astro:transitions` in Layout.astro.
+- **Shared Footer:** `Footer.astro` — "© 2026 Adam Kenawell · Built with Astro". `width: 100%` for mobile centering.
+- **Global `line-height: 1.8`** on body. White body text (`rgba(255,255,255,0.85)`) standardized across all pages.
+- **Section separators:** `border-top: 1px solid rgba(245, 208, 0, 0.2)`.
+
+### Landing Page Updates
+
+- Card text white (dark on yellow hover). 100 rotating taglines (random per build). Warm yellow hover glow.
+
+### Pokémon Controls
+
+- "Swap" → "Spawn". Controls row starts hidden, toggled by clicking title. Title text white, buttons yellow.
+
+### Projects Page
+
+- `projects.astro`: Project listing with cards linking to internal detail pages.
+- `projects/local-llm-stack.astro`: Full writeup — The Big Idea, My Hardware (spec grid), Software Stack, Use Cases, How-To steps, Tips & Gotchas, What's Next.
+
+### Blog System
+
+- **Category filters:** 4 tabs (Featured, Technical, Lifestyle, Monthly Report) with client-side JS toggling `.hidden` class. 50 random empty state messages.
+- **Content schema:** Added `category` field: `z.enum(['featured','technical','lifestyle','monthly-report']).default('featured')`.
+- **First real blog post:** `from-pixel-one.md` — "From Pixel One: How I Built This Website" (category: featured, 2026-05-07). Covers tech stack, design, LLM usage, sprites, taglines, deployment.
+- **All 6 sample posts deleted.**
+- **Post template (`[slug].astro`):** White body text, yellow h2/h3/strong/links. Author "Adam Kenawell" next to date with dot separator.
+
+### Final Push
+
+- Commit `30d9008`: 12 files changed, 585+/167-. Build: 7 pages in 2.07s. All deployed successfully.
+
+### Optimization Pass
+
+- **Removed unused dependency:** `@fontsource/fusion-pixel-12px-monospaced-kr` was still in `package.json` after the font switch to Proportional. Uninstalled it.
+- **Added `.page` wrapper to `about.astro` and `local-llm-stack.astro`:** Both were missing the flex layout div (`min-height: 100vh`, `flex-direction: column`) that other pages use, causing the footer to not stick to the bottom on short viewports.
+- **Fixed markdown lint in `from-pixel-one.md`:** Two lists missing blank lines above them (MD032).
+- **Removed duplicate H1 in `from-pixel-one.md`:** Title was rendered both by the `[slug].astro` template (yellow) and as an `# H1` in the markdown itself. Removed the markdown H1.
