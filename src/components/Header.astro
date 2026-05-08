@@ -5,19 +5,20 @@ interface Props {
 
 const { showNav = true } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
 <header>
   <div class="left-group">
     <a class="name-btn" href={base}>Adam Kenawell</a>
-    <a class="nav-link about-link" href={`${base}about`}>About Me</a>
+    <a class:list={['nav-link', 'about-link', { active: currentPath === '/about' }]} href={`${base}about`}>About Me</a>
   </div>
   <nav>
     {showNav && (
       <>
-        <a class="nav-link" href={`${base}blog`}>Blog</a>
-        <a class="nav-link" href={`${base}resume`}>R&#233;sum&#233;</a>
-        <a class="nav-link" href={`${base}projects`}>Projects</a>
+        <a class:list={['nav-link', { active: currentPath.startsWith('/blog') }]} href={`${base}blog`}>Blog</a>
+        <a class:list={['nav-link', { active: currentPath === '/resume' }]} href={`${base}resume`}>R&#233;sum&#233;</a>
+        <a class:list={['nav-link', { active: currentPath === '/projects' }]} href={`${base}projects`}>Projects</a>
       </>
     )}
     <a class="github-link" href="https://github.com/adam-kenawell" target="_blank" rel="noopener">GitHub ↗</a>
@@ -78,15 +79,21 @@ const base = import.meta.env.BASE_URL;
   .nav-link,
   .about-link {
     font-size: 0.7rem;
-    color: #f5d000;
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
-    opacity: 0.7;
     transition: opacity 0.2s;
   }
 
   .nav-link:hover,
   .about-link:hover {
-    opacity: 1;
+    color: rgba(255, 255, 255, 1);
+  }
+
+  .nav-link.active,
+  .about-link.active {
+    color: #f5d000;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .github-link {

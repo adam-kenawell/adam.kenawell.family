@@ -72,3 +72,53 @@ Running log of notable decisions, constraints, and context across sessions.
 ### Reference Docs
 - Astro: [https://docs.astro.build/en/getting-started/](https://docs.astro.build/en/getting-started/)
 - GitHub Pages: [https://docs.github.com/en/pages](https://docs.github.com/en/pages)
+
+---
+
+## 2026-05-07 — About Me Page & Style Refresh Session
+
+### About Me Page (`src/pages/about.astro`)
+- New page with detailed personal biography sections: My Childhood, My Faith, Growing Up, College, Life After College, Current Day.
+- Favorites grid at the bottom with small cards (Disc, Pokemon, Pokemon Typing, Coffee Order, Season, Activity) plus a full-width quote card.
+- Current Day mentions Pokémon Champions (VGC entry point) and ends with a clickable yellow link to the blog.
+- Tone: genuine, somewhat professional, thoughtful. No emojis or m-dashes in body text. Section titles use `<h2>` with yellow top border separators.
+
+### Header Updates (`src/components/Header.astro`)
+- "About Me" link added next to the "Adam Kenawell" button in a `.left-group` wrapper (always visible, regardless of `showNav`).
+- Nav links (Blog, Résumé, Projects, About Me) changed to white text (`rgba(255,255,255,0.7)`) instead of yellow, to add variety.
+- Active page indicator: current page's nav link gets yellow color + underline via `class:list` and `Astro.url.pathname` comparison.
+
+### Resume Updates (`src/pages/resume.astro`)
+- Added "Objective" section header at top.
+- Body text changed to white (`rgba(255,255,255,0.85)`) throughout.
+- Section separators changed from yellow bottom border to subtle yellow top border (matching About Me).
+- Experience expanded to 3 positions: Agentic AI Data Engineer (Ford, current), Data Engineering Intern (Ford, 2021), Bioinformatics Intern (Hillman Cancer Ctr, 2019-2020). Each has exactly 3 bullets.
+- Achievements converted to objects with `name` + `period`. Ordered by date (newest first), period displayed in gray on right. Title text (left of em dash) is yellow.
+- Technical skills trimmed to 5 per group. Added Data Pipeline Design, Root Cause Analysis, Bioinformatics from experience context.
+
+### Typography Change
+- Switched from `Fusion Pixel 12px Monospaced KR` to `Fusion Pixel 12px Proportional KR` for better readability on longer text. Installed `@fontsource/fusion-pixel-12px-proportional-kr`.
+- Font family updated in `Layout.astro` and `SpriteBackground.astro` controls.
+
+### Pokémon Controls (`SpriteBackground.astro`)
+- "Swap" button renamed to "Spawn".
+- Controls title text changed to white. Button text kept yellow (matches other buttons, looks clickable).
+- Font family references updated to proportional variant.
+
+### Landing Page (`src/pages/index.astro`)
+- Card text changed to white (turns dark on yellow hover).
+- Added tagline: "Data Engineer · Builder · Lifelong Learner" in soft white above cards.
+- Hover glow: added warm yellow `box-shadow` glow effect on card hover.
+
+### Global Improvements
+- **View Transitions:** Added `ClientRouter` from `astro:transitions` in Layout.astro for smooth page crossfades.
+- **Shared Footer:** Created `src/components/Footer.astro` ("© 2026 Adam Kenawell · Built with Astro"). Replaced inline footers on all pages.
+- **Standardized line-height:** Global `line-height: 1.8` set on body in Layout.astro. Removed per-page overrides.
+- **White text pattern:** Body/paragraph text is `rgba(255,255,255,0.85)` across all pages. Headers/accents remain yellow. This adds variety to the black+yellow palette.
+
+### Design System Updates
+- **Body text:** `rgba(255, 255, 255, 0.85)` (white) for paragraphs, list items, card content
+- **Nav links:** `rgba(255, 255, 255, 0.7)` default, white on hover, yellow+underline when active
+- **Section separators:** `border-top: 1px solid rgba(245, 208, 0, 0.2)` above h2 elements
+- **Font:** `Fusion Pixel 12px Proportional KR` (proportional, not monospaced)
+- **Line-height:** `1.8` globally

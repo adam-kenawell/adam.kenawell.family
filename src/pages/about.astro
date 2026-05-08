@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 
 const base = import.meta.env.BASE_URL;
 ---
@@ -203,6 +204,7 @@ const base = import.meta.env.BASE_URL;
       </div>
     </section>
   </main>
+  <Footer />
 </Layout>
 
 <style>
@@ -247,7 +249,6 @@ const base = import.meta.env.BASE_URL;
 
   p {
     color: rgba(255, 255, 255, 0.85);
-    line-height: 1.7;
     margin-bottom: 0.75rem;
   }
 

@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 
 const experience = [
   {
@@ -124,9 +125,7 @@ const skillGroups = [
       </section>
     </main>
 
-    <footer>
-      <span>&copy; 2026 Adam Kenawell</span>
-    </footer>
+    <Footer />
   </div>
 </Layout>
 
@@ -298,12 +297,5 @@ const skillGroups = [
       font-size: 0.7rem;
       padding: 0.25rem 0.5rem;
     }
-  }
-
-  footer {
-    text-align: center;
-    padding: 1.5rem;
-    font-size: 0.75rem;
-    opacity: 0.6;
   }
 </style>

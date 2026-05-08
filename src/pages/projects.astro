@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 
 // Add projects here as objects with title, description, tech[], and url.
 const projects: { title: string; description: string; tech: string[]; url: string }[] = [
@@ -34,9 +35,7 @@ const projects: { title: string; description: string; tech: string[]; url: strin
       )}
     </main>
 
-    <footer>
-      <span>&copy; 2026 Adam Kenawell</span>
-    </footer>
+    <Footer />
   </div>
 </Layout>
 
@@ -129,13 +128,6 @@ const projects: { title: string; description: string; tech: string[]; url: strin
   .empty-state .sub {
     font-size: 0.85rem;
     margin-top: 0.5rem;
-    opacity: 0.6;
-  }
-
-  footer {
-    text-align: center;
-    padding: 1.5rem;
-    font-size: 0.75rem;
     opacity: 0.6;
   }
 </style>
