@@ -10,6 +10,28 @@ const cards = [
   { title: 'R\u00e9sum\u00e9', href: `${base}resume` },
   { title: 'Projects', href: `${base}projects` },
 ];
+const taglines = [
+  'Data Engineer \u00b7 Builder \u00b7 Lifelong Learner',
+  'Turning raw data into real impact',
+  'Eagle Scout \u00b7 Data Nerd \u00b7 Family Man',
+  'Building pipelines by day, Pok\u00e9mon teams by night',
+  'Pittsburgh roots, Detroit drive',
+  'Agentic AI enthusiast with a pixel font obsession',
+  'Disc golf \u00b7 Big data \u00b7 Bigger ambitions',
+  'Catholic \u00b7 Husband \u00b7 Engineer \u00b7 Dreamer',
+  'Saving Ford millions, one pipeline at a time',
+  'Former marching band percussionist turned data engineer',
+  'If it can be measured, it can be improved',
+  'Side projects are just passion with a deadline',
+  'Penn State grad \u00b7 Ford engineer \u00b7 Perpetual student',
+  'Locally running LLMs and loving every second of it',
+  'Quads player turned query optimizer',
+  'Faith, family, and a well-tuned SQL query',
+  'VGC competitor \u00b7 Data pipeline architect \u00b7 Dog dad',
+  'There\u2019s nothing more extraordinary than the ordinary man',
+];
+
+const tagline = taglines[Math.floor(Math.random() * taglines.length)];
 ---
 
 <Layout title="Adam Kenawell">
@@ -17,7 +39,7 @@ const cards = [
     <Header showNav={false} />
 
     <main>
-      <p class="tagline">Data Engineer &middot; Builder &middot; Lifelong Learner</p>
+      <p class="tagline">{tagline}</p>
       <div class="cards">
         {cards.map((card) => (
           <a class="card" href={card.href}>
