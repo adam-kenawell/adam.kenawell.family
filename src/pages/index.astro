@@ -103,7 +103,7 @@ const tagline = taglines[Math.floor(Math.random() * taglines.length)];
     <Header showNav={false} />
 
     <main>
-      <p class="tagline">{tagline}</p>
+      <p class="tagline" id="tagline">{tagline}</p>
       <div class="cards">
         {cards.map((card) => (
           <a class="card" href={card.href}>
@@ -116,6 +116,15 @@ const tagline = taglines[Math.floor(Math.random() * taglines.length)];
     <Footer />
   </div>
 </Layout>
+
+<script define:vars={{ taglines }}>
+  document.addEventListener('astro:page-load', () => {
+    const el = document.getElementById('tagline');
+    if (el) {
+      el.textContent = taglines[Math.floor(Math.random() * taglines.length)];
+    }
+  });
+</script>
 
 <style>
   .page {

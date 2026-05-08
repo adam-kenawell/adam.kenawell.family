@@ -32,6 +32,7 @@ Running log of notable decisions, constraints, and context across sessions.
 - Pokémon Mystery Dungeon sprites from PMDCollab GitHub. ~37 curated IDs, 6-8 random per load.
 - Sprite sheets: 8 directional rows, N frame columns. Frame size from `AnimData.xml`. `image-rendering: pixelated`.
 - Z-layering: background(0) → sprites(1) → content(2). CSS uses `is:global`.
+- **Card backgrounds must be nearly opaque** (`rgba(26,26,26,0.95)`) — NOT transparent (`rgba(255,255,255,0.06)`) — so sprites don't show through them.
 - State machine: Walking → Idle (random chance) → Sleeping (2.5min inactivity) → Attacking (click). All timers use `performance.now()`.
 - Sheets per sprite: Walk (required), Idle, Sleep, Attack (optional fallback to Walk).
 

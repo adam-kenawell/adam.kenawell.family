@@ -61,6 +61,8 @@ const skillGroups = [
     <Header />
 
     <main>
+      <a href={`${import.meta.env.BASE_URL}Adam_Kenawell_Resume.html`} download class="download-link">⬇ Download One-Page Résumé</a>
+
       <section>
         <h2>Objective</h2>
         <p class="objective">Data Engineer with hands-on experience building agentic AI solutions, scalable data pipelines, and predictive models. Passionate about applying AI innovation to drive measurable impact at scale.</p>
@@ -145,6 +147,24 @@ const skillGroups = [
     max-width: 720px;
     width: 100%;
     margin: 0 auto;
+  }
+
+  .download-link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: 2px solid rgba(245, 208, 0, 0.5);
+    border-radius: 6px;
+    background-color: rgba(26, 26, 26, 0.9);
+    color: #f5d000;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .download-link:hover {
+    background-color: rgba(245, 208, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(245, 208, 0, 0.2);
   }
 
   .objective {

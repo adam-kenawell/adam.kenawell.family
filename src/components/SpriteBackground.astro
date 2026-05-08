@@ -5,9 +5,9 @@
 // Sprites persist across pages/refreshes via localStorage.
 ---
 
-<div id="sprite-background" aria-hidden="true"></div>
+<div id="sprite-background" aria-hidden="true" transition:persist></div>
 
-<div id="sprite-controls">
+<div id="sprite-controls" transition:persist>
   <span id="sprite-controls-title" role="button" tabindex="0">Pok&#233;mon Controls</span>
   <div id="sprite-controls-row" class="hidden">
     <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
@@ -23,7 +23,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
+    z-index: 0;
     pointer-events: none;
     overflow: hidden;
   }
@@ -32,6 +32,37 @@
     position: absolute;
     image-rendering: pixelated;
     pointer-events: none;
+  }
+
+  .spawn-flash {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    border-radius: 50%;
+    border: 0.3px solid #ffffff;
+    background: transparent;
+    pointer-events: none;
+    z-index: 9999;
+    animation: spawn-pulse 0.3s ease-out forwards;
+  }
+
+  @keyframes spawn-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(5); opacity: 0; }
+  }
+
+  #spawn-error {
+    font-size: 0.7rem;
+    color: #ff6b6b;
+    margin-top: 0.25rem;
+    animation: fade-out 3s ease-out forwards;
+  }
+
+  @keyframes fade-out {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; }
   }
 
   #sprite-controls {
@@ -148,15 +179,13 @@
   const FRAME_MS = 150;
   const ATTACK_FRAME_MS = 40;
   const MOVE_SPEED = 35;
-  const SPRITE_COUNT_MIN = 6;
-  const SPRITE_COUNT_MAX = 8;
+  const SPRITE_COUNT = 10;
   const IDLE_CHANCE = 0.002;
   const IDLE_MS_MIN = 2000;
   const IDLE_MS_MAX = 4000;
   const SLEEP_TIMEOUT = 150000;    // 2.5 min of no interaction
   const ATTACK_MS = 1000;
   const HIT_RADIUS = 40;          // Click detection radius around sprite center
-  const STORAGE_KEY = 'pmd-sprites';
   const VISIBILITY_KEY = 'pmd-sprites-visible';
   const MAX_DEX_NUMBER = 1025;     // Total sprite folders (approx)
 
@@ -190,13 +219,6 @@
     direction: number;
     sheets: Record<Action, HTMLImageElement | null>;
     frameInfo: Record<Action, FrameInfo | null>;
-  }
-
-  interface SavedSprite {
-    pokemonId: number;
-    spawnOrder: number;
-    x: number;
-    y: number;
   }
 
   // ── Helpers ─────────────────────────────────────────────
@@ -275,27 +297,6 @@
     return document.querySelector('header')?.getBoundingClientRect().bottom ?? 60;
   }
 
-  // ── Persistence ─────────────────────────────────────────
-  function saveSprites() {
-    const data: SavedSprite[] = sprites.map((s) => ({
-      pokemonId: s.pokemonId,
-      spawnOrder: s.spawnOrder,
-      x: Math.round(s.x),
-      y: Math.round(s.y),
-    }));
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
-  }
-
-  function loadSavedSprites(): SavedSprite[] | null {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const data = JSON.parse(raw) as SavedSprite[];
-      if (!Array.isArray(data) || data.length === 0) return null;
-      return data;
-    } catch { return null; }
-  }
-
   // ── Globals ─────────────────────────────────────────────
   const sprites: SpriteEntity[] = [];
   let spawnCounter = 0;
@@ -308,9 +309,6 @@
   document.addEventListener('mousemove', onUserActivity);
   document.addEventListener('keydown', onUserActivity);
   document.addEventListener('scroll', onUserActivity);
-
-  // Save positions on page unload so they persist
-  window.addEventListener('beforeunload', saveSprites);
 
   // ── Sprite Creation ─────────────────────────────────────
   async function createSprite(
@@ -442,28 +440,63 @@
 
     // Pick new ID
     let newId: number;
+    let newSprite: SpriteEntity | null = null;
+
+    // Get old sprite's position before removing
+    const old = sprites[oldestIdx];
+    const oldX = old.x;
+    const oldY = old.y;
+
     if (requestedId && requestedId >= 1 && requestedId <= MAX_DEX_NUMBER) {
       newId = requestedId;
+      newSprite = await createSprite(container, newId, oldX, oldY);
+      if (!newSprite) {
+        showSpawnError(`No sprite available for #${newId}`);
+        return;
+      }
     } else {
-      // Random from curated list, avoid duplicates if possible
+      // Random — keep trying until we find one that works
       const usedIds = new Set(sprites.map((s) => s.pokemonId));
-      const available = POKEMON_IDS.filter((id) => !usedIds.has(id));
-      const pool = available.length > 0 ? available : POKEMON_IDS;
-      newId = pool[Math.floor(Math.random() * pool.length)];
+      const candidates = Array.from({ length: MAX_DEX_NUMBER }, (_, i) => i + 1)
+        .filter((id) => !usedIds.has(id))
+        .sort(() => Math.random() - 0.5);
+
+      for (const id of candidates) {
+        newSprite = await createSprite(container, id, oldX, oldY);
+        if (newSprite) { newId = id; break; }
+      }
+      if (!newSprite) return;
     }
 
-    // Remove old sprite
-    const old = sprites[oldestIdx];
+    // Success — remove old sprite and add new one
     old.canvas.remove();
     sprites.splice(oldestIdx, 1);
+    newSprite.spawnOrder = spawnCounter++;
+    sprites.push(newSprite);
+    const walkInfo = newSprite.frameInfo.Walk!;
+    showSpawnFlash(container, oldX + (walkInfo.w * SCALE) / 2, oldY + (walkInfo.h * SCALE) / 2);
+  }
 
-    // Create new one
-    const newSprite = await createSprite(container, newId);
-    if (newSprite) {
-      newSprite.spawnOrder = spawnCounter++;
-      sprites.push(newSprite);
-      saveSprites();
-    }
+  // ── Spawn Error Message ────────────────────────────────
+  function showSpawnError(msg: string) {
+    const existing = document.getElementById('spawn-error');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.id = 'spawn-error';
+    el.textContent = msg;
+    const controls = document.getElementById('sprite-controls');
+    if (controls) controls.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  // ── Spawn Flash ────────────────────────────────────────
+  function showSpawnFlash(container: HTMLElement, x: number, y: number) {
+    const flash = document.createElement('div');
+    flash.className = 'spawn-flash';
+    flash.style.left = `${x}px`;
+    flash.style.top = `${y}px`;
+    document.body.appendChild(flash);
+    flash.addEventListener('animationend', () => flash.remove());
   }
 
   // ── Update & Render ────────────────────────────────────
@@ -546,48 +579,38 @@
     const container = document.getElementById('sprite-background');
     if (!container) return;
 
-    const saved = loadSavedSprites();
+    // Always spawn fresh random Pokémon on each load from full dex
+    const allIds = Array.from({ length: MAX_DEX_NUMBER }, (_, i) => i + 1);
+    const shuffled = allIds.sort(() => Math.random() - 0.5);
 
-    if (saved) {
-      // Restore persisted sprites
-      const headerH = getHeaderBottom();
-      for (const s of saved) {
-        // Clamp positions to current viewport
-        const x = Math.max(20, Math.min(window.innerWidth - 80, s.x));
-        const y = Math.max(headerH, Math.min(window.innerHeight - 80, s.y));
-        const sprite = await createSprite(container, s.pokemonId, x, y, s.spawnOrder);
-        if (sprite) sprites.push(sprite);
+    let loaded = 0;
+    for (const id of shuffled) {
+      if (loaded >= SPRITE_COUNT) break;
+      const sprite = await createSprite(container, id);
+      if (sprite) {
+        sprite.spawnOrder = spawnCounter++;
+        sprites.push(sprite);
+        loaded++;
       }
-      // Set spawn counter past all existing orders
-      spawnCounter = Math.max(...sprites.map((s) => s.spawnOrder)) + 1;
-    } else {
-      // First visit — random spawn
-      const count = SPRITE_COUNT_MIN + Math.floor(Math.random() * (SPRITE_COUNT_MAX - SPRITE_COUNT_MIN + 1));
-      const shuffled = [...POKEMON_IDS].sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, count + 6);
-
-      let loaded = 0;
-      for (const id of selected) {
-        if (loaded >= count) break;
-        const sprite = await createSprite(container, id);
-        if (sprite) {
-          sprite.spawnOrder = spawnCounter++;
-          sprites.push(sprite);
-          loaded++;
-        }
-      }
-      saveSprites();
     }
 
     if (sprites.length > 0) requestAnimationFrame(loop);
 
     // ── Wire up swap UI ──────────────────────────────────
-    const btn = document.getElementById('sprite-swap-btn');
+    const btn = document.getElementById('sprite-swap-btn') as HTMLButtonElement | null;
     const input = document.getElementById('sprite-dex-input') as HTMLInputElement | null;
-    btn?.addEventListener('click', () => {
+    let spawning = false;
+    btn?.addEventListener('click', async () => {
+      if (spawning) return;
+      spawning = true;
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
       const val = input?.value ? parseInt(input.value, 10) : undefined;
       if (input) input.value = '';
-      swapOldestSprite(val);
+      await swapOldestSprite(val);
+      btn.disabled = false;
+      btn.style.opacity = '';
+      spawning = false;
     });
 
     // ── Wire up toggle UI ────────────────────────────────
