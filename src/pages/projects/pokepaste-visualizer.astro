@@ -1,0 +1,1134 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="PokePaste Visualizer — Adam Kenawell">
+  <div class="page">
+    <Header />
+    <main>
+      <div id="input-view">
+        <input id="team-name-input" type="text" placeholder="Team 1" />
+        <textarea id="paste-input" placeholder="Paste PokePaste here"></textarea>
+        <div class="btn-row">
+          <button id="visualize-btn">Visualize</button>
+        </div>
+      </div>
+
+      <div id="output-view" style="display:none;">
+        <div class="output-actions">
+          <button id="back-btn">← Back</button>
+          <button id="save-btn">Save Team</button>
+          <button id="toggle-tags-btn">Show Tags</button>
+          <button id="toggle-sprites-btn">Static Sprites</button>
+        </div>
+        <div id="team-card"></div>
+      </div>
+
+      <div id="saved-section">
+        <h2>Saved Teams</h2>
+        <button id="delete-all-btn" style="display:none;">Delete All Teams</button>
+        <div id="saved-list"></div>
+      </div>
+    </main>
+    <Footer />
+  </div>
+</Layout>
+
+<script>
+  // ── Sprite helpers (from SpriteBackground logic) ────────
+  const ACTIONS = ['Walk', 'Idle', 'Attack'] as const;
+  type Action = (typeof ACTIONS)[number];
+  const FRAME_MS = 150;
+  const ATTACK_FRAME_MS = 80;
+  const SCALE = 2;
+
+  interface FrameInfo { w: number; h: number; count: number }
+
+  function spriteUrl(id: number, action: string): string {
+    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/${action}-Anim.png`;
+  }
+
+  function animDataUrl(id: number): string {
+    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/AnimData.xml`;
+  }
+
+  function loadImage(url: string): Promise<HTMLImageElement | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
+  async function fetchAnimData(id: number): Promise<Record<string, { w: number; h: number }>> {
+    try {
+      const res = await fetch(animDataUrl(id));
+      const text = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/xml');
+      const anims = doc.querySelectorAll('Anim');
+      const result: Record<string, { w: number; h: number }> = {};
+      anims.forEach((anim) => {
+        const name = anim.querySelector('Name')?.textContent ?? '';
+        const w = parseInt(anim.querySelector('FrameWidth')?.textContent ?? '0', 10);
+        const h = parseInt(anim.querySelector('FrameHeight')?.textContent ?? '0', 10);
+        if (name && w > 0 && h > 0) result[name] = { w, h };
+      });
+      return result;
+    } catch {
+      return {};
+    }
+  }
+
+  function calcFrameInfo(img: HTMLImageElement, dims: { w: number; h: number } | undefined): FrameInfo {
+    if (dims && dims.w > 0 && dims.h > 0) {
+      const count = Math.max(1, Math.floor(img.naturalWidth / dims.w));
+      return { w: dims.w, h: dims.h, count };
+    }
+    const h = Math.floor(img.naturalHeight / 8);
+    const w = h;
+    const count = Math.max(1, Math.floor(img.naturalWidth / w));
+    return { w, h, count };
+  }
+
+  // ── Name to Dex ID mapping via PokeAPI ─────────────────
+  // Cache for API results
+  const pokeDataCache: Record<string, any> = {};
+  const moveDataCache: Record<string, string> = {};
+
+  async function fetchPokemonData(species: string): Promise<any> {
+    let slug = species.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const formMap: Record<string, string> = {
+      'rotom-frost': 'rotom-frost',
+      'arcanine-hisui': 'arcanine-hisui',
+      'basculegion': 'basculegion-male',
+      'froslass-mega': 'froslass',
+    };
+    const lookup = formMap[slug] || slug;
+    if (pokeDataCache[lookup]) return pokeDataCache[lookup];
+    try {
+      let res = await fetch(`https://pokeapi.co/api/v2/pokemon/${lookup}`);
+      if (!res.ok) {
+        const base = slug.split('-')[0];
+        res = await fetch(`https://pokeapi.co/api/v2/pokemon/${base}`);
+        if (!res.ok) return null;
+      }
+      const data = await res.json();
+      pokeDataCache[lookup] = data;
+      return data;
+    } catch { return null; }
+  }
+
+  async function nameToDexId(species: string): Promise<number> {
+    const data = await fetchPokemonData(species);
+    return data?.id || 0;
+  }
+
+  async function fetchMoveType(moveName: string): Promise<string> {
+    const slug = moveName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (moveDataCache[slug]) return moveDataCache[slug];
+    try {
+      const res = await fetch(`https://pokeapi.co/api/v2/move/${slug}`);
+      if (!res.ok) return 'normal';
+      const data = await res.json();
+      const type = data.type?.name || 'normal';
+      moveDataCache[slug] = type;
+      return type;
+    } catch { return 'normal'; }
+  }
+
+  // ── Animated sprite widget ─────────────────────────────
+  interface SpriteWidget {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    sheets: Record<Action, HTMLImageElement | null>;
+    frameInfo: Record<Action, FrameInfo | null>;
+    frame: number;
+    state: 'idle' | 'attacking';
+    stateEnd: number;
+    direction: number;
+  }
+
+  let activeWidgets: SpriteWidget[] = [];
+  let animRunning = false;
+
+  function startAnimLoop() {
+    if (animRunning) return;
+    animRunning = true;
+    let last = 0;
+    function loop(ts: number) {
+      if (activeWidgets.length === 0) { animRunning = false; return; }
+      const now = performance.now();
+      if (ts - last >= FRAME_MS) {
+        last = ts;
+        for (const w of activeWidgets) {
+          const action: Action = w.state === 'attacking' ? 'Attack' : 'Idle';
+          const sheet = w.sheets[action] || w.sheets.Idle || w.sheets.Walk;
+          const info = w.frameInfo[action] || w.frameInfo.Idle || w.frameInfo.Walk;
+          if (!sheet || !info) continue;
+
+          const frameIdx = w.frame % info.count;
+          w.ctx.clearRect(0, 0, w.canvas.width, w.canvas.height);
+          w.ctx.imageSmoothingEnabled = false;
+          w.ctx.drawImage(
+            sheet,
+            frameIdx * info.w, w.direction * info.h, info.w, info.h,
+            0, 0, info.w * SCALE, info.h * SCALE,
+          );
+          w.frame++;
+
+          if (w.state === 'attacking' && now > w.stateEnd) {
+            w.state = 'idle';
+            w.frame = 0;
+          }
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  async function createSpriteWidget(dexId: number): Promise<HTMLCanvasElement | null> {
+    if (dexId <= 0) return null;
+
+    const [animDims, walkImg, idleImg, attackImg] = await Promise.all([
+      fetchAnimData(dexId),
+      loadImage(spriteUrl(dexId, 'Walk')),
+      loadImage(spriteUrl(dexId, 'Idle')),
+      loadImage(spriteUrl(dexId, 'Attack')),
+    ]);
+
+    if (!walkImg && !idleImg) return null;
+
+    const sheets: Record<Action, HTMLImageElement | null> = { Walk: walkImg, Idle: idleImg, Attack: attackImg };
+    const frameInfo: Record<Action, FrameInfo | null> = {
+      Walk: walkImg ? calcFrameInfo(walkImg, animDims['Walk']) : null,
+      Idle: idleImg ? calcFrameInfo(idleImg, animDims['Idle']) : null,
+      Attack: attackImg ? calcFrameInfo(attackImg, animDims['Attack']) : null,
+    };
+
+    const info = frameInfo.Idle || frameInfo.Walk!;
+    const canvas = document.createElement('canvas');
+    canvas.width = info.w * SCALE;
+    canvas.height = info.h * SCALE;
+    canvas.className = 'poke-sprite-canvas';
+    const ctx = canvas.getContext('2d')!;
+
+    const widget: SpriteWidget = {
+      canvas, ctx, sheets, frameInfo,
+      frame: 0, state: 'idle', stateEnd: 0, direction: 0,
+    };
+
+    canvas.addEventListener('click', () => {
+      if (widget.sheets.Attack) {
+        widget.state = 'attacking';
+        widget.frame = 0;
+        widget.stateEnd = performance.now() + 1000;
+      }
+    });
+
+    activeWidgets.push(widget);
+    startAnimLoop();
+    return canvas;
+  }
+
+  // ── PokePaste Parser ───────────────────────────────────
+  interface ParsedMon {
+    species: string;
+    item: string;
+    ability: string;
+    level: string;
+    nature: string;
+    evs: string;
+    moves: string[];
+  }
+
+  function parsePokepaste(text: string): ParsedMon[] {
+    const blocks = text.trim().split(/\n\n+/);
+    return blocks.map(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) return null;
+
+      const firstLine = lines[0];
+      const atSplit = firstLine.split('@');
+      const item = atSplit[1]?.trim() || '';
+      const nameRaw = atSplit[0].trim();
+      const species = nameRaw.replace(/\s*\([MF]\)\s*/, '').trim();
+
+      let ability = '', level = '', nature = '', evs = '';
+      const moves: string[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('Ability:')) ability = line.replace('Ability:', '').trim();
+        else if (line.startsWith('Level:')) level = line.replace('Level:', '').trim();
+        else if (line.startsWith('EVs:')) evs = line.replace('EVs:', '').trim();
+        else if (line.endsWith('Nature')) nature = line.replace('Nature', '').trim();
+        else if (line.startsWith('-')) moves.push(line.replace('-', '').trim());
+      }
+
+      return { species, item, ability, level, nature, evs, moves } as ParsedMon;
+    }).filter(Boolean) as ParsedMon[];
+  }
+
+  // ── Color Maps ─────────────────────────────────────────
+  const TYPE_COLORS: Record<string, string> = {
+    normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
+    grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+    ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+    rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
+    steel: '#B8B8D0', fairy: '#EE99AC',
+  };
+
+  const EV_COLORS: Record<string, string> = {
+    'hp': '#ff4d4d',
+    'atk': '#ff9933',
+    'def': '#f5d000',
+    'spa': '#4d9fff',
+    'spd': '#4dcc73',
+    'spe': '#ff66b2',
+  };
+
+  function colorizeEvs(evStr: string): string {
+    // EVs format: "32 HP / 15 Def / 15 SpD / 4 Spe"
+    const statMap: Record<string, string> = {
+      'hp': 'hp', 'atk': 'atk', 'attack': 'atk', 'def': 'def', 'defense': 'def',
+      'spa': 'spa', 'spatk': 'spa', 'spd': 'spd', 'spdef': 'spd',
+      'spe': 'spe', 'speed': 'spe',
+    };
+    return evStr.split('/').map(part => {
+      const trimmed = part.trim();
+      const match = trimmed.match(/(\d+)\s+(.+)/);
+      if (!match) return trimmed;
+      const [, num, statName] = match;
+      const key = statName.toLowerCase().replace(/[^a-z]/g, '');
+      const mapped = statMap[key] || key;
+      const color = EV_COLORS[mapped] || 'rgba(255,255,255,0.65)';
+      return `<span style="color:${color}">${num} ${statName}</span>`;
+    }).join(' / ');
+  }
+
+  function getTypeGradient(types: string[]): string {
+    if (types.length === 1) return TYPE_COLORS[types[0]] || '#A8A878';
+    const c1 = TYPE_COLORS[types[0]] || '#A8A878';
+    const c2 = TYPE_COLORS[types[1]] || '#A8A878';
+    return `linear-gradient(135deg, ${c1}, ${c2})`;
+  }
+
+  const ROLE_OPTIONS = [
+    'None', 'Physical Sweeper', 'Special Sweeper', 'Mixed Sweeper', 'Setup Sweeper',
+    'Tailwind Setter', 'Trick Room Setter', 'Support', 'Pivot', 'Fast', 'Slow',
+    'Wall', 'Tank', 'Redirection', 'Weather Setter', 'Terrain Setter', 'Lead',
+  ];
+
+  // ── Rendering ──────────────────────────────────────────
+  async function renderTeamCard(team: ParsedMon[], teamName: string, savedRoles?: string[][]) {
+    const card = document.getElementById('team-card')!;
+    card.innerHTML = `<h2 class="team-title">${teamName}</h2><div class="team-members"></div>`;
+    const membersEl = card.querySelector('.team-members')!;
+
+    for (const mon of team) {
+      const cell = document.createElement('div');
+      cell.className = 'mon-cell';
+
+      const bodyRow = document.createElement('div');
+      bodyRow.className = 'mon-body';
+
+      const spriteCell = document.createElement('div');
+      spriteCell.className = 'mon-sprite';
+      spriteCell.innerHTML = '<span class="loading-sprite">...</span>';
+      bodyRow.appendChild(spriteCell);
+
+      const infoWrapper = document.createElement('div');
+      infoWrapper.className = 'mon-info-wrapper';
+
+      const nameEl = document.createElement('h3');
+      nameEl.className = 'mon-name';
+      nameEl.textContent = mon.species;
+      infoWrapper.appendChild(nameEl);
+
+      const infoCell = document.createElement('div');
+      infoCell.className = 'mon-info';
+      infoCell.innerHTML = `
+        <p class="item-text">@ ${mon.item}</p>
+        <p class="stat-line"><strong>Ability:</strong> ${mon.ability}</p>
+        <p class="stat-line"><strong>Nature:</strong> ${mon.nature}</p>
+        <p class="stat-line evs-line"><strong>EVs:</strong> ${colorizeEvs(mon.evs)}</p>
+      `;
+      infoWrapper.appendChild(infoCell);
+      bodyRow.appendChild(infoWrapper);
+      cell.appendChild(bodyRow);
+
+      const movesEl = document.createElement('div');
+      movesEl.className = 'moves';
+      movesEl.innerHTML = mon.moves.map(m => `<span class="move-pill" data-move="${m}">${m}</span>`).join('');
+      cell.appendChild(movesEl);
+
+      const tagsEl = document.createElement('div');
+      tagsEl.className = 'role-tags';
+      const monIndex = team.indexOf(mon);
+      const savedMonRoles = savedRoles?.[monIndex] || [];
+
+      function addTagSelect(tagsContainer: HTMLElement, initialVal: string) {
+        const sel = document.createElement('select');
+        sel.className = 'role-select';
+        sel.innerHTML = ROLE_OPTIONS.map(r =>
+          `<option value="${r}"${r === initialVal ? ' selected' : ''}>${r === 'None' ? '—' : r}</option>`
+        ).join('');
+        if (initialVal !== 'None') sel.classList.add('active');
+        sel.addEventListener('change', () => {
+          sel.classList.toggle('active', sel.value !== 'None');
+        });
+        // Insert before the + button
+        const addBtn = tagsContainer.querySelector('.add-tag-btn');
+        if (addBtn) tagsContainer.insertBefore(sel, addBtn);
+        else tagsContainer.appendChild(sel);
+        updateAddBtn(tagsContainer);
+      }
+
+      function updateAddBtn(tagsContainer: HTMLElement) {
+        let btn = tagsContainer.querySelector('.add-tag-btn') as HTMLElement;
+        const count = tagsContainer.querySelectorAll('.role-select').length;
+        if (count >= 3) {
+          if (btn) btn.style.display = 'none';
+        } else {
+          if (!btn) {
+            btn = document.createElement('button');
+            btn.className = 'add-tag-btn';
+            btn.textContent = '+';
+            btn.addEventListener('click', () => {
+              addTagSelect(tagsContainer, 'None');
+            });
+            tagsContainer.appendChild(btn);
+          }
+          btn.style.display = '';
+        }
+      }
+
+      // Restore saved roles
+      const activeCount = savedMonRoles.filter(r => r && r !== 'None').length;
+      for (let t = 0; t < activeCount && t < 3; t++) {
+        addTagSelect(tagsEl, savedMonRoles[t] || 'None');
+      }
+      updateAddBtn(tagsEl);
+      cell.appendChild(tagsEl);
+
+      membersEl.appendChild(cell);
+
+      // Load pokemon data for sprite + type coloring
+      fetchPokemonData(mon.species).then(async (data) => {
+        if (data) {
+          // Color the name by type
+          const types: string[] = data.types.map((t: any) => t.type.name);
+          const nameTag = cell.querySelector('.mon-name') as HTMLElement;
+          if (types.length === 1) {
+            nameTag.style.color = TYPE_COLORS[types[0]] || '#fff';
+          } else {
+            nameTag.style.background = getTypeGradient(types);
+            nameTag.style.webkitBackgroundClip = 'text';
+            nameTag.style.webkitTextFillColor = 'transparent';
+            nameTag.style.backgroundClip = 'text';
+          }
+
+          // Build static sprite
+          const staticUrl = data.sprites?.other?.['official-artwork']?.front_default
+            || data.sprites?.front_default || '';
+          const staticHtml = staticUrl
+            ? `<img src="${staticUrl}" class="fallback-sprite" alt="${mon.species}" />`
+            : '<span class="no-sprite">?</span>';
+
+          // Build animated sprite
+          const canvas = await createSpriteWidget(data.id);
+
+          // Store both on the element for toggling
+          spriteCell.dataset.staticHtml = staticHtml;
+          spriteCell.dataset.hasAnimated = canvas ? 'true' : 'false';
+
+          spriteCell.innerHTML = '';
+          if (canvas) {
+            spriteCell.appendChild(canvas);
+          } else {
+            spriteCell.innerHTML = staticHtml;
+          }
+
+          // If currently in static mode, swap now
+          if (!useAnimatedSprites) {
+            spriteCell.innerHTML = staticHtml;
+          }
+        } else {
+          spriteCell.innerHTML = '<span class="no-sprite">?</span>';
+        }
+      });
+
+      // Color moves by type
+      const movePills = cell.querySelectorAll('.move-pill');
+      movePills.forEach(async (pill) => {
+        const moveName = (pill as HTMLElement).dataset.move!;
+        const moveType = await fetchMoveType(moveName);
+        const color = TYPE_COLORS[moveType] || 'rgba(255,255,255,0.85)';
+        (pill as HTMLElement).style.borderColor = color;
+        (pill as HTMLElement).style.color = color;
+        (pill as HTMLElement).style.background = color + '18';
+      });
+    }
+  }
+
+  // ── LocalStorage (saved teams) ─────────────────────────
+  const STORAGE_KEY = 'pokepaste-saved-teams';
+
+  interface SavedTeam { id: string; name: string; paste: string; roles?: string[][]; tagsVisible?: boolean; }
+
+  function loadSavedTeams(): SavedTeam[] {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch { return []; }
+  }
+
+  function saveSavedTeams(teams: SavedTeam[]) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
+  }
+
+  function getNextTeamNumber(): number {
+    return loadSavedTeams().length + 1;
+  }
+
+  function renderSavedTeams() {
+    const list = document.getElementById('saved-list')!;
+    const deleteAllBtn = document.getElementById('delete-all-btn')!;
+    const teams = loadSavedTeams();
+
+    if (teams.length === 0) {
+      list.innerHTML = '<p class="empty">No saved teams yet.</p>';
+      deleteAllBtn.style.display = 'none';
+      return;
+    }
+
+    deleteAllBtn.style.display = 'inline-block';
+    list.innerHTML = '';
+    teams.forEach(team => {
+      const item = document.createElement('div');
+      item.className = 'saved-item';
+      item.innerHTML = `
+        <span class="saved-name">${team.name}</span>
+        <div class="saved-actions">
+          <button class="load-btn" data-id="${team.id}">Load</button>
+          <button class="del-btn" data-id="${team.id}">Delete</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+
+    list.querySelectorAll('.load-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id!;
+        const team = loadSavedTeams().find(t => t.id === id);
+        if (!team) return;
+        activeWidgets = [];
+        animRunning = false;
+        const parsed = parsePokepaste(team.paste);
+        document.getElementById('input-view')!.style.display = 'none';
+        document.getElementById('output-view')!.style.display = 'block';
+        renderTeamCard(parsed, team.name, team.roles);
+        // Restore tag visibility
+        if (team.tagsVisible) {
+          tagsVisible = true;
+          toggleTagsBtn.textContent = 'Hide Tags';
+          document.querySelectorAll('.role-tags').forEach(el => {
+            (el as HTMLElement).style.display = 'flex';
+          });
+        }
+      });
+    });
+
+    list.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id!;
+        const teams = loadSavedTeams().filter(t => t.id !== id);
+        saveSavedTeams(teams);
+        renderSavedTeams();
+      });
+    });
+  }
+
+  // ── Event Wiring ───────────────────────────────────────
+  const nameInput = document.getElementById('team-name-input') as HTMLInputElement;
+  nameInput.placeholder = `Team ${getNextTeamNumber()}`;
+
+  document.getElementById('visualize-btn')!.addEventListener('click', () => {
+    const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
+    if (!text.trim()) return;
+    activeWidgets = [];
+    animRunning = false;
+    const team = parsePokepaste(text);
+    const name = nameInput.value.trim() || nameInput.placeholder;
+    document.getElementById('input-view')!.style.display = 'none';
+    document.getElementById('output-view')!.style.display = 'block';
+    renderTeamCard(team, name);
+  });
+
+  document.getElementById('back-btn')!.addEventListener('click', () => {
+    activeWidgets = [];
+    animRunning = false;
+    document.getElementById('input-view')!.style.display = 'flex';
+    document.getElementById('output-view')!.style.display = 'none';
+  });
+
+  const toggleTagsBtn = document.getElementById('toggle-tags-btn')!;
+  let tagsVisible = false;
+  toggleTagsBtn.textContent = 'Show Tags';
+  toggleTagsBtn.addEventListener('click', () => {
+    tagsVisible = !tagsVisible;
+    toggleTagsBtn.textContent = tagsVisible ? 'Hide Tags' : 'Show Tags';
+    document.querySelectorAll('.role-tags').forEach(el => {
+      (el as HTMLElement).style.display = tagsVisible ? 'flex' : 'none';
+    });
+  });
+
+  let useAnimatedSprites = true;
+  const toggleSpritesBtn = document.getElementById('toggle-sprites-btn')!;
+  toggleSpritesBtn.addEventListener('click', () => {
+    useAnimatedSprites = !useAnimatedSprites;
+    toggleSpritesBtn.textContent = useAnimatedSprites ? 'Static Sprites' : 'Animated Sprites';
+    document.querySelectorAll('.mon-sprite').forEach(spriteCell => {
+      const el = spriteCell as HTMLElement;
+      if (useAnimatedSprites) {
+        // Restore animated canvas if available
+        if (el.dataset.hasAnimated === 'true') {
+          // Re-render by triggering team re-render is complex,
+          // so we find the matching widget canvas
+          const canvas = el.querySelector('canvas');
+          if (!canvas) {
+            // Canvas was removed, need to show static as fallback
+            // The animated widgets are still in activeWidgets
+          }
+          // Show canvas, hide static
+          el.querySelectorAll('canvas').forEach(c => (c as HTMLElement).style.display = '');
+          el.querySelectorAll('img').forEach(c => (c as HTMLElement).style.display = 'none');
+          el.querySelectorAll('.no-sprite').forEach(c => (c as HTMLElement).style.display = 'none');
+        }
+      } else {
+        // Show static image
+        const staticHtml = el.dataset.staticHtml;
+        if (staticHtml) {
+          // Hide canvas, show static
+          el.querySelectorAll('canvas').forEach(c => (c as HTMLElement).style.display = 'none');
+          // Add static image if not already there
+          if (!el.querySelector('.fallback-sprite')) {
+            const wrapper = document.createElement('span');
+            wrapper.innerHTML = staticHtml;
+            const img = wrapper.firstElementChild;
+            if (img) el.appendChild(img);
+          } else {
+            el.querySelectorAll('.fallback-sprite').forEach(c => (c as HTMLElement).style.display = '');
+          }
+        }
+      }
+    });
+  });
+
+  document.getElementById('save-btn')!.addEventListener('click', () => {
+    const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
+    if (!text.trim()) return;
+    const name = nameInput.value.trim() || nameInput.placeholder;
+    // Gather role tags from current view
+    const cells = document.querySelectorAll('#team-card .mon-cell');
+    const roles: string[][] = [];
+    cells.forEach(cell => {
+      const selects = cell.querySelectorAll('.role-select') as NodeListOf<HTMLSelectElement>;
+      roles.push(Array.from(selects).map(s => s.value));
+    });
+    const teams = loadSavedTeams();
+    teams.push({ id: Date.now().toString(), name, paste: text, roles, tagsVisible });
+    saveSavedTeams(teams);
+    renderSavedTeams();
+    nameInput.placeholder = `Team ${getNextTeamNumber()}`;
+  });
+
+  document.getElementById('delete-all-btn')!.addEventListener('click', () => {
+    if (!confirm('Delete all saved teams?')) return;
+    saveSavedTeams([]);
+    renderSavedTeams();
+    nameInput.placeholder = 'Team 1';
+  });
+
+  renderSavedTeams();
+</script>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+  }
+
+  #input-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  #team-name-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(245, 208, 0, 0.4);
+    border-radius: 8px;
+    color: #f5d000;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 1.2rem;
+    padding: 0.7rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #team-name-input:focus {
+    border-color: #f5d000;
+  }
+
+  #team-name-input::placeholder {
+    color: rgba(245, 208, 0, 0.4);
+  }
+
+  #paste-input {
+    flex: 1;
+    width: 100%;
+    min-height: 55vh;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(245, 208, 0, 0.4);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    padding: 1.5rem;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #paste-input:focus {
+    border-color: #f5d000;
+  }
+
+  #paste-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 1.4rem;
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: center;
+  }
+
+  #visualize-btn {
+    background: #f5d000;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 0.8rem 3rem;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  #visualize-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(245, 208, 0, 0.4);
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  #back-btn, #save-btn, #toggle-tags-btn, #toggle-sprites-btn {
+    background: none;
+    border: 1px solid rgba(245, 208, 0, 0.5);
+    color: #f5d000;
+    border-radius: 6px;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  #back-btn:hover, #save-btn:hover, #toggle-tags-btn:hover, #toggle-sprites-btn:hover {
+    background: #f5d000;
+    color: #1a1a1a;
+  }
+
+  #team-card {
+    background: #1a1a1a;
+    border: 1px solid rgba(245, 208, 0, 0.5);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  #team-card :global(.team-title) {
+    color: #f5d000;
+    margin: 0 0 1rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(245, 208, 0, 0.2);
+    padding-bottom: 0.5rem;
+  }
+
+  #team-card :global(.team-members) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(160px, 250px));
+    gap: 0.8rem;
+    justify-content: center;
+  }
+
+  #team-card :global(.mon-cell) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.6rem;
+    padding-bottom: 1.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    aspect-ratio: 1;
+    overflow: hidden;
+    position: relative;
+    min-width: 0;
+  }
+
+  #team-card :global(.mon-body) {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+  }
+
+  #team-card :global(.mon-info-wrapper) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #team-card :global(.mon-name) {
+    text-align: center;
+    font-size: 0.85rem;
+    margin: 0 0 0.3rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  #team-card :global(.mon-sprite) {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  #team-card :global(.poke-sprite-canvas) {
+    image-rendering: pixelated;
+    cursor: pointer;
+    max-width: 64px;
+    max-height: 64px;
+  }
+
+  #team-card :global(.fallback-sprite) {
+    max-width: 64px;
+    max-height: 64px;
+    object-fit: contain;
+  }
+
+  #team-card :global(.no-sprite) {
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.2);
+  }
+
+  #team-card :global(.loading-sprite) {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  #team-card :global(.mon-info) {
+    flex: 1;
+    text-align: center;
+  }
+
+  #team-card :global(.mon-info h3) {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 0.1rem;
+    font-size: 0.9rem;
+  }
+
+  #team-card :global(.item-text) {
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
+    font-size: 0.7rem;
+    margin: 0 0 0.3rem;
+  }
+
+  #team-card :global(.stat-line) {
+    margin: 0.1rem 0;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.65);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #team-card :global(.evs-line) {
+    font-size: min(0.55rem, 1.8vw);
+  }
+
+  #team-card :global(.moves) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+    margin-top: 0.8rem;
+  }
+
+  #team-card :global(.move-pill) {
+    background: rgba(245, 208, 0, 0.12);
+    border: 1px solid rgba(245, 208, 0, 0.3);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: center;
+  }
+
+  #team-card :global(.role-tags) {
+    display: none;
+    gap: 0.25rem;
+    margin-top: 0.6rem;
+    align-items: center;
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.6rem;
+    right: 0.6rem;
+  }
+
+  #team-card :global(.add-tag-btn) {
+    background: none;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.7rem;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  #team-card :global(.add-tag-btn:hover) {
+    color: #f5d000;
+    border-color: rgba(245, 208, 0, 0.4);
+  }
+
+  #team-card :global(.role-select) {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.2);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.55rem;
+    padding: 0.15rem 0.2rem;
+    outline: none;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    max-width: 80px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  #team-card :global(.role-select option) {
+    background: #1a1a1a;
+    color: rgba(255, 255, 255, 0.85);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.7rem;
+    padding: 0.3rem;
+  }
+
+  #team-card :global(.role-select:hover) {
+    border-color: rgba(245, 208, 0, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  #team-card :global(.role-select.active) {
+    color: #f5d000;
+    border-color: rgba(245, 208, 0, 0.5);
+    background: rgba(245, 208, 0, 0.08);
+  }
+
+  /* ── Saved Teams Section ─────────────────────────────── */
+  #saved-section {
+    margin-top: 3rem;
+    border-top: 1px solid rgba(245, 208, 0, 0.2);
+    padding-top: 1.5rem;
+  }
+
+  #saved-section h2 {
+    color: #f5d000;
+    font-size: 1.1rem;
+    margin: 0 0 1rem;
+  }
+
+  #delete-all-btn {
+    background: none;
+    border: 1px solid rgba(255, 80, 80, 0.5);
+    color: #ff5050;
+    border-radius: 6px;
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  #delete-all-btn:hover {
+    background: #ff5050;
+    color: #1a1a1a;
+  }
+
+  #saved-list :global(.empty) {
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+  }
+
+  #saved-list :global(.saved-item) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+  }
+
+  #saved-list :global(.saved-name) {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.9rem;
+  }
+
+  #saved-list :global(.saved-actions) {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  #saved-list :global(.load-btn) {
+    background: none;
+    border: 1px solid rgba(245, 208, 0, 0.4);
+    color: #f5d000;
+    border-radius: 4px;
+    padding: 0.25rem 0.7rem;
+    cursor: pointer;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.75rem;
+  }
+
+  #saved-list :global(.load-btn:hover) {
+    background: #f5d000;
+    color: #1a1a1a;
+  }
+
+  #saved-list :global(.del-btn) {
+    background: none;
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    color: #ff5050;
+    border-radius: 4px;
+    padding: 0.25rem 0.7rem;
+    cursor: pointer;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.75rem;
+  }
+
+  #saved-list :global(.del-btn:hover) {
+    background: #ff5050;
+    color: #1a1a1a;
+  }
+
+  @media (max-width: 850px) {
+    #team-card :global(.team-members) {
+      grid-template-columns: repeat(2, minmax(150px, 200px));
+    }
+  }
+
+  @media (max-width: 600px) {
+    #team-card :global(.team-members) {
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+
+    #team-card {
+      padding: 0.75rem;
+    }
+
+    #team-card :global(.mon-cell) {
+      aspect-ratio: auto;
+      padding: 0.5rem;
+      padding-bottom: 1.6rem;
+    }
+
+    #team-card :global(.mon-sprite) {
+      width: 48px;
+      height: 48px;
+    }
+
+    #team-card :global(.poke-sprite-canvas) {
+      max-width: 48px;
+      max-height: 48px;
+    }
+
+    #team-card :global(.fallback-sprite) {
+      max-width: 48px;
+      max-height: 48px;
+    }
+
+    #team-card :global(.mon-name) {
+      font-size: 0.7rem;
+    }
+
+    #team-card :global(.stat-line) {
+      font-size: 0.55rem;
+    }
+
+    #team-card :global(.evs-line) {
+      font-size: 0.45rem;
+    }
+
+    #team-card :global(.item-text) {
+      font-size: 0.55rem;
+    }
+
+    #team-card :global(.move-pill) {
+      font-size: 0.5rem;
+      padding: 0.05rem 0.25rem;
+    }
+
+    .output-actions {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    #back-btn, #save-btn, #toggle-tags-btn, #toggle-sprites-btn {
+      font-size: 0.7rem;
+      padding: 0.4rem 0.8rem;
+    }
+  }
+</style>
