@@ -44,3 +44,33 @@ Running log of notable decisions, constraints, and context across sessions.
 - **Animated favicon:** Electivire headshot — top 35% of frame, center-cropped to fill 32x32, offset nudged 1px. Updates via `setInterval`.
 - **RSS auto-discovery:** `<link rel="alternate" type="application/rss+xml">` in Layout `<head>`.
 - **Open Graph:** Added `description` prop to Layout. `og:type`, `og:title`, `og:description`, `og:url` + standard meta description on every page. Blog posts use `excerpt` field.
+
+---
+
+## Session 5 — 2026-05-08 — PokePaste Visualizer
+
+- **New project page:** `src/pages/projects/pokepaste-visualizer.astro` — full client-side PokePaste team visualizer.
+- **Core flow:** Full-screen textarea with "Paste PokePaste here" placeholder → "Visualize" button → renders team card.
+- **Team card layout:** Single card containing a 3x2 grid of square Pokemon cells (250px, `aspect-ratio: 1`). Each cell: name centered over info section, animated PMD sprite on left, item/ability/nature/EVs on right, 2x2 move grid at bottom.
+- **Color coding:** Pokemon names colored by typing (dual types get CSS gradient). Move pills colored by move type via PokeAPI lookup. EV spreads color-coded: HP=red, Atk=orange, Def=yellow, SpA=blue, SpD=green, Spe=pink.
+- **Animated sprites:** Reuses PMDCollab sprite system from SpriteBackground. Idle animation by default, click triggers attack. Toggle button switches between animated PMD sprites and official PokeAPI artwork.
+- **Fallback sprites:** If no PMD sprite exists, falls back to official Pokemon artwork from PokeAPI.
+- **Role tags:** Up to 3 role tags per Pokemon via dropdown selects. Starts with just a "+" button, each click adds a dropdown (max 3). Options: Physical/Special/Mixed/Setup Sweeper, Tailwind/Trick Room Setter, Support, Pivot, Fast, Slow, Wall, Tank, Redirection, Weather/Terrain Setter, Lead. Tags hidden by default, toggled via "Show Tags" button. Tags overlay at bottom of cell without shifting layout.
+- **Save/Load:** Teams saved to localStorage with name, paste text, roles, and tag visibility. Team name input defaults to "Team 1", "Team 2", etc. Load/Delete per team, "Delete All Teams" with confirmation.
+- **Styling:** Fully opaque `#1a1a1a` team card background (sprites don't bleed through). Pixel font throughout. Dropdown options styled dark to match site theme.
+- **Responsive:** 3 columns >850px, 2 columns <=850px, scaled-down text/sprites on mobile <=600px. EVs use `min(0.55rem, 1.8vw)` to prevent overflow.
+- **Projects listing:** Added entry to `projects.astro` array.
+- **Pushed:** Single commit "Add PokePaste Visualizer project page" to main.
+
+---
+
+## Session 6 — 2026-05-08 — Theme System & Footer
+
+- **"Buy me a coffee" link:** Added to `Footer.astro` with accent-colored link pointing to `buymeacoffee.com/adamkenawell`. Account pending creation.
+- **Theme system overhaul:** Converted the entire site from hardcoded `#f5d000` / `rgba(245,208,0,...)` / `rgba(255,255,255,...)` / `#1a1a1a` to CSS custom properties. Touched 13 files total.
+- **CSS custom properties:** Defined on `:root` in `Layout.astro`: `--accent`, `--accent-rgb`, `--bg`, `--bg-rgb`, `--bg-card`, `--text`, `--text-muted`, `--text-faint`, `--header-bg`. All page/component styles reference these vars.
+- **ThemeControls component:** `src/components/ThemeControls.astro` — fixed bottom-right, collapsible "Theme" label (mirrors Pokémon Controls pattern). Panel contains dark/light mode toggle and a 5x4 grid of 20 accent color swatches (Gold, Red, Coral, Orange, Amber, Lime, Green, Emerald, Teal, Cyan, Sky, Blue, Indigo, Violet, Purple, Fuchsia, Pink, Rose, White, Silver). Active swatch gets highlighted border.
+- **Light mode:** Swaps background to `#f5f5f5`, text to dark `rgba(30,30,30,...)`, cards to white-tinted fills. All text elements properly invert for readability.
+- **Persistence:** Theme mode and accent RGB saved to `localStorage`. Inline `<script is:inline>` in `<head>` applies saved theme before first paint (no flash). `astro:after-swap` listener reapplies on view transitions.
+- **Click-outside-to-close:** Both Theme and Pokémon Controls panels close when clicking anywhere outside. Uses `stopPropagation` on panel internals so interacting with controls doesn't dismiss them.
+- **Files modified:** `Layout.astro`, `ThemeControls.astro` (new), `Header.astro`, `Footer.astro`, `SpriteBackground.astro`, `index.astro`, `about.astro`, `resume.astro`, `projects.astro`, `blog.astro`, `[slug].astro`, `local-llm-stack.astro`, `pokepaste-visualizer.astro`.

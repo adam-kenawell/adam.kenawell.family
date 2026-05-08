@@ -53,7 +53,7 @@ const { Content } = await render(post);
 
   article time {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
   }
 
   .meta {
@@ -64,12 +64,12 @@ const { Content } = await render(post);
 
   .separator {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-faint);
   }
 
   .author {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
   }
 
   article h1 {
@@ -80,18 +80,18 @@ const { Content } = await render(post);
   .content {
     font-size: 0.9rem;
     line-height: 1.8;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
   }
 
   .content :global(h2) {
     font-size: 1.1rem;
-    color: #f5d000;
+    color: var(--accent);
     margin: 2rem 0 0.75rem;
   }
 
   .content :global(h3) {
     font-size: 1rem;
-    color: #f5d000;
+    color: var(--accent);
     margin: 1.5rem 0 0.5rem;
   }
 
@@ -105,17 +105,17 @@ const { Content } = await render(post);
 
   .content :global(li) {
     margin-bottom: 0.3rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
   }
 
   .content :global(a) {
-    color: #f5d000;
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
   }
 
   .content :global(strong) {
-    color: #f5d000;
+    color: var(--accent);
   }
 
   @media (max-width: 600px) {

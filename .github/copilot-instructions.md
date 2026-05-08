@@ -27,28 +27,62 @@ src/
     resume.astro         # Resume (objective, 3 jobs, achievements, skills)
     projects.astro       # Project listing with internal detail links
     projects/
-      local-llm-stack.astro  # Project detail page
+      local-llm-stack.astro    # Project detail page
+      pokepaste-visualizer.astro  # PokePaste team visualizer
     blog.astro           # Blog listing with 4 category filter tabs
     blog/
       [slug].astro       # Blog post template
   components/
     Header.astro         # Sticky header (showNav prop, active page indicator)
-    Footer.astro         # Shared footer
+    Footer.astro         # Shared footer with "Buy me a coffee" link
     SpriteBackground.astro  # Animated Pokémon sprites background
+    ThemeControls.astro  # Dark/light mode + accent color picker
   layouts/
-    Layout.astro         # Base layout (font, global styles, ClientRouter)
+    Layout.astro         # Base layout (font, global styles, ClientRouter, theme init)
   content/
     blog/                # Markdown blog posts (content collection)
   content.config.ts      # glob() loader + Zod schema (includes category field)
 ```
 
-## Design System
+## Design System — Theming
 
-- **Background:** `#1a1a1a` · **Accent:** `#f5d000` (yellow) · **Body text:** `rgba(255,255,255,0.85)` (white)
-- **Card fills:** grey `rgba(255,255,255,0.06)` · **Card borders:** yellow `rgba(245,208,0,0.5)` · 3D hover lift
-- **Header:** Sticky, backdrop blur, `rgba(26,26,26,0.9)`. "Adam Kenawell" button links home.
-- **Nav links:** White `rgba(255,255,255,0.7)`, active = yellow + underline
-- **Section separators:** `border-top: 1px solid rgba(245, 208, 0, 0.2)`
+The site uses **CSS custom properties** for all colors. **Never hardcode** `#f5d000`, `rgba(245,208,0,...)`, `#1a1a1a`, or `rgba(255,255,255,...)` in styles. Always use the CSS vars:
+
+| Variable | Dark mode default | Light mode default | Usage |
+|----------|------------------|--------------------|-------|
+| `--accent` | `rgb(245,208,0)` | User-selected | Headings, links, borders, interactive elements |
+| `--accent-rgb` | `245,208,0` | User-selected | For `rgba(var(--accent-rgb), 0.X)` opacity patterns |
+| `--bg` | `#1a1a1a` | `#f5f5f5` | Page background |
+| `--bg-rgb` | `26,26,26` | `245,245,245` | For `rgba(var(--bg-rgb), 0.X)` |
+| `--bg-card` | `rgba(26,26,26,0.9)` | `rgba(255,255,255,0.9)` | Card/panel backgrounds |
+| `--text` | `rgba(255,255,255,0.85)` | `rgba(30,30,30,0.9)` | Body text |
+| `--text-muted` | `rgba(255,255,255,0.5)` | `rgba(30,30,30,0.55)` | Secondary text, labels |
+| `--text-faint` | `rgba(255,255,255,0.35)` | `rgba(30,30,30,0.35)` | Placeholders, subtle text |
+| `--header-bg` | `rgba(26,26,26,0.9)` | `rgba(245,245,245,0.9)` | Header background |
+
+### Common patterns
+
+```css
+color: var(--accent);                          /* accent text */
+border: 1px solid rgba(var(--accent-rgb), 0.5); /* accent border with opacity */
+background: var(--bg-card);                     /* card background */
+color: var(--text);                             /* body text */
+color: var(--text-muted);                       /* secondary text */
+```
+
+### Theme persistence
+
+- User preferences stored in `localStorage` keys: `theme-mode` (`dark`/`light`), `theme-accent` (RGB triplet like `245,208,0`)
+- Inline `<script is:inline>` in Layout `<head>` applies saved theme before first paint (prevents flash)
+- `astro:after-swap` event listener reapplies theme on Astro view transitions
+- `ThemeControls.astro` re-initializes via `astro:after-swap` as well
+
+## Design System — Other
+
+- **Card fills:** grey `rgba(255,255,255,0.06)` · **Card borders:** `rgba(var(--accent-rgb), 0.5)` · 3D hover lift
+- **Header:** Sticky, backdrop blur, `var(--header-bg)`. "Adam Kenawell" button links home.
+- **Nav links:** `var(--text-muted)`, active = `var(--accent)` + underline
+- **Section separators:** `border-top: 1px solid rgba(var(--accent-rgb), 0.2)`
 - **Font:** `Fusion Pixel 12px Proportional KR` · **Line-height:** `1.8` globally
 - **View Transitions:** `ClientRouter` from `astro:transitions`
 - **Tone:** Playful yet polished. No filler text. No emojis/m-dashes in body copy.
@@ -57,8 +91,10 @@ src/
 ## Component Patterns
 
 - **Header:** `showNav` prop (default `true`). Landing passes `showNav={false}`. "About Me" link in `.left-group` always visible.
+- **Footer:** Copyright + "Buy me a coffee" link (`buymeacoffee.com/adamkenawell`).
 - **Blog:** Content collections with `glob()` loader, Zod schema with `category: z.enum(['featured','technical','lifestyle','monthly-report'])`. 4 filter tabs with client-side JS.
-- **Sprites:** Pokémon Mystery Dungeon sprites on canvas. States: Walking → Idle → Sleeping (2.5min inactivity) → Attacking (click). CSS uses `is:global`. Controls collapsible.
+- **Sprites:** Pokémon Mystery Dungeon sprites on canvas. States: Walking → Idle → Sleeping (2.5min inactivity) → Attacking (click). CSS uses `is:global`. Controls collapsible (bottom-left), click-outside closes.
+- **ThemeControls:** Collapsible panel (bottom-right). Dark/light mode toggle + 20 accent color swatches (5x4 grid of colored circles). Click-outside closes. Persists via `localStorage`. Uses `transition:persist` across view transitions.
 - **Internal links** use `import.meta.env.BASE_URL` prefix.
 
 ## Agent Behavior
@@ -77,3 +113,5 @@ src/
 |------|---------|
 | `agent-context.md` | Running log of session decisions/context |
 | `.github/copilot-instructions.md` | This file — AI agent guidance |
+| `src/components/ThemeControls.astro` | Theme picker (mode + accent color) |
+| `src/layouts/Layout.astro` | CSS vars definition, theme init script |

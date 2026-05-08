@@ -230,21 +230,21 @@ const base = import.meta.env.BASE_URL;
 
   h1 {
     font-size: 2rem;
-    color: #f5d000;
+    color: var(--accent);
     margin-bottom: 0.25rem;
   }
 
   .tagline {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
   }
 
   h2 {
     font-size: 1.1rem;
-    color: #f5d000;
+    color: var(--accent);
     margin-bottom: 0.75rem;
     padding-top: 1.5rem;
-    border-top: 1px solid rgba(245, 208, 0, 0.2);
+    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
   }
 
   section {
@@ -257,12 +257,12 @@ const base = import.meta.env.BASE_URL;
   }
 
   p {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
     margin-bottom: 0.75rem;
   }
 
   strong {
-    color: #f5d000;
+    color: var(--accent);
   }
 
   ul {
@@ -272,13 +272,13 @@ const base = import.meta.env.BASE_URL;
   }
 
   li {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
     padding: 0.35rem 0;
   }
 
   li::before {
     content: '▸ ';
-    color: #f5d000;
+    color: var(--accent);
   }
 
   .favorites-grid {
@@ -288,8 +288,8 @@ const base = import.meta.env.BASE_URL;
   }
 
   .fav-card {
-    background: rgba(26, 26, 26, 0.95);
-    border: 1px solid rgba(245, 208, 0, 0.3);
+    background: var(--bg-card);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     display: flex;
@@ -299,14 +299,14 @@ const base = import.meta.env.BASE_URL;
 
   .fav-label {
     font-size: 0.65rem;
-    color: #f5d000;
+    color: var(--accent);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     opacity: 0.7;
   }
 
   .fav-value {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
     font-size: 0.85rem;
   }
 
@@ -319,16 +319,16 @@ const base = import.meta.env.BASE_URL;
   .fav-quote .fav-value {
     font-size: 0.95rem;
     font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text);
   }
 
   .fav-attr {
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-faint);
   }
 
   .inline-link {
-    color: #f5d000;
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 3px;
     transition: opacity 0.2s;

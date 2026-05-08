@@ -2,7 +2,7 @@
 ---
 
 <footer>
-  <span>&copy; 2026 Adam Kenawell &middot; Built with Astro</span>
+  <span>&copy; 2026 Adam Kenawell &middot; Built with Astro &middot; <a href="https://buymeacoffee.com/adamkenawell" target="_blank" rel="noopener noreferrer">Buy me a coffee</a></span>
 </footer>
 
 <style>
@@ -11,6 +11,13 @@
     text-align: center;
     padding: 1.5rem;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-faint);
+  }
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  footer a:hover {
+    text-decoration: underline;
   }
 </style>

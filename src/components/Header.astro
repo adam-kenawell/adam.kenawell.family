@@ -42,10 +42,10 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
-    background-color: rgba(26, 26, 26, 0.9);
+    background-color: var(--header-bg);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(245, 208, 0, 0.4);
-    box-shadow: 0 2px 12px rgba(245, 208, 0, 0.08);
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 2px 12px rgba(var(--accent-rgb), 0.08);
     gap: 0.5rem;
   }
 
@@ -59,21 +59,21 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
   .name-btn {
     font-size: 1rem;
     letter-spacing: 0.05em;
-    border: 1px solid rgba(245, 208, 0, 0.5);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
     border-radius: 6px;
     padding: 0.35rem 0.7rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    color: #f5d000;
+    color: var(--accent);
     text-decoration: none;
     white-space: nowrap;
     transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
 
   .name-btn:hover {
-    background-color: #f5d000;
-    color: #1a1a1a;
+    background-color: var(--accent);
+    color: var(--bg);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(245, 208, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.25);
   }
 
   nav {
@@ -94,7 +94,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
   .nav-link,
   .about-link {
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-muted);
     text-decoration: none;
     white-space: nowrap;
     transition: opacity 0.2s;
@@ -102,33 +102,33 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
   .nav-link:hover,
   .about-link:hover {
-    color: rgba(255, 255, 255, 1);
+    color: var(--text);
   }
 
   .nav-link.active,
   .about-link.active {
-    color: #f5d000;
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 3px;
   }
 
   .github-link {
     font-size: 0.8rem;
-    border: 1px solid rgba(245, 208, 0, 0.5);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
     border-radius: 6px;
     padding: 0.3rem 0.6rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    color: #f5d000;
+    color: var(--accent);
     text-decoration: none;
     white-space: nowrap;
     transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
 
   .github-link:hover {
-    background-color: #f5d000;
-    color: #1a1a1a;
+    background-color: var(--accent);
+    color: var(--bg);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(245, 208, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.25);
   }
 
   .avatar-wrapper {
@@ -151,8 +151,8 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     min-width: 200px;
     max-width: 260px;
     padding: 0.6rem 0.8rem;
-    background: rgba(26, 26, 26, 0.95);
-    border: 1px solid rgba(245, 208, 0, 0.5);
+    background: var(--bg-card);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     z-index: 200;
@@ -169,15 +169,15 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     left: 14px;
     width: 10px;
     height: 10px;
-    background: rgba(26, 26, 26, 0.95);
-    border-left: 1px solid rgba(245, 208, 0, 0.5);
-    border-top: 1px solid rgba(245, 208, 0, 0.5);
+    background: var(--bg-card);
+    border-left: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-top: 1px solid rgba(var(--accent-rgb), 0.5);
     transform: rotate(45deg);
   }
 
   .status-text {
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
     line-height: 1.5;
     margin: 0;
   }
