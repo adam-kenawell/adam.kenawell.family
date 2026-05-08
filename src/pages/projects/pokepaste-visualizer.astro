@@ -45,6 +45,67 @@ import Footer from '../../components/Footer.astro';
   const FRAME_MS = 150;
   const SCALE = 2;
 
+  // ── Default paste text ─────────────────────────────────
+  const DEFAULT_PASTE = `Froslass-Mega (F) @ Froslassite
+Ability: Snow Warning
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Modest Nature
+- Protect
+- Aurora Veil
+- Shadow Ball
+- Weather Ball
+
+Rotom-Frost @ Choice Scarf
+Ability: Levitate
+Level: 50
+EVs: 32 SpA / 2 SpD / 32 Spe
+Timid Nature
+- Electroweb
+- Volt Switch
+- Thunderbolt
+- Blizzard
+
+Basculegion (M) @ Focus Sash
+Ability: Adaptability
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Psychic Fangs
+- Aqua Jet
+- Wave Crash
+- Last Respects
+
+Arcanine-Hisui @ Charcoal
+Ability: Rock Head
+Level: 50
+EVs: 32 Atk / 32 Spe
+Adamant Nature
+- Protect
+- Extreme Speed
+- Head Smash
+- Flare Blitz
+
+Garchomp @ Sitrus Berry
+Ability: Rough Skin
+Level: 50
+EVs: 32 HP / 15 Def / 15 SpD / 4 Spe
+Adamant Nature
+- Protect
+- Scale Shot
+- Stomping Tantrum
+- Earthquake
+
+Empoleon @ Leftovers
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 19 SpA / 15 Spe
+Modest Nature
+- Protect
+- Vacuum Wave
+- Chilling Water
+- Flash Cannon`;
+
   // ── Name to Dex ID mapping via PokeAPI ─────────────────
   // Cache for API results
   const pokeDataCache: Record<string, any> = {};
@@ -105,6 +166,8 @@ import Footer from '../../components/Footer.astro';
 
   let activeWidgets: SpriteWidget[] = [];
   let animRunning = false;
+  let useAnimatedSprites = true;
+  let tagsVisible = false;
 
   function startAnimLoop() {
     if (animRunning) return;
@@ -485,7 +548,7 @@ import Footer from '../../components/Footer.astro';
         // Restore tag visibility
         if (team.tagsVisible) {
           tagsVisible = true;
-          toggleTagsBtn.textContent = 'Hide Tags';
+          document.getElementById('toggle-tags-btn')!.textContent = 'Hide Tags';
           document.querySelectorAll('.role-tags').forEach(el => {
             (el as HTMLElement).style.display = 'flex';
           });
@@ -504,107 +567,116 @@ import Footer from '../../components/Footer.astro';
   }
 
   // ── Event Wiring ───────────────────────────────────────
-  const nameInput = document.getElementById('team-name-input') as HTMLInputElement;
-  nameInput.placeholder = `Team ${getNextTeamNumber()}`;
-
-  document.getElementById('visualize-btn')!.addEventListener('click', () => {
-    const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
-    if (!text.trim()) return;
+  // Wrap in astro:page-load so listeners re-attach after view transitions
+  function initVisualizer() {
     activeWidgets = [];
     animRunning = false;
-    const team = parsePokepaste(text);
-    const name = nameInput.value.trim() || nameInput.placeholder;
-    document.getElementById('input-view')!.style.display = 'none';
-    document.getElementById('output-view')!.style.display = 'block';
-    renderTeamCard(team, name);
-  });
 
-  document.getElementById('back-btn')!.addEventListener('click', () => {
-    activeWidgets = [];
-    animRunning = false;
-    document.getElementById('input-view')!.style.display = 'flex';
-    document.getElementById('output-view')!.style.display = 'none';
-  });
-
-  const toggleTagsBtn = document.getElementById('toggle-tags-btn')!;
-  let tagsVisible = false;
-  toggleTagsBtn.textContent = 'Show Tags';
-  toggleTagsBtn.addEventListener('click', () => {
-    tagsVisible = !tagsVisible;
-    toggleTagsBtn.textContent = tagsVisible ? 'Hide Tags' : 'Show Tags';
-    document.querySelectorAll('.role-tags').forEach(el => {
-      (el as HTMLElement).style.display = tagsVisible ? 'flex' : 'none';
-    });
-  });
-
-  let useAnimatedSprites = true;
-  const toggleSpritesBtn = document.getElementById('toggle-sprites-btn')!;
-  toggleSpritesBtn.addEventListener('click', () => {
-    useAnimatedSprites = !useAnimatedSprites;
-    toggleSpritesBtn.textContent = useAnimatedSprites ? 'Static Sprites' : 'Animated Sprites';
-    document.querySelectorAll('.mon-sprite').forEach(spriteCell => {
-      const el = spriteCell as HTMLElement;
-      if (useAnimatedSprites) {
-        // Restore animated canvas if available
-        if (el.dataset.hasAnimated === 'true') {
-          // Re-render by triggering team re-render is complex,
-          // so we find the matching widget canvas
-          const canvas = el.querySelector('canvas');
-          if (!canvas) {
-            // Canvas was removed, need to show static as fallback
-            // The animated widgets are still in activeWidgets
-          }
-          // Show canvas, hide static
-          el.querySelectorAll('canvas').forEach(c => (c as HTMLElement).style.display = '');
-          el.querySelectorAll('img').forEach(c => (c as HTMLElement).style.display = 'none');
-          el.querySelectorAll('.no-sprite').forEach(c => (c as HTMLElement).style.display = 'none');
-        }
-      } else {
-        // Show static image
-        const staticHtml = el.dataset.staticHtml;
-        if (staticHtml) {
-          // Hide canvas, show static
-          el.querySelectorAll('canvas').forEach(c => (c as HTMLElement).style.display = 'none');
-          // Add static image if not already there
-          if (!el.querySelector('.fallback-sprite')) {
-            const wrapper = document.createElement('span');
-            wrapper.innerHTML = staticHtml;
-            const img = wrapper.firstElementChild;
-            if (img) el.appendChild(img);
-          } else {
-            el.querySelectorAll('.fallback-sprite').forEach(c => (c as HTMLElement).style.display = '');
-          }
-        }
-      }
-    });
-  });
-
-  document.getElementById('save-btn')!.addEventListener('click', () => {
-    const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
-    if (!text.trim()) return;
-    const name = nameInput.value.trim() || nameInput.placeholder;
-    // Gather role tags from current view
-    const cells = document.querySelectorAll('#team-card .mon-cell');
-    const roles: string[][] = [];
-    cells.forEach(cell => {
-      const selects = cell.querySelectorAll('.role-select') as NodeListOf<HTMLSelectElement>;
-      roles.push(Array.from(selects).map(s => s.value));
-    });
-    const teams = loadSavedTeams();
-    teams.push({ id: Date.now().toString(), name, paste: text, roles, tagsVisible });
-    saveSavedTeams(teams);
-    renderSavedTeams();
+    const nameInput = document.getElementById('team-name-input') as HTMLInputElement;
+    if (!nameInput) return; // not on this page
     nameInput.placeholder = `Team ${getNextTeamNumber()}`;
-  });
 
-  document.getElementById('delete-all-btn')!.addEventListener('click', () => {
-    if (!confirm('Delete all saved teams?')) return;
-    saveSavedTeams([]);
+    // Set default paste text if empty
+    const pasteInput = document.getElementById('paste-input') as HTMLTextAreaElement;
+    if (pasteInput && !pasteInput.value.trim()) {
+      pasteInput.value = DEFAULT_PASTE;
+    }
+
+    // Show background sprites on this page
+    const spriteContainer = document.getElementById('sprite-background');
+    if (spriteContainer) spriteContainer.style.display = '';
+    const spriteToggleBtn = document.getElementById('sprite-toggle-btn');
+    if (spriteToggleBtn) spriteToggleBtn.textContent = 'Hide';
+
+    document.getElementById('visualize-btn')!.addEventListener('click', () => {
+      const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
+      if (!text.trim()) return;
+      activeWidgets = [];
+      animRunning = false;
+      const team = parsePokepaste(text);
+      const name = nameInput.value.trim() || nameInput.placeholder;
+      document.getElementById('input-view')!.style.display = 'none';
+      document.getElementById('output-view')!.style.display = 'block';
+      renderTeamCard(team, name);
+    });
+
+    document.getElementById('back-btn')!.addEventListener('click', () => {
+      activeWidgets = [];
+      animRunning = false;
+      document.getElementById('input-view')!.style.display = 'flex';
+      document.getElementById('output-view')!.style.display = 'none';
+    });
+
+    const toggleTagsBtn = document.getElementById('toggle-tags-btn')!;
+    tagsVisible = false;
+    toggleTagsBtn.textContent = 'Show Tags';
+    toggleTagsBtn.addEventListener('click', () => {
+      tagsVisible = !tagsVisible;
+      toggleTagsBtn.textContent = tagsVisible ? 'Hide Tags' : 'Show Tags';
+      document.querySelectorAll('.role-tags').forEach(el => {
+        (el as HTMLElement).style.display = tagsVisible ? 'flex' : 'none';
+      });
+    });
+
+    useAnimatedSprites = true;
+    const toggleSpritesBtn = document.getElementById('toggle-sprites-btn')!;
+    toggleSpritesBtn.addEventListener('click', () => {
+      useAnimatedSprites = !useAnimatedSprites;
+      toggleSpritesBtn.textContent = useAnimatedSprites ? 'Static Sprites' : 'Animated Sprites';
+      document.querySelectorAll('.mon-sprite').forEach(spriteCell => {
+        const el = spriteCell as HTMLElement;
+        if (useAnimatedSprites) {
+          if (el.dataset.hasAnimated === 'true') {
+            el.querySelectorAll('canvas').forEach(c => (c as HTMLElement).style.display = '');
+            el.querySelectorAll('img').forEach(c => (c as HTMLElement).style.display = 'none');
+            el.querySelectorAll('.no-sprite').forEach(c => (c as HTMLElement).style.display = 'none');
+          }
+        } else {
+          const staticHtml = el.dataset.staticHtml;
+          if (staticHtml) {
+            el.querySelectorAll('canvas').forEach(c => (c as HTMLElement).style.display = 'none');
+            if (!el.querySelector('.fallback-sprite')) {
+              const wrapper = document.createElement('span');
+              wrapper.innerHTML = staticHtml;
+              const img = wrapper.firstElementChild;
+              if (img) el.appendChild(img);
+            } else {
+              el.querySelectorAll('.fallback-sprite').forEach(c => (c as HTMLElement).style.display = '');
+            }
+          }
+        }
+      });
+    });
+
+    document.getElementById('save-btn')!.addEventListener('click', () => {
+      const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
+      if (!text.trim()) return;
+      const name = nameInput.value.trim() || nameInput.placeholder;
+      const cells = document.querySelectorAll('#team-card .mon-cell');
+      const roles: string[][] = [];
+      cells.forEach(cell => {
+        const selects = cell.querySelectorAll('.role-select') as NodeListOf<HTMLSelectElement>;
+        roles.push(Array.from(selects).map(s => s.value));
+      });
+      const teams = loadSavedTeams();
+      teams.push({ id: Date.now().toString(), name, paste: text, roles, tagsVisible });
+      saveSavedTeams(teams);
+      renderSavedTeams();
+      nameInput.placeholder = `Team ${getNextTeamNumber()}`;
+    });
+
+    document.getElementById('delete-all-btn')!.addEventListener('click', () => {
+      if (!confirm('Delete all saved teams?')) return;
+      saveSavedTeams([]);
+      renderSavedTeams();
+      nameInput.placeholder = 'Team 1';
+    });
+
     renderSavedTeams();
-    nameInput.placeholder = 'Team 1';
-  });
+  }
 
-  renderSavedTeams();
+  // Run on initial load and on every view transition navigation
+  document.addEventListener('astro:page-load', initVisualizer);
 </script>
 
 <style>

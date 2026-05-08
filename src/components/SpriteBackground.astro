@@ -464,10 +464,13 @@
     }
 
     if (toggleBtn && container) {
-      const isHidden = localStorage.getItem(VISIBILITY_KEY) === 'hidden';
+      const isHidden = localStorage.getItem(VISIBILITY_KEY) !== 'visible';
       if (isHidden) {
         container.style.display = 'none';
         toggleBtn.textContent = 'Show';
+      } else {
+        container.style.display = '';
+        toggleBtn.textContent = 'Hide';
       }
       toggleBtn.onclick = () => {
         const nowHidden = container.style.display === 'none';
