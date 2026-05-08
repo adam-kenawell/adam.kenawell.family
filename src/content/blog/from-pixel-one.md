@@ -2,7 +2,7 @@
 title: "From Pixel One: How I Built This Website"
 date: 2026-05-07
 excerpt: "The full story of how a data engineer with no web dev experience built a personal website from scratch using Astro, GitHub Pages, and a locally-hosted LLM."
-category: "featured"
+categories: ["featured"]
 ---
 
 If you told me a year ago that I'd be building a personal website from scratch, I probably would have laughed. I'm a data engineer. I write SQL and Python all day. HTML and CSS? That's a different department. But here we are, and I'm genuinely proud of how it turned out. Here's the full story.

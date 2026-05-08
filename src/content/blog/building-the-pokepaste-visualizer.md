@@ -2,7 +2,7 @@
 title: "Building the PokePaste Visualizer: A Technical Deep Dive"
 date: 2026-05-08
 excerpt: "How I built a fully client-side PokePaste team visualizer with animated sprites, type-aware color coding, and localStorage persistence, all in a single Astro page."
-category: "technical"
+categories: ["featured", "technical"]
 ---
 
 I play competitive Pokemon. Not at a world championship level or anything, but enough that I spend way too much time staring at PokePaste exports trying to remember what my team does. PokePaste is the standard format for sharing competitive teams, and it looks like this:

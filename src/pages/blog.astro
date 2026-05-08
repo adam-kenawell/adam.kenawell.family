@@ -99,7 +99,7 @@ const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.leng
     <div class="post-list">
       {showPosts && posts.length > 0 ? (
         categories.map((cat) => {
-          const filtered = posts.filter((p) => p.data.category === cat.id);
+          const filtered = posts.filter((p) => (p.data.categories as string[]).includes(cat.id));
           return (
             <div class:list={['category-group', { hidden: cat.id !== 'featured' }]} data-group={cat.id}>
               {filtered.length > 0 ? (

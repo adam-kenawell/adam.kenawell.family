@@ -8,7 +8,7 @@ const blog = defineCollection({
     title: z.string(),
     date: z.date(),
     excerpt: z.string(),
-    category: z.enum(['featured', 'technical', 'lifestyle', 'monthly-report']).default('featured'),
+    categories: z.array(z.enum(['featured', 'technical', 'lifestyle', 'monthly-report'])).default(['featured']),
   }),
 });
 
