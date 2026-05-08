@@ -60,6 +60,8 @@
 </style>
 
 <script>
+  import { spriteUrl, loadImage, fetchAnimData, calcFrameInfo, type FrameInfo } from '../utils/sprite-utils';
+
   // ── Config ──────────────────────────────────────────────
   const SCALE = 1;
   const FRAME_MS = 150;
@@ -69,27 +71,16 @@
   const IDLE_CHANCE = 0.002;
   const IDLE_MS_MIN = 2000;
   const IDLE_MS_MAX = 4000;
-  const SLEEP_TIMEOUT = 150000;    // 2.5 min of no interaction
-  const ATTACK_MS = 1000;
-  const HIT_RADIUS = 40;          // Click detection radius around sprite center
+  const SLEEP_TIMEOUT = 150000;
+  const HIT_RADIUS = 40;
   const VISIBILITY_KEY = 'pmd-sprites-visible';
-  const MAX_DEX_NUMBER = 1025;     // Total sprite folders (approx)
-
-  // Curated Pokémon IDs known to have good sprites
-  const POKEMON_IDS = [
-    1, 4, 7, 25, 37, 39, 52, 54, 58, 94, 131, 133, 143, 150, 151,
-    152, 155, 158, 175, 196, 197, 252, 255, 258, 300, 387, 390,
-    393, 448, 570, 572, 403, 447, 334, 302, 352, 442, 479,
-  ];
+  const MAX_DEX_NUMBER = 1025;
 
   const ACTIONS = ['Walk', 'Idle', 'Sleep', 'Attack'] as const;
   type Action = (typeof ACTIONS)[number];
   type SpriteState = 'walking' | 'idle' | 'sleeping' | 'attacking';
 
-  // Direction rows: 0=S, 1=SE, 2=E, 3=NE, 4=N, 5=NW, 6=W, 7=SW
   const ANGLE_TO_ROW = [2, 1, 0, 7, 6, 5, 4, 3];
-
-  interface FrameInfo { w: number; h: number; count: number }
 
   interface SpriteEntity {
     pokemonId: number;
@@ -105,56 +96,6 @@
     direction: number;
     sheets: Record<Action, HTMLImageElement | null>;
     frameInfo: Record<Action, FrameInfo | null>;
-  }
-
-  // ── Helpers ─────────────────────────────────────────────
-  function spriteUrl(id: number, action: string): string {
-    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/${action}-Anim.png`;
-  }
-
-  function animDataUrl(id: number): string {
-    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/AnimData.xml`;
-  }
-
-  function loadImage(url: string): Promise<HTMLImageElement | null> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  }
-
-  async function fetchAnimData(id: number): Promise<Record<string, { w: number; h: number }>> {
-    try {
-      const res = await fetch(animDataUrl(id));
-      const text = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/xml');
-      const anims = doc.querySelectorAll('Anim');
-      const result: Record<string, { w: number; h: number }> = {};
-      anims.forEach((anim) => {
-        const name = anim.querySelector('Name')?.textContent ?? '';
-        const w = parseInt(anim.querySelector('FrameWidth')?.textContent ?? '0', 10);
-        const h = parseInt(anim.querySelector('FrameHeight')?.textContent ?? '0', 10);
-        if (name && w > 0 && h > 0) result[name] = { w, h };
-      });
-      return result;
-    } catch {
-      return {};
-    }
-  }
-
-  function calcFrameInfo(img: HTMLImageElement, dims: { w: number; h: number } | undefined): FrameInfo {
-    if (dims && dims.w > 0 && dims.h > 0) {
-      const count = Math.max(1, Math.floor(img.naturalWidth / dims.w));
-      return { w: dims.w, h: dims.h, count };
-    }
-    const h = Math.floor(img.naturalHeight / 8);
-    const w = h;
-    const count = Math.max(1, Math.floor(img.naturalWidth / w));
-    return { w, h, count };
   }
 
   function velocityToRow(vx: number, vy: number): number {
@@ -258,47 +199,34 @@
   }
 
   // ── State Transitions ──────────────────────────────────
-  function setWalking(s: SpriteEntity) {
-    s.state = 'walking';
+  function setState(s: SpriteEntity, state: SpriteState) {
+    s.state = state;
     s.frame = 0;
-    const { vx, vy } = randomVelocity(s.x, s.y);
-    s.vx = vx; s.vy = vy;
-    s.direction = velocityToRow(vx, vy);
-    resizeCanvas(s, 'Walk');
-  }
-
-  function setIdle(s: SpriteEntity) {
-    s.state = 'idle';
-    s.frame = 0;
-    s.vx = 0; s.vy = 0;
-    s.stateEnd = performance.now() + randRange(IDLE_MS_MIN, IDLE_MS_MAX);
-    resizeCanvas(s, s.sheets.Idle ? 'Idle' : 'Walk');
-  }
-
-  function setSleeping(s: SpriteEntity) {
-    s.state = 'sleeping';
-    s.frame = 0;
-    s.vx = 0; s.vy = 0;
-    s.direction = 0;
-    resizeCanvas(s, s.sheets.Sleep ? 'Sleep' : 'Walk');
-  }
-
-  function setAttacking(s: SpriteEntity) {
-    s.state = 'attacking';
-    s.frame = 0;
-    s.vx = 0; s.vy = 0;
-    s.direction = 0;
-    resizeCanvas(s, s.sheets.Attack ? 'Attack' : 'Walk');
+    if (state === 'walking') {
+      const { vx, vy } = randomVelocity(s.x, s.y);
+      s.vx = vx; s.vy = vy;
+      s.direction = velocityToRow(vx, vy);
+      resizeCanvas(s, 'Walk');
+    } else {
+      s.vx = 0; s.vy = 0;
+      if (state === 'idle') {
+        s.stateEnd = performance.now() + randRange(IDLE_MS_MIN, IDLE_MS_MAX);
+        resizeCanvas(s, s.sheets.Idle ? 'Idle' : 'Walk');
+      } else if (state === 'sleeping') {
+        s.direction = 0;
+        resizeCanvas(s, s.sheets.Sleep ? 'Sleep' : 'Walk');
+      } else {
+        s.direction = 0;
+        resizeCanvas(s, s.sheets.Attack ? 'Attack' : 'Walk');
+      }
+    }
   }
 
   function handleSpriteClick(s: SpriteEntity) {
     lastInteraction = performance.now();
     allAsleep = false;
-    if (s.state === 'sleeping') {
-      setWalking(s);
-    } else if (s.state !== 'attacking') {
-      setAttacking(s);
-    }
+    if (s.state === 'sleeping') setState(s, 'walking');
+    else if (s.state !== 'attacking') setState(s, 'attacking');
   }
 
   // ── Resolve Current Sheet ──────────────────────────────
@@ -390,7 +318,7 @@
     if (now - lastInteraction > SLEEP_TIMEOUT && !allAsleep) {
       allAsleep = true;
       for (const s of sprites) {
-        if (s.state === 'walking' || s.state === 'idle') setSleeping(s);
+        if (s.state === 'walking' || s.state === 'idle') setState(s, 'sleeping');
       }
     }
 
@@ -409,12 +337,12 @@
             s.vx = v.vx; s.vy = v.vy;
             s.direction = velocityToRow(v.vx, v.vy);
           }
-          if (!allAsleep && Math.random() < IDLE_CHANCE) setIdle(s);
+          if (!allAsleep && Math.random() < IDLE_CHANCE) setState(s, 'idle');
           break;
         }
         case 'idle':
           if (now >= s.stateEnd) {
-            allAsleep ? setSleeping(s) : setWalking(s);
+            allAsleep ? setState(s, 'sleeping') : setState(s, 'walking');
           }
           break;
         case 'attacking':
@@ -428,7 +356,7 @@
         const { info } = getSheet(s);
         const nextFrame = s.frame + 1;
         if (s.state === 'attacking' && nextFrame >= info.count) {
-          setWalking(s);
+          setState(s, 'walking');
         } else {
           s.frame = nextFrame % info.count;
         }

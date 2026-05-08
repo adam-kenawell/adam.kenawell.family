@@ -37,63 +37,13 @@ import Footer from '../../components/Footer.astro';
 </Layout>
 
 <script>
-  // ── Sprite helpers (from SpriteBackground logic) ────────
+  import { spriteUrl, loadImage, fetchAnimData, calcFrameInfo, type FrameInfo } from '../../utils/sprite-utils';
+
+  // ── Sprite animation config ────────────────────────────
   const ACTIONS = ['Walk', 'Idle', 'Attack'] as const;
   type Action = (typeof ACTIONS)[number];
   const FRAME_MS = 150;
-  const ATTACK_FRAME_MS = 80;
   const SCALE = 2;
-
-  interface FrameInfo { w: number; h: number; count: number }
-
-  function spriteUrl(id: number, action: string): string {
-    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/${action}-Anim.png`;
-  }
-
-  function animDataUrl(id: number): string {
-    return `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${String(id).padStart(4, '0')}/AnimData.xml`;
-  }
-
-  function loadImage(url: string): Promise<HTMLImageElement | null> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  }
-
-  async function fetchAnimData(id: number): Promise<Record<string, { w: number; h: number }>> {
-    try {
-      const res = await fetch(animDataUrl(id));
-      const text = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/xml');
-      const anims = doc.querySelectorAll('Anim');
-      const result: Record<string, { w: number; h: number }> = {};
-      anims.forEach((anim) => {
-        const name = anim.querySelector('Name')?.textContent ?? '';
-        const w = parseInt(anim.querySelector('FrameWidth')?.textContent ?? '0', 10);
-        const h = parseInt(anim.querySelector('FrameHeight')?.textContent ?? '0', 10);
-        if (name && w > 0 && h > 0) result[name] = { w, h };
-      });
-      return result;
-    } catch {
-      return {};
-    }
-  }
-
-  function calcFrameInfo(img: HTMLImageElement, dims: { w: number; h: number } | undefined): FrameInfo {
-    if (dims && dims.w > 0 && dims.h > 0) {
-      const count = Math.max(1, Math.floor(img.naturalWidth / dims.w));
-      return { w: dims.w, h: dims.h, count };
-    }
-    const h = Math.floor(img.naturalHeight / 8);
-    const w = h;
-    const count = Math.max(1, Math.floor(img.naturalWidth / w));
-    return { w, h, count };
-  }
 
   // ── Name to Dex ID mapping via PokeAPI ─────────────────
   // Cache for API results
@@ -658,18 +608,11 @@ import Footer from '../../components/Footer.astro';
 </script>
 
 <style>
-  .page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
   main {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 2rem;
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
   }
 
   #input-view {
@@ -684,7 +627,6 @@ import Footer from '../../components/Footer.astro';
     border: 1px solid rgba(var(--accent-rgb), 0.4);
     border-radius: 8px;
     color: var(--accent);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 1.2rem;
     padding: 0.7rem 1rem;
     outline: none;
@@ -721,7 +663,6 @@ import Footer from '../../components/Footer.astro';
 
   #paste-input::placeholder {
     color: var(--text-faint);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 1.4rem;
   }
 
@@ -736,7 +677,6 @@ import Footer from '../../components/Footer.astro';
     border: none;
     border-radius: 8px;
     padding: 0.8rem 3rem;
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 1.1rem;
     font-weight: bold;
     cursor: pointer;
@@ -761,7 +701,6 @@ import Footer from '../../components/Footer.astro';
     border-radius: 6px;
     padding: 0.5rem 1.2rem;
     cursor: pointer;
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.9rem;
     transition: background 0.2s, color 0.2s;
   }
@@ -945,7 +884,6 @@ import Footer from '../../components/Footer.astro';
     border: 1px solid rgba(var(--accent-rgb), 0.08);
     border-radius: 4px;
     color: var(--text-faint);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.55rem;
     padding: 0.15rem 0.2rem;
     outline: none;
@@ -960,7 +898,6 @@ import Footer from '../../components/Footer.astro';
   #team-card :global(.role-select option) {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.7rem;
     padding: 0.3rem;
   }
@@ -996,7 +933,6 @@ import Footer from '../../components/Footer.astro';
     border-radius: 6px;
     padding: 0.4rem 1rem;
     cursor: pointer;
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.8rem;
     margin-bottom: 1rem;
     transition: background 0.2s, color 0.2s;
@@ -1039,7 +975,6 @@ import Footer from '../../components/Footer.astro';
     border-radius: 4px;
     padding: 0.25rem 0.7rem;
     cursor: pointer;
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.75rem;
   }
 
@@ -1055,13 +990,12 @@ import Footer from '../../components/Footer.astro';
     border-radius: 4px;
     padding: 0.25rem 0.7rem;
     cursor: pointer;
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.75rem;
   }
 
   #saved-list :global(.del-btn:hover) {
     background: #ff5050;
-    color: #1a1a1a;
+    color: var(--bg);
   }
 
   @media (max-width: 850px) {

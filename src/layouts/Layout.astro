@@ -31,33 +31,22 @@ const canonicalUrl = Astro.url.href;
     <!-- Theme init: apply saved theme before paint to prevent flash -->
     <script is:inline>
       (function() {
-        function applyStoredTheme() {
+        var themes = {
+          dark: {'--bg':'#1a1a1a','--bg-rgb':'26,26,26','--bg-card':'rgba(26,26,26,0.9)','--text':'rgba(255,255,255,0.85)','--text-muted':'rgba(255,255,255,0.5)','--text-faint':'rgba(255,255,255,0.35)','--header-bg':'rgba(26,26,26,0.9)'},
+          light: {'--bg':'#f5f5f5','--bg-rgb':'245,245,245','--bg-card':'rgba(255,255,255,0.9)','--text':'rgba(30,30,30,0.9)','--text-muted':'rgba(30,30,30,0.55)','--text-faint':'rgba(30,30,30,0.35)','--header-bg':'rgba(245,245,245,0.9)'}
+        };
+        function apply() {
           var t = localStorage.getItem('theme-mode') || 'dark';
           var a = localStorage.getItem('theme-accent') || '245,208,0';
           var r = document.documentElement;
           r.setAttribute('data-theme', t);
           r.style.setProperty('--accent-rgb', a);
           r.style.setProperty('--accent', 'rgb(' + a + ')');
-          if (t === 'light') {
-            r.style.setProperty('--bg', '#f5f5f5');
-            r.style.setProperty('--bg-rgb', '245,245,245');
-            r.style.setProperty('--bg-card', 'rgba(255,255,255,0.9)');
-            r.style.setProperty('--text', 'rgba(30,30,30,0.9)');
-            r.style.setProperty('--text-muted', 'rgba(30,30,30,0.55)');
-            r.style.setProperty('--text-faint', 'rgba(30,30,30,0.35)');
-            r.style.setProperty('--header-bg', 'rgba(245,245,245,0.9)');
-          } else {
-            r.style.setProperty('--bg', '#1a1a1a');
-            r.style.setProperty('--bg-rgb', '26,26,26');
-            r.style.setProperty('--bg-card', 'rgba(26,26,26,0.9)');
-            r.style.setProperty('--text', 'rgba(255,255,255,0.85)');
-            r.style.setProperty('--text-muted', 'rgba(255,255,255,0.5)');
-            r.style.setProperty('--text-faint', 'rgba(255,255,255,0.35)');
-            r.style.setProperty('--header-bg', 'rgba(26,26,26,0.9)');
-          }
+          var v = themes[t] || themes.dark;
+          for (var k in v) r.style.setProperty(k, v[k]);
         }
-        applyStoredTheme();
-        document.addEventListener('astro:after-swap', applyStoredTheme);
+        apply();
+        document.addEventListener('astro:after-swap', apply);
       })();
     </script>
   </head>
@@ -100,6 +89,10 @@ const canonicalUrl = Astro.url.href;
     line-height: 1.8;
   }
 
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+
   a {
     color: var(--accent);
     text-decoration: none;
@@ -116,5 +109,110 @@ const canonicalUrl = Astro.url.href;
   #page-content {
     position: relative;
     z-index: 2;
+  }
+
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Shared accent-bordered button base — used by Header, blog, resume, etc. */
+  .accent-btn {
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    background: none;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .accent-btn:hover {
+    background-color: var(--accent);
+    color: var(--bg);
+    transform: translateY(-2px);
+  }
+
+  /* Shared content page patterns */
+  .content-page {
+    flex: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .hero .tagline {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .content-page section {
+    margin-bottom: 1.5rem;
+  }
+
+  .content-page h2 {
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+  }
+
+  .hero + section h2 {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .content-page p {
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+
+  .content-page strong {
+    color: var(--accent);
+  }
+
+  /* Shared info-card grid (favorites, specs, etc.) */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .info-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .info-card-label {
+    font-size: 0.65rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+  }
+
+  .info-card-value {
+    color: var(--text);
+    font-size: 0.85rem;
   }
 </style>

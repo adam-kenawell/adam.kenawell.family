@@ -89,3 +89,38 @@ Running log of notable decisions, constraints, and context across sessions.
 - **Color swatch CSS fix:** Swatches are created dynamically via `document.createElement()` in ThemeControls JS, so they don't get Astro's scoped `data-astro-cid-xxx` attributes. Fixed by using `:global()` selectors for `.color-grid` and `.color-swatch` in Header.astro.
 - **Script timing fix:** Settings toggle uses `<script is:inline>` (not regular `<script>`) to ensure DOM elements exist when listeners attach. Regular Astro scripts are hoisted to `<head>` as ES modules and may run before the body is parsed.
 - **Inline onclick approach:** Settings button uses `onclick` attribute as the most reliable method — no script timing, no DOM readiness issues, no module hoisting problems.
+
+---
+
+## Session 8 — 2026-05-08 — Code Optimization & Modularization
+
+- **Shared sprite utilities:** Extracted `spriteUrl`, `animDataUrl`, `loadImage`, `fetchAnimData`, `calcFrameInfo`, and `FrameInfo` type into `src/utils/sprite-utils.ts`. Eliminated ~80 lines of duplicated code across SpriteBackground, PokePaste Visualizer, and Header avatar.
+- **Shared theme utilities:** Extracted `applyTheme` and `applyStoredTheme` into `src/utils/theme-utils.ts`. Theme CSS var mappings stored as data (single object) instead of repeated if/else blocks. ThemeControls.astro now imports from shared utils instead of defining its own copy.
+- **Layout inline script compacted:** Replaced 20-line if/else theme init with data-driven loop (themes object + for-in), cut to ~10 lines. Same data structure as `theme-utils.ts`.
+- **Global `.page` CSS:** Moved the `.page { display:flex; flex-direction:column; min-height:100vh }` pattern from 8 separate pages into `Layout.astro` global styles. Removed ~32 lines of duplicated CSS.
+- **Header avatar refactored:** Replaced inline AnimData XML parsing with `fetchAnimData()` from shared utils. Replaced manual URL construction with `spriteUrl()`. Cut ~25 lines.
+- **Hardcoded color fix:** Replaced `#1a1a1a` with `var(--bg)` in pokepaste-visualizer delete button hover.
+- **Removed unused code:** `POKEMON_IDS` array (curated list), `ATTACK_MS` constant — both were dead code in SpriteBackground.
+- **Build verified:** All 8 pages build successfully after each change.
+
+---
+
+## Session 9 — 2026-05-08 — CSS Consolidation & Deduplication
+
+- **`.accent-btn` base class:** Added to Layout globals. Consolidates shared border/radius/transition/cursor/color styles used by 7 Header buttons (`.name-btn`, `.github-link`, `.avatar-btn`, `.settings-btn`, `.settings-action-btn`). Each button now only defines its own size/padding overrides.
+- **Content-page shared patterns:** Added `.content-page`, `.hero`, `.hero h1`, `.hero .tagline`, `.content-page section/h2/p/strong`, `.hero + section h2`, `.info-grid`, `.info-card`, `.info-card-label`, `.info-card-value` to Layout globals. Used by `about.astro` and `local-llm-stack.astro` — removed ~130 lines of duplicated CSS.
+- **SpriteBackground `setState()` consolidation:** Merged 4 separate functions (`setWalking`, `setIdle`, `setSleeping`, `setAttacking`) into single `setState(s, state)` with data-driven animation name lookup.
+- **Font-family global inherit:** Added `button, input, select, textarea { font-family: inherit }` to Layout globals, then removed 14 redundant `font-family` declarations across Header, blog, and pokepaste-visualizer.
+- **PowerShell corruption fix:** `Set-Content -NoNewline` collapsed pokepaste-visualizer.astro to 1 line. Recovered via `git checkout` + manual re-application of all changes. Lesson: never use PowerShell `Set-Content` for file writes — use `replace_string_in_file` tool only.
+
+### Context-Loading Tips for Future Sessions
+
+To minimize context needed when starting a new session:
+
+1. **Read `agent-context.md` first** — it has the full history of decisions and gotchas.
+2. **Read `.github/copilot-instructions.md`** — it has the complete project structure, design system, and component patterns.
+3. **Only read files relevant to the task.** Use the Key Files table in copilot-instructions.md to know which files to read.
+4. **Shared utilities location:** `src/utils/sprite-utils.ts` (sprite loading/rendering) and `src/utils/theme-utils.ts` (theme application). Both are imported by multiple components.
+5. **Don't re-read Layout.astro** unless changing global styles or theme init — the design system vars are documented in copilot-instructions.md.
+6. **For CSS changes:** Check Layout.astro global styles first (`.page`, CSS vars, resets). Page-scoped styles are in each `.astro` file's `<style>` block.
+7. **For sprite work:** All sprite URL construction, image loading, and frame calculation lives in `sprite-utils.ts`. SpriteBackground, PokePaste Visualizer, and Header avatar all import from it.

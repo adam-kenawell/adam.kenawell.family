@@ -11,7 +11,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 <header>
   <div class="left-group">
     <div class="avatar-wrapper">
-      <button class="avatar-btn" id="avatar-btn" title="Click me!">
+      <button class="avatar-btn accent-btn" id="avatar-btn" title="Click me!">
         <canvas id="avatar-sprite" width="32" height="32"></canvas>
       </button>
       <div id="status-bubble" class="status-bubble hidden">
@@ -19,7 +19,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
         <p class="status-text">fixing data pipelines and pretending to be a web developer</p>
       </div>
     </div>
-    <a class="name-btn" href={base}>Adam Kenawell</a>
+    <a class="accent-btn name-btn" href={base}>Adam Kenawell</a>
     <a class:list={['nav-link', 'about-link', { active: currentPath === '/about' }]} href={`${base}about`}>About Me</a>
   </div>
   <div class="right-group">
@@ -31,20 +31,20 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
           <a class:list={['nav-link', { active: currentPath === '/projects' }]} href={`${base}projects`}>Projects</a>
         </>
       )}
-      <a class="github-link" href="https://github.com/adam-kenawell" target="_blank" rel="noopener">GitHub ↗</a>
-      <a class="github-link" href="https://www.linkedin.com/in/adam-kenawell/" target="_blank" rel="noopener">LinkedIn ↗</a>
-      <a class="github-link coffee-link" href="https://buymeacoffee.com/adam.kenawell" target="_blank" rel="noopener noreferrer">Buy me a coffee!</a>
+      <a class="accent-btn github-link" href="https://github.com/adam-kenawell" target="_blank" rel="noopener">GitHub ↗</a>
+      <a class="accent-btn github-link" href="https://www.linkedin.com/in/adam-kenawell/" target="_blank" rel="noopener">LinkedIn ↗</a>
+      <a class="accent-btn github-link coffee-link" href="https://buymeacoffee.com/adam.kenawell" target="_blank" rel="noopener noreferrer">Buy me a coffee!</a>
     </div>
     <div class="settings-wrapper">
-      <button class="settings-btn" id="settings-btn" title="Settings">⚙</button>
+      <button class="accent-btn settings-btn" id="settings-btn" title="Settings">⚙</button>
       <div class="settings-dropdown" id="settings-dropdown" style="display:none;">
         <div class="settings-group">
           <span class="settings-group-title" id="pokemon-title" role="button" tabindex="0">Pok&#233;mon Controls</span>
           <div class="settings-group-content" id="pokemon-content" style="display:none;">
             <div class="settings-row" id="sprite-controls-row">
               <input id="sprite-dex-input" type="number" min="1" placeholder="Dex #" />
-              <button id="sprite-swap-btn" class="settings-action-btn" title="Spawn a new Pokémon">⟳ Spawn</button>
-              <button id="sprite-toggle-btn" class="settings-action-btn" title="Toggle Pokémon visibility">Hide</button>
+              <button id="sprite-swap-btn" class="accent-btn settings-action-btn" title="Spawn a new Pokémon">⟳ Spawn</button>
+              <button id="sprite-toggle-btn" class="accent-btn settings-action-btn" title="Toggle Pokémon visibility">Hide</button>
             </div>
           </div>
         </div>
@@ -93,20 +93,11 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
   .name-btn {
     font-size: 1rem;
     letter-spacing: 0.05em;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
     padding: 0.35rem 0.7rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    color: var(--accent);
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
 
   .name-btn:hover {
-    background-color: var(--accent);
-    color: var(--bg);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.25);
   }
 
@@ -154,20 +145,11 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
   .github-link {
     font-size: 0.8rem;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
     padding: 0.3rem 0.6rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    color: var(--accent);
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
 
   .github-link:hover {
-    background-color: var(--accent);
-    color: var(--bg);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.25);
   }
 
@@ -180,17 +162,11 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
     padding: 0.2rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, transform 0.2s;
   }
 
   .avatar-btn:hover {
     background-color: rgba(var(--accent-rgb), 0.15);
-    transform: translateY(-2px);
   }
 
   #avatar-sprite {
@@ -250,19 +226,12 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
   .settings-btn {
     font-size: 1.1rem;
-    background: none;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
     padding: 0.2rem 0.5rem;
-    color: var(--accent);
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, transform 0.2s;
   }
 
   .settings-btn:hover {
     background-color: var(--accent);
     color: var(--bg);
-    transform: translateY(-2px);
   }
 
   .settings-dropdown {
@@ -343,7 +312,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     border-radius: 6px;
     background: var(--bg-card);
     color: var(--text);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.8rem;
     outline: none;
   }
@@ -358,20 +326,11 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
   .settings-action-btn {
     padding: 0.3rem 0.65rem;
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    border-radius: 6px;
     background: var(--bg-card);
-    color: var(--accent);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.8rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-    white-space: nowrap;
   }
 
   .settings-action-btn:hover {
-    background: var(--accent);
-    color: var(--bg);
     border-color: var(--accent);
   }
 
@@ -387,7 +346,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     border-radius: 6px;
     background: transparent;
     color: var(--text-muted);
-    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.7rem;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
@@ -507,11 +465,9 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 </style>
 
 <script>
+  import { spriteUrl, loadImage, fetchAnimData } from '../utils/sprite-utils';
+
   const ELECTIVIRE_ID = 466;
-  const SPRITE_BASE = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite';
-  const padId = String(ELECTIVIRE_ID).padStart(4, '0');
-  const sheetUrl = `${SPRITE_BASE}/${padId}/Idle-Anim.png`;
-  const animDataUrl = `${SPRITE_BASE}/${padId}/AnimData.xml`;
 
   function initAvatar() {
     const canvas = document.getElementById('avatar-sprite') as HTMLCanvasElement | null;
@@ -521,7 +477,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Toggle status bubble
     const avatarBtn = document.getElementById('avatar-btn');
     if (avatarBtn) {
       avatarBtn.addEventListener('click', (e) => {
@@ -534,52 +489,27 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = async () => {
-      // Parse AnimData for frame dimensions
-      let fw = 0, fh = 0;
-      try {
-        const res = await fetch(animDataUrl);
-        const text = await res.text();
-        const doc = new DOMParser().parseFromString(text, 'text/xml');
-        const anims = doc.querySelectorAll('Anim');
-        for (const anim of anims) {
-          if (anim.querySelector('Name')?.textContent === 'Idle') {
-            fw = parseInt(anim.querySelector('FrameWidth')?.textContent ?? '0', 10);
-            fh = parseInt(anim.querySelector('FrameHeight')?.textContent ?? '0', 10);
-            break;
-          }
-        }
-      } catch { /* fallback below */ }
-
-      if (!fw || !fh) {
-        fh = Math.floor(img.naturalHeight / 8);
-        fw = fh;
-      }
+      const animDims = await fetchAnimData(ELECTIVIRE_ID);
+      let fw = animDims['Idle']?.w || 0;
+      let fh = animDims['Idle']?.h || 0;
+      if (!fw || !fh) { fh = Math.floor(img.naturalHeight / 8); fw = fh; }
 
       const frameCount = Math.max(1, Math.floor(img.naturalWidth / fw));
-      const row = 0; // face down
       let frame = 0;
-      const FRAME_INTERVAL = 150;
-
-      // Crop: cut off the bottom 15% (feet/empty space)
       const cropH = Math.floor(fh * 0.70);
       canvas.width = fw;
       canvas.height = cropH;
 
       function draw() {
         ctx!.clearRect(0, 0, fw, cropH);
-        ctx!.drawImage(img, frame * fw, row * fh, fw, cropH, 0, 0, fw, cropH);
+        ctx!.drawImage(img, frame * fw, 0, fw, cropH, 0, 0, fw, cropH);
       }
 
       draw();
-      setInterval(() => {
-        frame = (frame + 1) % frameCount;
-        draw();
-      }, FRAME_INTERVAL);
-
-      // Animated favicon
+      setInterval(() => { frame = (frame + 1) % frameCount; draw(); }, 150);
       setupFavicon(img, fw, fh, frameCount);
     };
-    img.src = sheetUrl;
+    img.src = spriteUrl(ELECTIVIRE_ID, 'Idle');
   }
 
   function setupFavicon(img: HTMLImageElement, fw: number, fh: number, frameCount: number) {

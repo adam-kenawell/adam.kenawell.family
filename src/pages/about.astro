@@ -9,7 +9,7 @@ const base = import.meta.env.BASE_URL;
 <Layout title="About Me — Adam Kenawell" description="Get to know Adam Kenawell — data engineer, disc golfer, and lifelong tinkerer.">
   <div class="page">
   <Header />
-  <main>
+  <main class="content-page">
     <section class="hero">
       <h1>About Me</h1>
       <p class="tagline">Family Man · Pokémon VGC Pro · Disc Golf Pro · Big Data Enthusiast · Claw Bro</p>
@@ -172,34 +172,34 @@ const base = import.meta.env.BASE_URL;
 
     <section>
       <h2>Favorites</h2>
-      <div class="favorites-grid">
-        <div class="fav-card">
-          <span class="fav-label">Disc</span>
-          <span class="fav-value">Clash Discs Vanilla 🥏</span>
+      <div class="info-grid">
+        <div class="info-card">
+          <span class="info-card-label">Disc</span>
+          <span class="info-card-value">Clash Discs Vanilla 🥏</span>
         </div>
-        <div class="fav-card">
-          <span class="fav-label">Pokemon</span>
-          <span class="fav-value">Electivire</span>
+        <div class="info-card">
+          <span class="info-card-label">Pokemon</span>
+          <span class="info-card-value">Electivire</span>
         </div>
-        <div class="fav-card">
-          <span class="fav-label">Large Language Model</span>
-          <span class="fav-value">Qwen3.6 📊</span>
+        <div class="info-card">
+          <span class="info-card-label">Large Language Model</span>
+          <span class="info-card-value">Qwen3.6 📊</span>
         </div>
-        <div class="fav-card">
-          <span class="fav-label">Coffee Order</span>
-          <span class="fav-value">Hot and Black ☕</span>
+        <div class="info-card">
+          <span class="info-card-label">Coffee Order</span>
+          <span class="info-card-value">Hot and Black ☕</span>
         </div>
-        <div class="fav-card">
-          <span class="fav-label">Season</span>
-          <span class="fav-value">Fall 🍂</span>
+        <div class="info-card">
+          <span class="info-card-label">Season</span>
+          <span class="info-card-value">Fall 🍂</span>
         </div>
-        <div class="fav-card">
-          <span class="fav-label">Activity</span>
-          <span class="fav-value">Meditating in Sunshine ☀️</span>
+        <div class="info-card">
+          <span class="info-card-label">Activity</span>
+          <span class="info-card-value">Meditating in Sunshine ☀️</span>
         </div>
-        <div class="fav-card fav-quote">
-          <span class="fav-label">Quote</span>
-          <span class="fav-value">"There's nothing more extraordinary than the ordinary man."</span>
+        <div class="info-card fav-quote">
+          <span class="info-card-label">Quote</span>
+          <span class="info-card-value">"There's nothing more extraordinary than the ordinary man."</span>
           <span class="fav-attr">— G.K. Chesterton</span>
         </div>
       </div>
@@ -210,61 +210,6 @@ const base = import.meta.env.BASE_URL;
 </Layout>
 
 <style>
-  .page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  main {
-    flex: 1;
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
-
-  .hero {
-    text-align: center;
-    margin-bottom: 2.5rem;
-  }
-
-  h1 {
-    font-size: 2rem;
-    color: var(--accent);
-    margin-bottom: 0.25rem;
-  }
-
-  .tagline {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  h2 {
-    font-size: 1.1rem;
-    color: var(--accent);
-    margin-bottom: 0.75rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
-  }
-
-  section {
-    margin-bottom: 1.5rem;
-  }
-
-  .hero + section h2 {
-    border-top: none;
-    padding-top: 0;
-  }
-
-  p {
-    color: var(--text);
-    margin-bottom: 0.75rem;
-  }
-
-  strong {
-    color: var(--accent);
-  }
-
   ul {
     list-style: none;
     padding: 0;
@@ -281,45 +226,15 @@ const base = import.meta.env.BASE_URL;
     color: var(--accent);
   }
 
-  .favorites-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .fav-card {
-    background: var(--bg-card);
-    border: 1px solid rgba(var(--accent-rgb), 0.3);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .fav-label {
-    font-size: 0.65rem;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.7;
-  }
-
-  .fav-value {
-    color: var(--text);
-    font-size: 0.85rem;
-  }
-
   .fav-quote {
     grid-column: 1 / -1;
     text-align: center;
     padding: 1rem 1.5rem;
   }
 
-  .fav-quote .fav-value {
+  .fav-quote .info-card-value {
     font-size: 0.95rem;
     font-style: italic;
-    color: var(--text);
   }
 
   .fav-attr {

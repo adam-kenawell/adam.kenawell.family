@@ -39,7 +39,10 @@ src/
     SpriteBackground.astro  # Animated Pokémon sprites background (canvas + JS only)
     ThemeControls.astro  # Theme JS only — applyTheme(), initThemeControls(), color swatches
   layouts/
-    Layout.astro         # Base layout (font, global CSS vars, ClientRouter, theme init)
+    Layout.astro         # Base layout (font, global CSS vars, .page class, ClientRouter, theme init)
+  utils/
+    sprite-utils.ts      # Shared: spriteUrl, loadImage, fetchAnimData, calcFrameInfo, FrameInfo
+    theme-utils.ts       # Shared: applyTheme, applyStoredTheme (theme CSS var mappings)
   content/
     blog/                # Markdown blog posts (content collection)
   content.config.ts      # glob() loader + Zod schema (includes category field)
@@ -129,5 +132,7 @@ Use this to know where to look for specific features:
 | Landing page, taglines | `src/pages/index.astro` |
 | Resume content | `src/pages/resume.astro`, `public/Adam_Kenawell_Resume.html` (PDF) |
 | Global styles, fonts, meta tags | `src/layouts/Layout.astro` |
+| Shared sprite utilities | `src/utils/sprite-utils.ts` (used by SpriteBackground, PokePaste, Header avatar) |
+| Shared theme utilities | `src/utils/theme-utils.ts` (used by ThemeControls, importable anywhere) |
 | Agent decisions log | `agent-context.md` |
 | Agent rules | `.github/copilot-instructions.md` (this file) |

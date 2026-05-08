@@ -7,7 +7,7 @@ import Footer from '../../components/Footer.astro';
 <Layout title="Local LLM Stack via Openclaw — Adam Kenawell">
   <div class="page">
   <Header />
-  <main>
+  <main class="content-page">
     <section class="hero">
       <h1>Local LLM Stack via Openclaw</h1>
       <p class="tagline">Running large language models on consumer hardware, no cloud required</p>
@@ -30,30 +30,30 @@ import Footer from '../../components/Footer.astro';
 
     <section>
       <h2>My Hardware</h2>
-      <div class="spec-grid">
-        <div class="spec-card">
-          <span class="spec-label">Machine</span>
-          <span class="spec-value">Samsung Galaxy Book 4 Ultra</span>
+      <div class="info-grid">
+        <div class="info-card">
+          <span class="info-card-label">Machine</span>
+          <span class="info-card-value">Samsung Galaxy Book 4 Ultra</span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">GPU</span>
-          <span class="spec-value">NVIDIA RTX 4070 Laptop (8GB VRAM)</span>
+        <div class="info-card">
+          <span class="info-card-label">GPU</span>
+          <span class="info-card-value">NVIDIA RTX 4070 Laptop (8GB VRAM)</span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">RAM</span>
-          <span class="spec-value">32GB DDR5</span>
+        <div class="info-card">
+          <span class="info-card-label">RAM</span>
+          <span class="info-card-value">32GB DDR5</span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">CPU</span>
-          <span class="spec-value">Intel Core Ultra 9 185H</span>
+        <div class="info-card">
+          <span class="info-card-label">CPU</span>
+          <span class="info-card-value">Intel Core Ultra 9 185H</span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">Storage</span>
-          <span class="spec-value">1TB NVMe SSD</span>
+        <div class="info-card">
+          <span class="info-card-label">Storage</span>
+          <span class="info-card-value">1TB NVMe SSD</span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">OS</span>
-          <span class="spec-value">Windows 11</span>
+        <div class="info-card">
+          <span class="info-card-label">OS</span>
+          <span class="info-card-value">Windows 11</span>
         </div>
       </div>
     </section>
@@ -151,65 +151,14 @@ import Footer from '../../components/Footer.astro';
 </Layout>
 
 <style>
-  .page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  main {
-    flex: 1;
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
-
-  .hero {
-    text-align: center;
-    margin-bottom: 2.5rem;
-  }
-
-  h1 {
+  .hero h1 {
     font-size: 1.8rem;
-    color: var(--accent);
-    margin-bottom: 0.25rem;
-  }
-
-  .tagline {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  h2 {
-    font-size: 1.1rem;
-    color: var(--accent);
-    margin-bottom: 0.75rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
-  }
-
-  .hero + section h2 {
-    border-top: none;
-    padding-top: 0;
   }
 
   h3 {
     font-size: 0.9rem;
     color: var(--accent);
     margin: 1rem 0 0.5rem;
-  }
-
-  section {
-    margin-bottom: 1.5rem;
-  }
-
-  p {
-    color: var(--text);
-    margin-bottom: 0.75rem;
-  }
-
-  strong {
-    color: var(--accent);
   }
 
   ul, ol {
@@ -240,34 +189,5 @@ import Footer from '../../components/Footer.astro';
     content: counter(steps) '. ';
     color: var(--accent);
     font-weight: bold;
-  }
-
-  .spec-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .spec-card {
-    background: var(--bg-card);
-    border: 1px solid rgba(var(--accent-rgb), 0.3);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .spec-label {
-    font-size: 0.65rem;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.7;
-  }
-
-  .spec-value {
-    color: var(--text);
-    font-size: 0.85rem;
   }
 </style>
