@@ -1,0 +1,264 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="Local LLM Stack via Openclaw — Adam Kenawell">
+  <Header />
+  <main>
+    <section class="hero">
+      <h1>Local LLM Stack via Openclaw</h1>
+      <p class="tagline">Running large language models on consumer hardware, no cloud required</p>
+    </section>
+
+    <section>
+      <h2>The Big Idea</h2>
+      <p>
+        I wanted to see how far I could push locally hosted AI on a laptop. No API keys,
+        no monthly bills, no sending data to someone else's server. Just me, my machine,
+        and an open-source stack. The result is a setup that can run coding assistants,
+        chat models, and even agentic workflows entirely offline.
+      </p>
+      <p>
+        I actually built the bare bones of this very website using this stack. It works
+        surprisingly well for a consumer laptop, and I think setups like this will become
+        the norm for power users and developers in the near future.
+      </p>
+    </section>
+
+    <section>
+      <h2>My Hardware</h2>
+      <div class="spec-grid">
+        <div class="spec-card">
+          <span class="spec-label">Machine</span>
+          <span class="spec-value">Samsung Galaxy Book 4 Ultra</span>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">GPU</span>
+          <span class="spec-value">NVIDIA RTX 4070 Laptop (8GB VRAM)</span>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">RAM</span>
+          <span class="spec-value">32GB DDR5</span>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">CPU</span>
+          <span class="spec-value">Intel Core Ultra 9 185H</span>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">Storage</span>
+          <span class="spec-value">1TB NVMe SSD</span>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">OS</span>
+          <span class="spec-value">Windows 11</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>The Software Stack</h2>
+      <p>
+        <strong>Openclaw</strong> is the backbone of my setup. It's an open-source tool that makes
+        it dead simple to download, manage, and run LLMs locally. Think of it as a package manager
+        for AI models. You pick a model, it handles the quantization format, VRAM allocation, and
+        inference engine under the hood.
+      </p>
+      <p>
+        Here's what my stack looks like:
+      </p>
+      <ul>
+        <li><strong>Openclaw</strong> for model management and inference</li>
+        <li><strong>GGUF quantized models</strong> (typically Q4_K_M or Q5_K_M) to fit in 8GB VRAM</li>
+        <li><strong>Models I run frequently:</strong> Qwen 2.5 Coder 14B, DeepSeek Coder V2 Lite, Llama 3.1 8B</li>
+        <li><strong>VS Code</strong> with local model integration for code completion and chat</li>
+        <li><strong>CUDA 12.x</strong> drivers for GPU acceleration</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What I Use It For</h2>
+      <p>
+        <strong>Code generation</strong> is the primary use case. Having a coding assistant that
+        runs entirely on my machine means I can work on personal projects without worrying about
+        API rate limits or costs. It's also great for experimenting with prompts and fine-tuning
+        workflows without burning through cloud credits.
+      </p>
+      <p>
+        <strong>Agentic workflows</strong> are where things get really interesting. I've been
+        experimenting with multi-step task execution where the model plans, writes code, tests it,
+        and iterates, all running locally. It's slower than cloud-hosted models, but the privacy and
+        cost savings are worth it for personal use.
+      </p>
+      <p>
+        <strong>Learning and experimentation</strong> is the other big one. Running models locally
+        lets me peek under the hood, try different quantization levels, compare model architectures,
+        and really understand how these systems work at a lower level than you get through an API.
+      </p>
+    </section>
+
+    <section>
+      <h2>How You Can Do This Too</h2>
+      <p>
+        You don't need a $3,000 laptop to get started. Here's the minimum I'd recommend:
+      </p>
+      <ul>
+        <li><strong>GPU:</strong> Any NVIDIA GPU with 6GB+ VRAM (RTX 3060 or better). AMD GPUs work too but CUDA support is smoother.</li>
+        <li><strong>RAM:</strong> 16GB minimum, 32GB preferred. Models that don't fit in VRAM spill into system RAM.</li>
+        <li><strong>Storage:</strong> At least 50GB free. Models range from 4GB to 30GB+ depending on size and quantization.</li>
+      </ul>
+
+      <h3>Step-by-step</h3>
+      <ol>
+        <li>Install <strong>Openclaw</strong> from their official site. It handles model downloads and runtime setup.</li>
+        <li>Install the latest <strong>NVIDIA drivers</strong> and <strong>CUDA toolkit</strong> for your GPU.</li>
+        <li>Browse available models and pull one that fits your VRAM. Start with a 7B or 8B parameter model in Q4_K_M quantization.</li>
+        <li>Run the model locally. Openclaw gives you a local API endpoint, so you can connect it to VS Code, a web UI, or your own scripts.</li>
+        <li>Experiment! Try different models, adjust context windows, and find what works for your use case.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Tips and Gotchas</h2>
+      <ul>
+        <li><strong>VRAM is king.</strong> The more you have, the larger the model you can run. 8GB gets you solid 14B models at Q4 quantization.</li>
+        <li><strong>Quantization matters.</strong> Q4_K_M is the sweet spot for quality vs. size. Q5 and Q6 are better quality but need more VRAM.</li>
+        <li><strong>Close other GPU-hungry apps.</strong> Games, video editors, and even some browsers eat into your available VRAM.</li>
+        <li><strong>Expect slower inference than cloud.</strong> A local RTX 4070 won't match an A100 cluster, but for personal use it's more than fast enough.</li>
+        <li><strong>Keep models on an SSD.</strong> Loading a 10GB model from a spinning disk is painful. NVMe makes a real difference.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What's Next</h2>
+      <p>
+        I'm excited about where local AI is heading. Models are getting smaller and more capable
+        every month. I think within a year or two, running a GPT-4 class model on a mid-range
+        laptop will be completely normal. The tools are already there. The hardware just needs to
+        catch up a little more.
+      </p>
+      <p>
+        If you're at all interested in this space, I'd encourage you to just try it. Download
+        Openclaw, pull a model, and start playing. You'll be surprised how capable these local
+        models already are.
+      </p>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    color: #f5d000;
+    margin-bottom: 0.25rem;
+  }
+
+  .tagline {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  h2 {
+    font-size: 1.1rem;
+    color: #f5d000;
+    margin-bottom: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(245, 208, 0, 0.2);
+  }
+
+  .hero + section h2 {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  h3 {
+    font-size: 0.9rem;
+    color: #f5d000;
+    margin: 1rem 0 0.5rem;
+  }
+
+  section {
+    margin-bottom: 1.5rem;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 0.75rem;
+  }
+
+  strong {
+    color: #f5d000;
+  }
+
+  ul, ol {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  li {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.35rem 0;
+  }
+
+  ul li::before {
+    content: '\25B8 ';
+    color: #f5d000;
+  }
+
+  ol {
+    counter-reset: steps;
+  }
+
+  ol li {
+    counter-increment: steps;
+  }
+
+  ol li::before {
+    content: counter(steps) '. ';
+    color: #f5d000;
+    font-weight: bold;
+  }
+
+  .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .spec-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(245, 208, 0, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .spec-label {
+    font-size: 0.65rem;
+    color: #f5d000;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+  }
+
+  .spec-value {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+  }
+</style>

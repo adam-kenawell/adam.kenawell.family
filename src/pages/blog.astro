@@ -9,27 +9,113 @@ const posts = (await getCollection('blog')).sort(
 );
 const base = import.meta.env.BASE_URL;
 
-// Set to true when you have real blog posts to show
-const showPosts = false;
+const showPosts = true;
+
+const categories = [
+  { id: 'featured', label: 'Featured' },
+  { id: 'technical', label: 'Technical' },
+  { id: 'lifestyle', label: 'Lifestyle' },
+  { id: 'monthly-report', label: 'Monthly Report' },
+];
+
+const emptyMessages = [
+  "looks like someone's been slacking on their blog posts!",
+  "the blog gremlins ate everything. check back later.",
+  "this section is emptier than my coffee mug on a Monday.",
+  "I promise I'll write something here soon. probably.",
+  "currently marinating some thoughts. stay tuned.",
+  "this page is under construction. mentally.",
+  "the words are loading... very slowly.",
+  "content pending. blame the backlog.",
+  "I had a great idea for a post here. then I forgot it.",
+  "placeholder energy. real content coming soon.",
+  "imagine a really insightful blog post right here.",
+  "this space intentionally left blank. for now.",
+  "my keyboard and I are having creative differences.",
+  "the data pipeline for blog posts is still being built.",
+  "insert witty blog post here.",
+  "I was going to write something, but then disc golf happened.",
+  "the blog post is in another castle.",
+  "currently buffering...",
+  "ask me again after my next cup of coffee.",
+  "this section is resting. it had a long day.",
+  "coming soon to a browser near you.",
+  "my thoughts are in staging, not production yet.",
+  "still in the drafting phase. of the drafting phase.",
+  "the creative juices are fermenting.",
+  "new posts are like buses. you wait forever, then three come at once.",
+  "this void is temporary. the ambition is permanent.",
+  "my inner writer is on PTO.",
+  "I'll get to this right after I optimize one more query.",
+  "the cursor is blinking. that counts as progress, right?",
+  "future me is going to crush this section.",
+  "nothing here yet, but the potential is immense.",
+  "currently procrastinating productively.",
+  "posts are queued in my brain's Airflow DAG.",
+  "the pen is mightier than the sword, but lazier than the couch.",
+  "thinking really hard about what to write. can you tell?",
+  "this section is powered by good intentions.",
+  "writer's block is just your brain doing garbage collection.",
+  "hold tight. genius takes time.",
+  "the blog fairy hasn't visited yet.",
+  "I've been meaning to write here. for weeks.",
+  "quality over quantity. and right now, we have neither.",
+  "in my defense, side projects don't write themselves. oh wait.",
+  "the real blog was the friends we made along the way.",
+  "404: blog posts not found. but the vibes are immaculate.",
+  "loading content... estimated time: eventually.",
+  "I'm not lazy, I'm on an energy-saving schedule.",
+  "still compiling thoughts. no errors so far.",
+  "the blog is asleep. try clicking a Pok\u00e9mon instead.",
+  "new content drops when Mercury is in retrograde.",
+  "this page has big 'coming soon' energy.",
+];
+
+const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.length)];
 ---
 
 <Layout title="Blog — Adam Kenawell">
   <div class="page">
     <Header />
 
+    <div class="filter-tabs">
+      {categories.map((cat, i) => (
+        <button
+          class:list={['filter-btn', { active: i === 0 }]}
+          data-category={cat.id}
+        >
+          {cat.label}
+        </button>
+      ))}
+    </div>
+
     <div class="post-list">
       {showPosts && posts.length > 0 ? (
-        posts.map((post) => (
-          <a class="post-card" href={`${base}blog/${post.id}`}>
-            <time>{post.data.date.toISOString().slice(0, 10)}</time>
-            <h2>{post.data.title}</h2>
-            <p>{post.data.excerpt}</p>
-          </a>
-        ))
+        categories.map((cat) => {
+          const filtered = posts.filter((p) => p.data.category === cat.id);
+          return (
+            <div class:list={['category-group', { hidden: cat.id !== 'featured' }]} data-group={cat.id}>
+              {filtered.length > 0 ? (
+                filtered.map((post) => (
+                  <a class="post-card" href={`${base}blog/${post.id}`}>
+                    <time>{post.data.date.toISOString().slice(0, 10)}</time>
+                    <h2>{post.data.title}</h2>
+                    <p>{post.data.excerpt}</p>
+                  </a>
+                ))
+              ) : (
+                <div class="empty-state">
+                  <p>nothing to see here!</p>
+                  <p class="sub">{emptyMessage}</p>
+                </div>
+              )}
+            </div>
+          );
+        })
       ) : (
         <div class="empty-state">
           <p>nothing to see here!</p>
-          <p class="sub">looks like someone's been slacking on their blog posts!</p>
+          <p class="sub">{emptyMessage}</p>
         </div>
       )}
     </div>
@@ -38,6 +124,28 @@ const showPosts = false;
   </div>
 </Layout>
 
+<script>
+  const buttons = document.querySelectorAll('.filter-btn');
+  const groups = document.querySelectorAll('.category-group');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const cat = (btn as HTMLElement).dataset.category;
+
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      groups.forEach((g) => {
+        if ((g as HTMLElement).dataset.group === cat) {
+          g.classList.remove('hidden');
+        } else {
+          g.classList.add('hidden');
+        }
+      });
+    });
+  });
+</script>
+
 <style>
   .page {
     display: flex;
@@ -45,12 +153,43 @@ const showPosts = false;
     min-height: 100vh;
   }
 
+  .filter-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid rgba(245, 208, 0, 0.4);
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .filter-btn:hover {
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(245, 208, 0, 0.6);
+  }
+
+  .filter-btn.active {
+    background: #f5d000;
+    color: #1a1a1a;
+    border-color: #f5d000;
+  }
+
   .post-list {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    padding: 2.5rem 2rem;
+    padding: 1.5rem 2rem 2.5rem;
     max-width: 720px;
     width: 100%;
     margin: 0 auto;
@@ -70,6 +209,16 @@ const showPosts = false;
   .post-list::-webkit-scrollbar-thumb {
     background-color: rgba(245, 208, 0, 0.3);
     border-radius: 3px;
+  }
+
+  .category-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .category-group.hidden {
+    display: none;
   }
 
   .post-card {
@@ -92,7 +241,7 @@ const showPosts = false;
 
   .post-card time {
     font-size: 0.75rem;
-    opacity: 0.5;
+    color: rgba(255, 255, 255, 0.5);
   }
 
   .post-card h2 {
@@ -102,8 +251,7 @@ const showPosts = false;
 
   .post-card p {
     font-size: 0.85rem;
-    opacity: 0.7;
-    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.7);
   }
 
   @media (max-width: 600px) {
@@ -118,21 +266,30 @@ const showPosts = false;
     .post-card h2 {
       font-size: 0.95rem;
     }
+
+    .filter-tabs {
+      gap: 0.35rem;
+    }
+
+    .filter-btn {
+      font-size: 0.65rem;
+      padding: 0.3rem 0.5rem;
+    }
   }
 
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    opacity: 0.7;
   }
 
   .empty-state p {
     font-size: 1.2rem;
+    color: #f5d000;
   }
 
   .empty-state .sub {
     font-size: 0.85rem;
     margin-top: 0.5rem;
-    opacity: 0.6;
+    color: rgba(255, 255, 255, 0.6);
   }
 </style>
