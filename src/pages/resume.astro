@@ -4,16 +4,33 @@ import Header from '../components/Header.astro';
 
 const experience = [
   {
-    role: 'Data Engineer',
+    role: 'Agentic AI Data Engineer',
     company: 'Ford Motor Company',
-    period: 'May 2022 — Present',
+    period: 'Sep 2023 — Present',
     bullets: [
-      'Design and maintain scalable data pipelines using GCP BigQuery, Vertex AI, dbt Core, and Astronomer Airflow for internal analytics products',
-      'Lead onboarding of new data sources into DBC (Digital Birth Certificate), an agentic AI product that resolves vehicle manufacturing root-cause issues',
-      'Contributed to agentic AI solution that saved Ford an estimated $68M+ in its first two months of operation (Feb–Mar 2026)',
-      'Personally drove $5M+ in cost savings through AI-powered automation and analytics in March 2026',
-      'Collaborate cross-functionally with engineering, product, and business teams to translate complex requirements into data-driven solutions',
-      'Apply prompt engineering techniques with Anthropic Claude API and Vertex AI to optimize AI agent performance',
+      'Designed and maintained scalable data pipelines using GCP BigQuery, Vertex AI, dbt Core, and Astronomer Airflow',
+      'Led the onboarding of new data sources into the Digital Birth Certificate (DBC) product, enhancing vehicle manufacturing insights',
+      'Contributed to an AI solution that saved Ford over $68M in its initial two months of operation',
+    ],
+  },
+  {
+    role: 'Data Engineering Intern',
+    company: 'Ford Motor Company',
+    period: 'May 2021 — Aug 2021',
+    bullets: [
+      'Developed a notification manager for data pipelines within the quality.ai team at Ford Motor Company',
+      'Created and maintained a data pipeline for root cause analysis in vehicle manufacturing',
+      'Collaborated with cross-functional teams to enhance data processing efficiency and reliability',
+    ],
+  },
+  {
+    role: 'Bioinformatics Intern',
+    company: 'Hillman Cancer Center',
+    period: 'Jun 2019 — Apr 2020',
+    bullets: [
+      'Conducted cancer research at a state-of-the-art oncology research facility, contributing to early-stage scientific exploration',
+      'Coded and debugged molecular visualization software designed to simulate complex molecule interactions for research analysis',
+      'Selected as 1 of only 2 students (out of ~250) from one of Pennsylvania\'s highest-performing high schools to participate in this competitive research opportunity',
     ],
   },
 ];
@@ -24,15 +41,17 @@ const education = [
 ];
 
 const achievements = [
-  '"Moving the Business Forward" Award — Ford Motor Company (2026)',
-  'Best Overall — Penn State Data Science Hackathon (2023)',
-  'Computer Science Departmental Award — South Fayette School District (2019)',
+  { name: '"Moving the Business Forward" Award — Ford Motor Company', period: 'Mar 2026' },
+  { name: 'Best Overall — Penn State Data Science Hackathon', period: 'Apr 2023' },
+  { name: 'Intern City of Tomorrow Challenge: Future Mobility — High Achiever', period: 'Aug 2022' },
+  { name: 'Computer Science Departmental Award — South Fayette School District', period: 'Jun 2019' },
+  { name: 'Eagle Scout Award — Boy Scouts of America', period: 'May 2018' },
 ];
 
 const skillGroups = [
-  { label: 'Cloud & Data', items: ['GCP', 'BigQuery', 'Dataflow', 'Vertex AI', 'dbt Core', 'Astronomer Airflow', 'Looker Studio'] },
-  { label: 'Languages & AI', items: ['Python', 'SQL', 'R', 'Prompt Engineering', 'Anthropic Claude API', 'Agentic AI', 'Generative AI', 'NLP'] },
-  { label: 'Analytics & Tools', items: ['Microsoft Power BI', 'Statistics', 'Mathematics', 'Git', 'Jupyter'] },
+  { label: 'Cloud & Data', items: ['GCP', 'BigQuery', 'Vertex AI', 'dbt Core', 'Astronomer Airflow'] },
+  { label: 'Languages & AI', items: ['Python', 'SQL', 'Prompt Engineering', 'Agentic AI', 'Anthropic Claude API'] },
+  { label: 'Analytics & Tools', items: ['Statistics', 'Data Pipeline Design', 'Root Cause Analysis', 'Git', 'Bioinformatics'] },
 ];
 ---
 
@@ -41,9 +60,10 @@ const skillGroups = [
     <Header />
 
     <main>
-      <div class="intro">
-        <p>Data Engineer with hands-on experience building agentic AI solutions, scalable data pipelines, and predictive models. Passionate about applying AI innovation to drive measurable impact at scale.</p>
-      </div>
+      <section>
+        <h2>Objective</h2>
+        <p class="objective">Data Engineer with hands-on experience building agentic AI solutions, scalable data pipelines, and predictive models. Passionate about applying AI innovation to drive measurable impact at scale.</p>
+      </section>
 
       <section>
         <h2>Experience</h2>
@@ -79,7 +99,12 @@ const skillGroups = [
         <h2>Achievements</h2>
         <div class="card">
           <ul class="achievements-list">
-            {achievements.map((a) => <li>{a}</li>)}
+            {achievements.map((a) => (
+              <li>
+                <span><span class="achievement-title">{a.name.split(' — ')[0]}</span> — {a.name.split(' — ')[1]}</span>
+                <span class="period">{a.period}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </section>
@@ -116,19 +141,17 @@ const skillGroups = [
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: 2rem;
     padding: 2.5rem 2rem;
     max-width: 720px;
     width: 100%;
     margin: 0 auto;
   }
 
-  .intro p {
+  .objective {
     font-size: 0.9rem;
-    line-height: 1.6;
-    opacity: 0.8;
-    text-align: center;
-    padding: 0 1rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.85);
   }
 
   section {
@@ -141,14 +164,21 @@ const skillGroups = [
     font-size: 1.1rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    padding-top: 1.5rem;
     padding-bottom: 0.6rem;
-    border-bottom: 2px solid rgba(245, 208, 0, 0.4);
+    border-top: 1px solid rgba(245, 208, 0, 0.2);
+    border-bottom: none;
     margin-bottom: 0.25rem;
+  }
+
+  section:first-child h2 {
+    border-top: none;
+    padding-top: 0;
   }
 
   h3 {
     font-size: 0.8rem;
-    opacity: 0.6;
+    color: rgba(255, 255, 255, 0.6);
     margin-bottom: 0.5rem;
     letter-spacing: 0.05em;
   }
@@ -171,19 +201,19 @@ const skillGroups = [
 
   .period {
     font-size: 0.75rem;
-    opacity: 0.5;
+    color: rgba(255, 255, 255, 0.5);
   }
 
   .company {
     font-size: 0.85rem;
-    opacity: 0.7;
+    color: rgba(255, 255, 255, 0.7);
     display: block;
     margin: 0.25rem 0 0.75rem;
   }
 
   .detail {
     font-size: 0.8rem;
-    opacity: 0.5;
+    color: rgba(255, 255, 255, 0.5);
     display: block;
     margin-top: 0.25rem;
   }
@@ -199,7 +229,7 @@ const skillGroups = [
 
   .card li {
     font-size: 0.85rem;
-    opacity: 0.7;
+    color: rgba(255, 255, 255, 0.85);
     line-height: 1.5;
     padding-left: 1rem;
     position: relative;
@@ -215,10 +245,18 @@ const skillGroups = [
 
   .achievements-list li {
     padding-left: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
   }
 
   .achievements-list li::before {
     content: '★';
+  }
+
+  .achievement-title {
+    color: #f5d000;
   }
 
   .skill-group {
@@ -237,6 +275,7 @@ const skillGroups = [
     border-radius: 6px;
     background-color: rgba(26, 26, 26, 0.9);
     font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
