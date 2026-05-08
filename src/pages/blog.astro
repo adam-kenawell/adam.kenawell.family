@@ -74,11 +74,18 @@ const emptyMessages = [
 const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.length)];
 ---
 
-<Layout title="Blog — Adam Kenawell">
+<Layout title="Blog — Adam Kenawell" description="Thoughts on data engineering, side projects, and life in general.">
   <div class="page">
     <Header />
 
     <div class="filter-tabs">
+      <a class="rss-link" href={`${base}rss.xml`} target="_blank" title="Subscribe via RSS">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="6.18" cy="17.82" r="2.18"/>
+          <path d="M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56zm0 5.66v2.83c3.9 0 7.07 3.17 7.07 7.07h2.83c0-5.47-4.43-9.9-9.9-9.9z"/>
+        </svg>
+        RSS
+      </a>
       {categories.map((cat, i) => (
         <button
           class:list={['filter-btn', { active: i === 0 }]}
@@ -87,13 +94,6 @@ const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.leng
           {cat.label}
         </button>
       ))}
-      <a class="rss-link" href={`${base}rss.xml`} target="_blank" title="Subscribe via RSS">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="6.18" cy="17.82" r="2.18"/>
-          <path d="M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56zm0 5.66v2.83c3.9 0 7.07 3.17 7.07 7.07h2.83c0-5.47-4.43-9.9-9.9-9.9z"/>
-        </svg>
-        RSS
-      </a>
     </div>
 
     <div class="post-list">
@@ -166,7 +166,14 @@ const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.leng
     align-items: center;
     gap: 0.5rem;
     padding: 1.5rem 1rem 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .rss-link {
@@ -181,7 +188,8 @@ const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.leng
     font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.75rem;
     text-decoration: none;
-    margin-left: 0.5rem;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: background-color 0.2s, border-color 0.2s;
   }
 
@@ -199,6 +207,8 @@ const emptyMessage = emptyMessages[Math.floor(Math.random() * emptyMessages.leng
     font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
     font-size: 0.75rem;
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
   }
 

@@ -125,3 +125,51 @@ Running log of notable decisions, constraints, and context across sessions.
 - **Added `.page` wrapper to `about.astro` and `local-llm-stack.astro`:** Both were missing the flex layout div (`min-height: 100vh`, `flex-direction: column`) that other pages use, causing the footer to not stick to the bottom on short viewports.
 - **Fixed markdown lint in `from-pixel-one.md`:** Two lists missing blank lines above them (MD032).
 - **Removed duplicate H1 in `from-pixel-one.md`:** Title was rendered both by the `[slug].astro` template (yellow) and as an `# H1` in the markdown itself. Removed the markdown H1.
+
+---
+
+## Session 3 — 2026-05-08 — RSS Feed
+
+- **Added `@astrojs/rss`** dependency and created `src/pages/rss.xml.ts` endpoint.
+- RSS feed serves all blog posts sorted by date at `/rss.xml`.
+- Added a visible "RSS" pill button (yellow accent, matching filter tab style) to the blog page filter bar.
+- Commit `f9c10e2`: 5 files changed, 187+.
+
+---
+
+## Session 4 — 2026-05-08 — Mobile Polish, Avatar, Favicon, Open Graph
+
+### Mobile Header Fix
+
+- Removed `flex-wrap` from header and nav; nav now uses `overflow-x: auto` with hidden scrollbar so buttons stay on one line and scroll if needed.
+- `.left-group` set to `flex-shrink: 0`; all nav/link elements get `white-space: nowrap`.
+
+### Blog Filter Bar Fix
+
+- Moved RSS button to the left of filter tabs in markup.
+- Changed `.filter-tabs` from `flex-wrap: wrap` to `nowrap` with `overflow-x: auto` and hidden scrollbar.
+- All filter buttons and RSS link get `flex-shrink: 0` and `white-space: nowrap`.
+
+### Electivire Avatar (Header)
+
+- Added animated Electivire (dex #466) PMD idle sprite as a canvas element in the header, left of the "Adam Kenawell" button.
+- Loads spritesheet and AnimData.xml from PMDCollab, same source as background sprites.
+- Bottom 15% of sprite frame cropped off for a cleaner look.
+- Click toggles a speech bubble with current status text ("fixing data pipelines and pretending to be a web developer").
+- Reinitializes on `astro:after-swap` for view transition support.
+
+### Animated Favicon
+
+- Electivire idle animation rendered to a 32x32 canvas as the favicon.
+- Top 35% of frame cropped and center-cropped to fill the square (headshot effect).
+- Crop offset nudged 1px left for centering. Updates dynamically via `setInterval`.
+
+### RSS Auto-Discovery
+
+- Added `<link rel="alternate" type="application/rss+xml">` tag in `Layout.astro` `<head>` for automatic RSS reader detection.
+
+### Open Graph Meta Tags
+
+- Added `description` prop to `Layout.astro` with sensible default.
+- Added `og:type`, `og:title`, `og:description`, `og:url` and standard `meta description` tags.
+- Every page now passes a custom description. Blog posts use the post `excerpt` field.

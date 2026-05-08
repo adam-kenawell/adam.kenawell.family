@@ -10,6 +10,13 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 <header>
   <div class="left-group">
+    <div class="avatar-wrapper">
+      <canvas id="avatar-sprite" width="40" height="40" title="Click me!"></canvas>
+      <div id="status-bubble" class="status-bubble hidden">
+        <div class="status-arrow"></div>
+        <p class="status-text">fixing data pipelines and pretending to be a web developer</p>
+      </div>
+    </div>
     <a class="name-btn" href={base}>Adam Kenawell</a>
     <a class:list={['nav-link', 'about-link', { active: currentPath === '/about' }]} href={`${base}about`}>About Me</a>
   </div>
@@ -39,7 +46,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     backdrop-filter: blur(8px);
     border-bottom: 1px solid rgba(245, 208, 0, 0.4);
     box-shadow: 0 2px 12px rgba(245, 208, 0, 0.08);
-    flex-wrap: wrap;
     gap: 0.5rem;
   }
 
@@ -47,6 +53,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-shrink: 0;
   }
 
   .name-btn {
@@ -73,7 +80,15 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    flex-wrap: wrap;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  nav::-webkit-scrollbar {
+    display: none;
   }
 
   .nav-link,
@@ -81,6 +96,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
+    white-space: nowrap;
     transition: opacity 0.2s;
   }
 
@@ -115,6 +131,62 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     box-shadow: 0 4px 12px rgba(245, 208, 0, 0.25);
   }
 
+  .avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  #avatar-sprite {
+    display: block;
+    image-rendering: pixelated;
+    height: 40px;
+    width: auto;
+  }
+
+  .status-bubble {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 200px;
+    max-width: 260px;
+    padding: 0.6rem 0.8rem;
+    background: rgba(26, 26, 26, 0.95);
+    border: 1px solid rgba(245, 208, 0, 0.5);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    animation: bubble-in 0.15s ease-out;
+  }
+
+  .status-bubble.hidden {
+    display: none;
+  }
+
+  .status-arrow {
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    width: 10px;
+    height: 10px;
+    background: rgba(26, 26, 26, 0.95);
+    border-left: 1px solid rgba(245, 208, 0, 0.5);
+    border-top: 1px solid rgba(245, 208, 0, 0.5);
+    transform: rotate(45deg);
+  }
+
+  .status-text {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @media (max-width: 600px) {
     header {
       padding: 0.5rem 0.75rem;
@@ -124,6 +196,15 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
     .left-group {
       gap: 0.4rem;
+    }
+
+    #avatar-sprite {
+      height: 32px;
+    }
+
+    .status-bubble {
+      min-width: 160px;
+      max-width: 200px;
     }
 
     .name-btn {
@@ -149,3 +230,120 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     }
   }
 </style>
+
+<script>
+  const ELECTIVIRE_ID = 466;
+  const SPRITE_BASE = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite';
+  const padId = String(ELECTIVIRE_ID).padStart(4, '0');
+  const sheetUrl = `${SPRITE_BASE}/${padId}/Idle-Anim.png`;
+  const animDataUrl = `${SPRITE_BASE}/${padId}/AnimData.xml`;
+
+  function initAvatar() {
+    const canvas = document.getElementById('avatar-sprite') as HTMLCanvasElement | null;
+    const bubble = document.getElementById('status-bubble');
+    if (!canvas || !bubble) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Toggle status bubble
+    canvas.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bubble.classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => bubble.classList.add('hidden'));
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = async () => {
+      // Parse AnimData for frame dimensions
+      let fw = 0, fh = 0;
+      try {
+        const res = await fetch(animDataUrl);
+        const text = await res.text();
+        const doc = new DOMParser().parseFromString(text, 'text/xml');
+        const anims = doc.querySelectorAll('Anim');
+        for (const anim of anims) {
+          if (anim.querySelector('Name')?.textContent === 'Idle') {
+            fw = parseInt(anim.querySelector('FrameWidth')?.textContent ?? '0', 10);
+            fh = parseInt(anim.querySelector('FrameHeight')?.textContent ?? '0', 10);
+            break;
+          }
+        }
+      } catch { /* fallback below */ }
+
+      if (!fw || !fh) {
+        fh = Math.floor(img.naturalHeight / 8);
+        fw = fh;
+      }
+
+      const frameCount = Math.max(1, Math.floor(img.naturalWidth / fw));
+      const row = 0; // face down
+      let frame = 0;
+      const FRAME_INTERVAL = 150;
+
+      // Crop: cut off the bottom 15% (feet/empty space)
+      const cropH = Math.floor(fh * 0.70);
+      canvas.width = fw;
+      canvas.height = cropH;
+
+      function draw() {
+        ctx!.clearRect(0, 0, fw, cropH);
+        ctx!.drawImage(img, frame * fw, row * fh, fw, cropH, 0, 0, fw, cropH);
+      }
+
+      draw();
+      setInterval(() => {
+        frame = (frame + 1) % frameCount;
+        draw();
+      }, FRAME_INTERVAL);
+
+      // Animated favicon
+      setupFavicon(img, fw, fh, frameCount);
+    };
+    img.src = sheetUrl;
+  }
+
+  function setupFavicon(img: HTMLImageElement, fw: number, fh: number, frameCount: number) {
+    const size = 32;
+    const srcH = Math.floor(fh * 0.60);
+    // Crop-to-fill: scale up to cover the square, then center-crop
+    const scale = Math.max(size / fw, size / srcH);
+    const sw = Math.round(size / scale); // source width to sample
+    const sh = Math.round(size / scale); // source height to sample
+    const sox = Math.round((fw - sw) / 2) - 1; // nudge left
+    const soy = Math.round((srcH - sh) / 2); // center vertically
+
+    const favCanvas = document.createElement('canvas');
+    favCanvas.width = size;
+    favCanvas.height = size;
+    const fCtx = favCanvas.getContext('2d');
+    if (!fCtx) return;
+    fCtx.imageSmoothingEnabled = false;
+
+    let link = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.type = 'image/png';
+
+    let frame = 0;
+    const row = 0;
+
+    function drawFav() {
+      fCtx!.clearRect(0, 0, size, size);
+      fCtx!.drawImage(img, frame * fw + sox, row * fh + soy, sw, sh, 0, 0, size, size);
+      link!.href = favCanvas.toDataURL('image/png');
+      frame = (frame + 1) % frameCount;
+    }
+
+    drawFav();
+    setInterval(drawFav, 150);
+  }
+
+  // Run on initial load and after view transitions
+  initAvatar();
+  document.addEventListener('astro:after-swap', initAvatar);
+</script>
