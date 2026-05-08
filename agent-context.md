@@ -33,6 +33,39 @@ Running log of notable decisions, constraints, and context across sessions.
 - Sprite sheets: 8 directional rows, N frame columns. Frame size from `AnimData.xml`. `image-rendering: pixelated`.
 - Z-layering: background(0) → sprites(1) → content(2). CSS uses `is:global`.
 - **Card backgrounds must be nearly opaque** (`rgba(26,26,26,0.95)`) — NOT transparent (`rgba(255,255,255,0.06)`) — so sprites don't show through them.
+
+---
+
+## Session 3 — 2026-05-08 — Sprite Overhaul, Resume PDF, View Transitions Fix
+
+### Resume One-Pager
+
+- Created `public/Adam_Kenawell_Resume.html` — printable one-page resume (Ctrl+P → Save as PDF).
+- Added download link button at top of `resume.astro` with yellow-border styling.
+
+### View Transitions Fix
+
+- Added `transition:persist` to `#sprite-background` and `#sprite-controls` so sprites survive page navigation.
+- Tagline on index page now randomizes client-side via `astro:page-load` event listener (`define:vars`).
+
+### Sprite System Overhaul (SpriteBackground.astro condensed from 658 → 300 lines)
+
+- **Fresh sprites on every reload** — removed localStorage persistence entirely.
+- **Always 10 sprites** — fixed count instead of random 6–8.
+- **Full dex range** (1–1025) for both initial load and random spawn (was curated list of 37).
+- **Spawn uses old position** — new Pokémon appears where the removed one was.
+- **Spawn validation** — tries creation before removing old sprite. Shows red error for invalid dex #, silently retries for random.
+- **Spawn debounce** — button disables during spawn to prevent spam-breaking.
+- **Spawn flash** — white circle outline, 0.3s, scale(5), z-index 9999 (visible over cards).
+- **Sprites behind cards** — z-index 0 for background; cards use opaque `rgba(26,26,26,0.95)`.
+
+### Card Opacity Fix
+
+- Changed `.spec-card` (local-llm-stack) and `.fav-card` (about) from transparent `rgba(255,255,255,0.06)` to opaque `rgba(26,26,26,0.95)`.
+
+### Deployment
+
+- Commit `c978028`: 7 files changed, 265+/87-. Build: 7 pages in 4.70s.
 - State machine: Walking → Idle (random chance) → Sleeping (2.5min inactivity) → Attacking (click). All timers use `performance.now()`.
 - Sheets per sprite: Walk (required), Idle, Sleep, Attack (optional fallback to Walk).
 
