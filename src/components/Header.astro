@@ -8,7 +8,10 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <header>
-  <a class="name-btn" href={base}>Adam Kenawell</a>
+  <div class="left-group">
+    <a class="name-btn" href={base}>Adam Kenawell</a>
+    <a class="nav-link about-link" href={`${base}about`}>About Me</a>
+  </div>
   <nav>
     {showNav && (
       <>
@@ -39,6 +42,12 @@ const base = import.meta.env.BASE_URL;
     gap: 0.5rem;
   }
 
+  .left-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .name-btn {
     font-size: 1rem;
     letter-spacing: 0.05em;
@@ -66,7 +75,8 @@ const base = import.meta.env.BASE_URL;
     flex-wrap: wrap;
   }
 
-  .nav-link {
+  .nav-link,
+  .about-link {
     font-size: 0.7rem;
     color: #f5d000;
     text-decoration: none;
@@ -74,7 +84,8 @@ const base = import.meta.env.BASE_URL;
     transition: opacity 0.2s;
   }
 
-  .nav-link:hover {
+  .nav-link:hover,
+  .about-link:hover {
     opacity: 1;
   }
 
