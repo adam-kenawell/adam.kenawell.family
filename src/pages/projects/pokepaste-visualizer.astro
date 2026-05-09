@@ -37,306 +37,18 @@ import Footer from '../../components/Footer.astro';
 </Layout>
 
 <script>
-  import { spriteUrl, loadImage, fetchAnimData, calcFrameInfo, type FrameInfo } from '../../utils/sprite-utils';
+  import {
+    createSpriteWidget, resetWidgets,
+    parsePokepaste, type ParsedMon,
+    TYPE_COLORS, colorizeEvs, getTypeGradient,
+    fetchPokemonData, fetchMoveType,
+    loadSavedTeams, saveSavedTeams, getNextTeamNumber,
+    ROLE_OPTIONS,
+    DEFAULT_PASTE,
+  } from 'pmd-visualizer';
 
-  // ── Sprite animation config ────────────────────────────
-  const ACTIONS = ['Walk', 'Idle', 'Attack'] as const;
-  type Action = (typeof ACTIONS)[number];
-  const FRAME_MS = 150;
-  const SCALE = 2;
-
-  // ── Default paste text ─────────────────────────────────
-  const DEFAULT_PASTE = `Froslass-Mega (F) @ Froslassite
-Ability: Snow Warning
-Level: 50
-EVs: 2 HP / 32 SpA / 32 Spe
-Modest Nature
-- Protect
-- Aurora Veil
-- Shadow Ball
-- Weather Ball
-
-Rotom-Frost @ Choice Scarf
-Ability: Levitate
-Level: 50
-EVs: 32 SpA / 2 SpD / 32 Spe
-Timid Nature
-- Electroweb
-- Volt Switch
-- Thunderbolt
-- Blizzard
-
-Basculegion (M) @ Focus Sash
-Ability: Adaptability
-Level: 50
-EVs: 2 HP / 32 Atk / 32 Spe
-Jolly Nature
-- Psychic Fangs
-- Aqua Jet
-- Wave Crash
-- Last Respects
-
-Arcanine-Hisui @ Charcoal
-Ability: Rock Head
-Level: 50
-EVs: 32 Atk / 32 Spe
-Adamant Nature
-- Protect
-- Extreme Speed
-- Head Smash
-- Flare Blitz
-
-Garchomp @ Sitrus Berry
-Ability: Rough Skin
-Level: 50
-EVs: 32 HP / 15 Def / 15 SpD / 4 Spe
-Adamant Nature
-- Protect
-- Scale Shot
-- Stomping Tantrum
-- Earthquake
-
-Empoleon @ Leftovers
-Ability: Competitive
-Level: 50
-EVs: 32 HP / 19 SpA / 15 Spe
-Modest Nature
-- Protect
-- Vacuum Wave
-- Chilling Water
-- Flash Cannon`;
-
-  // ── Name to Dex ID mapping via PokeAPI ─────────────────
-  // Cache for API results
-  const pokeDataCache: Record<string, any> = {};
-  const moveDataCache: Record<string, string> = {};
-
-  async function fetchPokemonData(species: string): Promise<any> {
-    let slug = species.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const formMap: Record<string, string> = {
-      'rotom-frost': 'rotom-frost',
-      'arcanine-hisui': 'arcanine-hisui',
-      'basculegion': 'basculegion-male',
-      'froslass-mega': 'froslass',
-    };
-    const lookup = formMap[slug] || slug;
-    if (pokeDataCache[lookup]) return pokeDataCache[lookup];
-    try {
-      let res = await fetch(`https://pokeapi.co/api/v2/pokemon/${lookup}`);
-      if (!res.ok) {
-        const base = slug.split('-')[0];
-        res = await fetch(`https://pokeapi.co/api/v2/pokemon/${base}`);
-        if (!res.ok) return null;
-      }
-      const data = await res.json();
-      pokeDataCache[lookup] = data;
-      return data;
-    } catch { return null; }
-  }
-
-  async function nameToDexId(species: string): Promise<number> {
-    const data = await fetchPokemonData(species);
-    return data?.id || 0;
-  }
-
-  async function fetchMoveType(moveName: string): Promise<string> {
-    const slug = moveName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (moveDataCache[slug]) return moveDataCache[slug];
-    try {
-      const res = await fetch(`https://pokeapi.co/api/v2/move/${slug}`);
-      if (!res.ok) return 'normal';
-      const data = await res.json();
-      const type = data.type?.name || 'normal';
-      moveDataCache[slug] = type;
-      return type;
-    } catch { return 'normal'; }
-  }
-
-  // ── Animated sprite widget ─────────────────────────────
-  interface SpriteWidget {
-    canvas: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-    sheets: Record<Action, HTMLImageElement | null>;
-    frameInfo: Record<Action, FrameInfo | null>;
-    frame: number;
-    state: 'idle' | 'attacking';
-    stateEnd: number;
-    direction: number;
-  }
-
-  let activeWidgets: SpriteWidget[] = [];
-  let animRunning = false;
   let useAnimatedSprites = true;
   let tagsVisible = false;
-
-  function startAnimLoop() {
-    if (animRunning) return;
-    animRunning = true;
-    let last = 0;
-    function loop(ts: number) {
-      if (activeWidgets.length === 0) { animRunning = false; return; }
-      const now = performance.now();
-      if (ts - last >= FRAME_MS) {
-        last = ts;
-        for (const w of activeWidgets) {
-          const action: Action = w.state === 'attacking' ? 'Attack' : 'Idle';
-          const sheet = w.sheets[action] || w.sheets.Idle || w.sheets.Walk;
-          const info = w.frameInfo[action] || w.frameInfo.Idle || w.frameInfo.Walk;
-          if (!sheet || !info) continue;
-
-          const frameIdx = w.frame % info.count;
-          w.ctx.clearRect(0, 0, w.canvas.width, w.canvas.height);
-          w.ctx.imageSmoothingEnabled = false;
-          w.ctx.drawImage(
-            sheet,
-            frameIdx * info.w, w.direction * info.h, info.w, info.h,
-            0, 0, info.w * SCALE, info.h * SCALE,
-          );
-          w.frame++;
-
-          if (w.state === 'attacking' && now > w.stateEnd) {
-            w.state = 'idle';
-            w.frame = 0;
-          }
-        }
-      }
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
-  }
-
-  async function createSpriteWidget(dexId: number): Promise<HTMLCanvasElement | null> {
-    if (dexId <= 0) return null;
-
-    const [animDims, walkImg, idleImg, attackImg] = await Promise.all([
-      fetchAnimData(dexId),
-      loadImage(spriteUrl(dexId, 'Walk')),
-      loadImage(spriteUrl(dexId, 'Idle')),
-      loadImage(spriteUrl(dexId, 'Attack')),
-    ]);
-
-    if (!walkImg && !idleImg) return null;
-
-    const sheets: Record<Action, HTMLImageElement | null> = { Walk: walkImg, Idle: idleImg, Attack: attackImg };
-    const frameInfo: Record<Action, FrameInfo | null> = {
-      Walk: walkImg ? calcFrameInfo(walkImg, animDims['Walk']) : null,
-      Idle: idleImg ? calcFrameInfo(idleImg, animDims['Idle']) : null,
-      Attack: attackImg ? calcFrameInfo(attackImg, animDims['Attack']) : null,
-    };
-
-    const info = frameInfo.Idle || frameInfo.Walk!;
-    const canvas = document.createElement('canvas');
-    canvas.width = info.w * SCALE;
-    canvas.height = info.h * SCALE;
-    canvas.className = 'poke-sprite-canvas';
-    const ctx = canvas.getContext('2d')!;
-
-    const widget: SpriteWidget = {
-      canvas, ctx, sheets, frameInfo,
-      frame: 0, state: 'idle', stateEnd: 0, direction: 0,
-    };
-
-    canvas.addEventListener('click', () => {
-      if (widget.sheets.Attack) {
-        widget.state = 'attacking';
-        widget.frame = 0;
-        widget.stateEnd = performance.now() + 1000;
-      }
-    });
-
-    activeWidgets.push(widget);
-    startAnimLoop();
-    return canvas;
-  }
-
-  // ── PokePaste Parser ───────────────────────────────────
-  interface ParsedMon {
-    species: string;
-    item: string;
-    ability: string;
-    level: string;
-    nature: string;
-    evs: string;
-    moves: string[];
-  }
-
-  function parsePokepaste(text: string): ParsedMon[] {
-    const blocks = text.trim().split(/\n\n+/);
-    return blocks.map(block => {
-      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length === 0) return null;
-
-      const firstLine = lines[0];
-      const atSplit = firstLine.split('@');
-      const item = atSplit[1]?.trim() || '';
-      const nameRaw = atSplit[0].trim();
-      const species = nameRaw.replace(/\s*\([MF]\)\s*/, '').trim();
-
-      let ability = '', level = '', nature = '', evs = '';
-      const moves: string[] = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        if (line.startsWith('Ability:')) ability = line.replace('Ability:', '').trim();
-        else if (line.startsWith('Level:')) level = line.replace('Level:', '').trim();
-        else if (line.startsWith('EVs:')) evs = line.replace('EVs:', '').trim();
-        else if (line.endsWith('Nature')) nature = line.replace('Nature', '').trim();
-        else if (line.startsWith('-')) moves.push(line.replace('-', '').trim());
-      }
-
-      return { species, item, ability, level, nature, evs, moves } as ParsedMon;
-    }).filter(Boolean) as ParsedMon[];
-  }
-
-  // ── Color Maps ─────────────────────────────────────────
-  const TYPE_COLORS: Record<string, string> = {
-    normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
-    grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
-    ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
-    rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
-    steel: '#B8B8D0', fairy: '#EE99AC',
-  };
-
-  const EV_COLORS: Record<string, string> = {
-    'hp': '#ff4d4d',
-    'atk': '#ff9933',
-    'def': '#f5d000',
-    'spa': '#4d9fff',
-    'spd': '#4dcc73',
-    'spe': '#ff66b2',
-  };
-
-  function colorizeEvs(evStr: string): string {
-    // EVs format: "32 HP / 15 Def / 15 SpD / 4 Spe"
-    const statMap: Record<string, string> = {
-      'hp': 'hp', 'atk': 'atk', 'attack': 'atk', 'def': 'def', 'defense': 'def',
-      'spa': 'spa', 'spatk': 'spa', 'spd': 'spd', 'spdef': 'spd',
-      'spe': 'spe', 'speed': 'spe',
-    };
-    return evStr.split('/').map(part => {
-      const trimmed = part.trim();
-      const match = trimmed.match(/(\d+)\s+(.+)/);
-      if (!match) return trimmed;
-      const [, num, statName] = match;
-      const key = statName.toLowerCase().replace(/[^a-z]/g, '');
-      const mapped = statMap[key] || key;
-      const color = EV_COLORS[mapped] || 'rgba(255,255,255,0.65)';
-      return `<span style="color:${color}">${num} ${statName}</span>`;
-    }).join(' / ');
-  }
-
-  function getTypeGradient(types: string[]): string {
-    if (types.length === 1) return TYPE_COLORS[types[0]] || '#A8A878';
-    const c1 = TYPE_COLORS[types[0]] || '#A8A878';
-    const c2 = TYPE_COLORS[types[1]] || '#A8A878';
-    return `linear-gradient(135deg, ${c1}, ${c2})`;
-  }
-
-  const ROLE_OPTIONS = [
-    'None', 'Physical Sweeper', 'Special Sweeper', 'Mixed Sweeper', 'Setup Sweeper',
-    'Tailwind Setter', 'Trick Room Setter', 'Support', 'Pivot', 'Fast', 'Slow',
-    'Wall', 'Tank', 'Redirection', 'Weather Setter', 'Terrain Setter', 'Lead',
-  ];
 
   // ── Rendering ──────────────────────────────────────────
   async function renderTeamCard(team: ParsedMon[], teamName: string, savedRoles?: string[][]) {
@@ -490,24 +202,6 @@ Modest Nature
     }
   }
 
-  // ── LocalStorage (saved teams) ─────────────────────────
-  const STORAGE_KEY = 'pokepaste-saved-teams';
-
-  interface SavedTeam { id: string; name: string; paste: string; roles?: string[][]; tagsVisible?: boolean; }
-
-  function loadSavedTeams(): SavedTeam[] {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { return []; }
-  }
-
-  function saveSavedTeams(teams: SavedTeam[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
-  }
-
-  function getNextTeamNumber(): number {
-    return loadSavedTeams().length + 1;
-  }
-
   function renderSavedTeams() {
     const list = document.getElementById('saved-list')!;
     const deleteAllBtn = document.getElementById('delete-all-btn')!;
@@ -539,8 +233,7 @@ Modest Nature
         const id = (btn as HTMLElement).dataset.id!;
         const team = loadSavedTeams().find(t => t.id === id);
         if (!team) return;
-        activeWidgets = [];
-        animRunning = false;
+        resetWidgets();
         const parsed = parsePokepaste(team.paste);
         document.getElementById('input-view')!.style.display = 'none';
         document.getElementById('output-view')!.style.display = 'block';
@@ -569,8 +262,7 @@ Modest Nature
   // ── Event Wiring ───────────────────────────────────────
   // Wrap in astro:page-load so listeners re-attach after view transitions
   function initVisualizer() {
-    activeWidgets = [];
-    animRunning = false;
+    resetWidgets();
 
     const nameInput = document.getElementById('team-name-input') as HTMLInputElement;
     if (!nameInput) return; // not on this page
@@ -591,8 +283,7 @@ Modest Nature
     document.getElementById('visualize-btn')!.addEventListener('click', () => {
       const text = (document.getElementById('paste-input') as HTMLTextAreaElement).value;
       if (!text.trim()) return;
-      activeWidgets = [];
-      animRunning = false;
+      resetWidgets();
       const team = parsePokepaste(text);
       const name = nameInput.value.trim() || nameInput.placeholder;
       document.getElementById('input-view')!.style.display = 'none';
@@ -601,8 +292,7 @@ Modest Nature
     });
 
     document.getElementById('back-btn')!.addEventListener('click', () => {
-      activeWidgets = [];
-      animRunning = false;
+      resetWidgets();
       document.getElementById('input-view')!.style.display = 'flex';
       document.getElementById('output-view')!.style.display = 'none';
     });

@@ -22,3 +22,14 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# tests
+tests/
+test-results/
+playwright.config.ts
+playwright-report/
+
+# copilot agent files
+agent-context.md
+agent-instructions.md
+.github/copilot-instructions.md
