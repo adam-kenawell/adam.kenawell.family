@@ -19,7 +19,7 @@ import Footer from '../../components/Footer.astro';
 </Layout>
 
 <script>
-  import { initBoard } from 'task-shard';
+  import { initBoard } from '../../lib/task-shard';
   const root = document.getElementById('task-shard-root');
   if (root) initBoard(root);
 </script>
