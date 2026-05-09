@@ -21,6 +21,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout pmd-visualizer
+        uses: actions/checkout@v4
+        with:
+          repository: adam-kenawell/pmd-visualizer
+          path: ../pmd-visualizer
+
+      - name: Checkout task-shard
+        uses: actions/checkout@v4
+        with:
+          repository: adam-kenawell/task-shard
+          path: ../task-shard
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
