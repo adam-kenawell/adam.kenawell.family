@@ -20,7 +20,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       </div>
     </div>
     <a class="accent-btn name-btn" href={base}>Adam Kenawell</a>
-    <a class:list={['nav-link', 'about-link', { active: currentPath === '/about' }]} href={`${base}about`}>About Me</a>
+    <a class:list={['nav-link', 'about-link', { active: currentPath.startsWith('/blog/about-me') }]} href={`${base}blog/about-me`}>About Me</a>
   </div>
   <div class="right-group">
     <div class="nav-links">
