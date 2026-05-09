@@ -16,7 +16,8 @@
     "@astrojs/rss": "^4.0.18",
     "@fontsource/fusion-pixel-12px-proportional-kr": "^5.2.5",
     "astro": "^6.3.0",
-    "pmd-visualizer": "file:../pmd-visualizer"
+    "pmd-visualizer": "file:../pmd-visualizer",
+    "task-shard": "file:../task-shard"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
