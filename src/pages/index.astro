@@ -103,6 +103,9 @@ const tagline = taglines[Math.floor(Math.random() * taglines.length)];
     <Header showNav={false} />
 
     <main>
+      <a class="notice-banner" href={`${base}projects/rescue-team-ai`}>
+        🚧 New project: <strong>Rescue Team AI</strong> — gamified agentic AI orchestration. Check it out →
+      </a>
       <p class="tagline" id="tagline">{tagline}</p>
       <div class="cards">
         {cards.map((card) => (
@@ -127,6 +130,22 @@ const tagline = taglines[Math.floor(Math.random() * taglines.length)];
 </script>
 
 <style>
+  .notice-banner {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 20px;
+    background: rgba(var(--accent-rgb), 0.08);
+    color: var(--accent);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .notice-banner:hover {
+    background: rgba(var(--accent-rgb), 0.2);
+  }
+
   main {
     flex: 1;
     display: flex;
