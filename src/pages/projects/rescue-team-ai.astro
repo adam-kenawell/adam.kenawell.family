@@ -11,7 +11,7 @@ import Footer from '../../components/Footer.astro';
       <section class="hero">
         <h1>Rescue Team AI</h1>
         <p class="tagline">Gamified multi-agent AI orchestration — Pokémon Mystery Dungeon style</p>
-        <span class="wip-badge">🚧 Work in Progress</span>
+        <span class="wip-badge"> Work in Progress</span>
       </section>
 
       <section>
@@ -222,3 +222,12 @@ import Footer from '../../components/Footer.astro';
     color: var(--bg);
   }
 </style>
+
+<script>
+  // Force background sprites on for the Rescue Team AI page
+  localStorage.setItem('pmd-sprites-visible', 'visible');
+  const container = document.getElementById('sprite-background');
+  if (container) container.style.display = '';
+  const toggleBtn = document.getElementById('sprite-toggle-btn');
+  if (toggleBtn) toggleBtn.textContent = 'Hide';
+</script>
