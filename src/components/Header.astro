@@ -6,6 +6,44 @@ interface Props {
 const { showNav = true } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const GITHUB_USER = 'adam-kenawell';
+
+let ghStats = {
+  username: GITHUB_USER,
+  repos: 0,
+  stars: 0,
+  languages: [] as string[],
+  lastPush: 'unknown',
+  updatedAt: new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+};
+
+try {
+  const userRes = await fetch(`https://api.github.com/users/${GITHUB_USER}`);
+  const user = await userRes.json();
+  ghStats.repos = user.public_repos ?? 0;
+
+  const reposRes = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed`);
+  const repos = await reposRes.json();
+
+  if (Array.isArray(repos) && repos.length) {
+    ghStats.stars = repos.reduce((sum: number, r: any) => sum + (r.stargazers_count ?? 0), 0);
+    ghStats.lastPush = repos[0].pushed_at
+      ? new Date(repos[0].pushed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'unknown';
+
+    const langCounts: Record<string, number> = {};
+    for (const r of repos) {
+      if (r.language) langCounts[r.language] = (langCounts[r.language] ?? 0) + 1;
+    }
+    ghStats.languages = Object.entries(langCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([lang]) => lang);
+  }
+} catch {
+  // Build continues with defaults if GitHub is unreachable
+}
 ---
 
 <header>
@@ -16,7 +54,17 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       </button>
       <div id="status-bubble" class="status-bubble hidden">
         <div class="status-arrow"></div>
-        <p class="status-text">fixing data pipelines and pretending to be a web developer</p>
+        <div class="gh-stats">
+          <p class="gh-username">@{ghStats.username}</p>
+          <div class="gh-row">
+            <span>{ghStats.repos} repos</span>
+            <span class="gh-sep">&middot;</span>
+            <span>{ghStats.stars} ★</span>
+          </div>
+          <p class="gh-langs">{ghStats.languages.join(' · ') || 'N/A'}</p>
+          <p class="gh-push">Last push: {ghStats.lastPush}</p>
+          <p class="gh-updated">Updated: {ghStats.updatedAt}</p>
+        </div>
       </div>
     </div>
     <a class="accent-btn name-btn" href={base}>Adam Kenawell</a>
@@ -207,11 +255,48 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     transform: rotate(45deg);
   }
 
-  .status-text {
+  .gh-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .gh-username {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  .gh-row {
     font-size: 0.7rem;
     color: var(--text);
-    line-height: 1.5;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .gh-sep {
+    opacity: 0.4;
+  }
+
+  .gh-langs {
+    font-size: 0.65rem;
+    color: var(--text-muted);
     margin: 0;
+  }
+
+  .gh-push {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .gh-updated {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin: 0.15rem 0 0;
   }
 
   .coffee-link {
