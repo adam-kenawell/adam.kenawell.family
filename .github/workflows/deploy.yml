@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: |
           sed -i 's|file:../pmd-visualizer|file:./pmd-visualizer|' package.json
-          npm ci
+          npm install
 
       - name: Build Astro
         run: npm run build
