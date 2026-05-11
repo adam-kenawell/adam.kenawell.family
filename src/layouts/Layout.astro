@@ -36,8 +36,8 @@ const canonicalUrl = Astro.url.href;
           light: {'--bg':'#f5f5f5','--bg-rgb':'245,245,245','--bg-card':'rgba(255,255,255,0.9)','--text':'rgba(30,30,30,0.9)','--text-muted':'rgba(30,30,30,0.55)','--text-faint':'rgba(30,30,30,0.35)','--header-bg':'rgba(245,245,245,0.9)'}
         };
         function apply() {
-          var t = localStorage.getItem('theme-mode') || 'light';
-          var a = localStorage.getItem('theme-accent') || '30,30,30';
+          var t = localStorage.getItem('theme-mode') || 'dark';
+          var a = localStorage.getItem('theme-accent') || '255,255,255';
           var r = document.documentElement;
           r.setAttribute('data-theme', t);
           r.style.setProperty('--accent-rgb', a);
@@ -61,7 +61,7 @@ const canonicalUrl = Astro.url.href;
 
 <style is:global>
   :root {
-    --accent-rgb: 245, 208, 0;
+    --accent-rgb: 255, 255, 255;
     --accent: rgb(var(--accent-rgb));
     --bg: #1a1a1a;
     --bg-rgb: 26, 26, 26;

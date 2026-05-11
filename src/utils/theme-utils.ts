@@ -27,7 +27,7 @@ export function applyTheme(mode: string, accentRgb: string) {
 
 export function applyStoredTheme() {
   applyTheme(
-    localStorage.getItem('theme-mode') || 'light',
-    localStorage.getItem('theme-accent') || '30,30,30',
+    localStorage.getItem('theme-mode') || 'dark',
+    localStorage.getItem('theme-accent') || '255,255,255',
   );
 }

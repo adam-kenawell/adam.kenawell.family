@@ -91,8 +91,8 @@
     if (!grid || !darkBtn || !lightBtn) return;
 
     // Read saved state
-    const savedMode = localStorage.getItem('theme-mode') || 'light';
-    const savedAccent = localStorage.getItem('theme-accent') || '30,30,30';
+    const savedMode = localStorage.getItem('theme-mode') || 'dark';
+    const savedAccent = localStorage.getItem('theme-accent') || '255,255,255';
 
     // Mode buttons
     if (savedMode === 'light') {
@@ -103,17 +103,15 @@
     darkBtn.addEventListener('click', () => {
       darkBtn.classList.add('active');
       lightBtn.classList.remove('active');
-      const accent = localStorage.getItem('theme-accent') || '30,30,30';
-      applyTheme('dark', accent);
-      buildSwatches(grid, 'dark', accent);
+      applyTheme('dark', '255,255,255');
+      buildSwatches(grid, 'dark', '255,255,255');
     });
 
     lightBtn.addEventListener('click', () => {
       lightBtn.classList.add('active');
       darkBtn.classList.remove('active');
-      const accent = localStorage.getItem('theme-accent') || '30,30,30';
-      applyTheme('light', accent);
-      buildSwatches(grid, 'light', accent);
+      applyTheme('light', '30,30,30');
+      buildSwatches(grid, 'light', '30,30,30');
     });
 
     // Build color swatches for current mode
