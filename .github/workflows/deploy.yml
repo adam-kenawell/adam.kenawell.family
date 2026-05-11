@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: adam-kenawell/pmd-visualizer
+          token: ${{ secrets.PAT_TOKEN }}
           path: ../pmd-visualizer
 
       - name: Setup Node
