@@ -1,0 +1,224 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="Rescue Team AI — Adam Kenawell" description="Gamified multi-agent AI orchestration with a Pokémon Mystery Dungeon twist.">
+  <div class="page">
+    <Header />
+    <main class="content-page">
+      <section class="hero">
+        <h1>Rescue Team AI</h1>
+        <p class="tagline">Gamified multi-agent AI orchestration — Pokémon Mystery Dungeon style</p>
+        <span class="wip-badge">🚧 Work in Progress</span>
+      </section>
+
+      <section>
+        <h2>The Big Idea</h2>
+        <p>
+          Managing multi-agent AI workflows is highly technical and usually about as
+          visually exciting as reading server logs. Rescue Team AI fixes that by wrapping
+          agent orchestration in a <strong>Pokémon Mystery Dungeon</strong> visual theme.
+        </p>
+        <p>
+          You build a "rescue team" of specialized AI agents, each stationed at a shop on a
+          2D market map. An orchestrator agent (your team leader) physically walks across the
+          map to delegate tasks to sub-agents — all driven by your prompts in a single chat
+          window. It's agentic AI you can actually <em>watch</em>.
+        </p>
+        <p>
+          Pokémon nerd not required for use. But it helps.
+        </p>
+      </section>
+
+      <section>
+        <h2>How It Works</h2>
+        <ul>
+          <li><strong>Supervisor Routing:</strong> You chat exclusively with the team leader. It decides which specialist to consult.</li>
+          <li><strong>Market Architecture:</strong> Agents live at shops on a 2D canvas map. The leader sprite walks to them in real time.</li>
+          <li><strong>Local Execution:</strong> Agents interact with your local file system — cloned repos, terminal commands, the works.</li>
+          <li><strong>State Polling:</strong> HTMX-driven status updates show when an agent is thinking and when a response is ready.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>The Stack</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <span class="info-card-label">AI Engine</span>
+            <span class="info-card-value">Python + Pydantic AI</span>
+          </div>
+          <div class="info-card">
+            <span class="info-card-label">LLMs</span>
+            <span class="info-card-value">Anthropic · OpenAI · Gemini</span>
+          </div>
+          <div class="info-card">
+            <span class="info-card-label">Backend</span>
+            <span class="info-card-value">Django + SQLite</span>
+          </div>
+          <div class="info-card">
+            <span class="info-card-label">State</span>
+            <span class="info-card-value">HTMX async polling</span>
+          </div>
+          <div class="info-card">
+            <span class="info-card-label">Game Engine</span>
+            <span class="info-card-value">TypeScript + 2D Canvas</span>
+          </div>
+          <div class="info-card">
+            <span class="info-card-label">Hosting</span>
+            <span class="info-card-value">Digital Ocean Droplet</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Roadmap</h2>
+        <div class="roadmap">
+          <div class="milestone">
+            <span class="milestone-label">Month 1</span>
+            <p>Backend infrastructure — SQLite, Pydantic AI orchestration, basic local git tools.</p>
+          </div>
+          <div class="milestone">
+            <span class="milestone-label">Month 2</span>
+            <p>Frontend foundations — Django server, HTMX polling, static map rendering, landing page deploy.</p>
+          </div>
+          <div class="milestone">
+            <span class="milestone-label">Month 3</span>
+            <p>Visual logic — TypeScript sprite animations and market routing behavior.</p>
+          </div>
+          <div class="milestone">
+            <span class="milestone-label">Month 4</span>
+            <p>MVP polish — Refine the chat interface, bug testing, and launch.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <h2>Follow the Build</h2>
+        <p>
+          This project is actively in development. Star the repo, watch for updates, or clone it and poke around.
+        </p>
+        <a class="cta-btn" href="https://github.com/adam-kenawell/rescue-team-ai" target="_blank" rel="noopener noreferrer">
+          View on GitHub →
+        </a>
+      </section>
+    </main>
+    <Footer />
+  </div>
+</Layout>
+
+<style>
+  .hero {
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .wip-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.35rem 1rem;
+    border: 2px solid rgba(var(--accent-rgb), 0.6);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  li {
+    color: var(--text);
+    padding: 0.35rem 0;
+  }
+
+  li::before {
+    content: '\25B8 ';
+    color: var(--accent);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: 8px;
+    background: rgba(var(--accent-rgb), 0.05);
+  }
+
+  .info-card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  .info-card-value {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .roadmap {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .milestone {
+    padding: 1rem;
+    border-left: 3px solid var(--accent);
+    background: rgba(var(--accent-rgb), 0.05);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .milestone-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .milestone p {
+    margin-top: 0.35rem;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+
+  .cta-section {
+    text-align: center;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.75rem 2rem;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .cta-btn:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+</style>
