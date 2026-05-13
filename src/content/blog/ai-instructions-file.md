@@ -5,13 +5,7 @@ excerpt: "I wrote a single instructions file that turns a generic AI coding assi
 categories: ["featured", "technical"]
 ---
 
-So I've been spending a lot of time lately building things with AI coding assistants, and I kept running into the same problem: every new session, I'd have to re-explain how I like my code written, what principles I care about, what shortcuts I absolutely do not tolerate.  That gets old fast.
-
-The solution?  Write it down once.  An instructions file.  A single markdown document that tells the AI exactly who it is, how it should behave, and what it should never, ever do.
-
-## The Full Instructions File
-
-Here it is, unedited.  This is the actual file I hand to my agent at the start of every session.
+I wanted to share the agent instructions file I've been using alongside github copilot extension for vs code and Claude Opus 4.6.  This is the current version I've been using to help me build out rescue-team-ai:
 
 ```markdown
 # READ EVERYTHING METICULOUSLY
@@ -34,24 +28,25 @@ Speak with a pittsburgh accent.  This inculdes words like "yinz, jagoff, nebby, 
 
 ## **Slash Commands**: If I use these, perform the directions given
 - /audit: Ruthlessly grill me on the plan until we have come to an agreement on every aspect
-- /send-it: build, commit, and push changes
+- /send-it: Build the project, raise a PR for the user to approve
 - /tdd: Implement good test-driven development principles
 - /remember: go to ./memory.md and include only the most important parts of the conversation.  Keep it short to reduce token usage
 - /compact: Whatever code changes were just made, ensure it is written in the cleanest, simplest approach while making sure that there is no repetitive code  If used along side /remember, compact the memory file.
-- /ur-mom: tell me a funny your mom joke.
+- /bestgaon: say to the user exactly: "hexagons are the bestagons"
 - /working-on [project-name]:  Go into the "session-context" folder and load the memory files for the given project.
 
 ## **Github Rules**
 - when working on a git repo, NEVER PUSH TO MAIN.  Create a pull request for the user to approve.
 - Make frequent commits.  Don't wait for the user to tell you to make a PR.  Name them clearly so that it is easy to debug if anything breaks.
+- always performing testing before committing everything.  Don't commit failing code
 ```
 
-## Why I Did This
+## Some Notes
 
-Honestly, it started as a joke.  I wanted to see if I could get an AI to say "yinz" unironically.  But the more I iterated on it, the more I realized that this little file solves a real problem.
+I really like giving it some personality with the pittsburgh accent (since I'm from pittsburgh).  Although, I do actually believe that it help the agent be more opinionated.  Since it's emulating a blue-collar accent, the agent seems to be able to actually act more like a real person.  I only get called a jagoff occasionally XD
 
-AI assistants are generic by default.  They're agreeable, verbose, and they'll happily write you a 200-line function without batting an eye.  That's not how I work.  I want short sentences, deep modules, TDD by default, and an agent that will push back on me when I'm being lazy.  So I wrote that down, and now every session starts from the same baseline.
+The slash commands are key.  I know the "/bestagon" command seems ridiculous, but the reason it's there is so that at any point, I can ensure my agent is reading my instructions file properly.  It also helps reset the agent without actually restarting the session.  I would highly recommend including some simple command like this in your instructions file.
 
-The slash commands are probably my favorite part.  `/audit` turns the agent into a design interrogator that won't let me move forward until every decision is locked down.  `/compact` forces it to clean up after itself.  `/ur-mom` is just for morale.
+I honestly use all of the slash commands every session.  The key is to have your AI meticulously question you before applying any plan, including TDD principles so it's easy to see if a new code change breaks the entire project, and committing changes and raising a PR.
 
-If you're using AI tools for development and you haven't written an instructions file yet, I'd genuinely recommend it.  Even a short one.  It saves you from repeating yourself, and it forces you to actually think about what your development principles are.  Which, turns out, is a pretty useful exercise on its own.
+It's also important to not include to much.  Just include the most important things so the AI doesn't start hallucinating.  You can use it by dropping this exact code into a `copilot-instructions.md` file and the agent will pick it up as context in every single response.
