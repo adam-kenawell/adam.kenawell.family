@@ -1,0 +1,1584 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="Chample — Adam Kenawell" description="A daily Pokémon guessing game based on Pokémon Champions Regulation M-A.">
+  <div class="page">
+    <Header />
+    <main class="chample-container">
+      <section class="chample-hero">
+        <h1>Chample</h1>
+        <p class="tagline">Daily Pokémon Guessing Game — Regulation M-A</p>
+        <div class="streak-badge-container" id="page-streak-container" style="display: none;">
+          <span class="streak-badge"><span class="streak-badge-label">Streak:</span> <span id="page-streak-val">0</span> <span class="flame-icon">🔥</span></span>
+        </div>
+        <p class="description">
+          Guess the daily Pokémon! A new base stat is revealed with each incorrect guess.
+        </p>
+      </section>
+
+      <!-- Stats Reveal Section -->
+      <section class="stats-panel-section">
+        <h2>Target Pokémon Base Stats</h2>
+        <div class="stats-grid">
+          <div class="stat-card" id="stat-hp">
+            <span class="stat-label">HP</span>
+            <span class="stat-value" id="val-hp">???</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill fill-hp" id="bar-hp" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-attack">
+            <span class="stat-label">Attack</span>
+            <span class="stat-value" id="val-attack">???</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill fill-attack" id="bar-attack" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-defense">
+            <span class="stat-label">Defense</span>
+            <span class="stat-value" id="val-defense">???</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill fill-defense" id="bar-defense" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-spAtk">
+            <span class="stat-label">Sp. Atk</span>
+            <span class="stat-value" id="val-spAtk">???</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill fill-spAtk" id="bar-spAtk" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-spDef">
+            <span class="stat-label">Sp. Def</span>
+            <span class="stat-value" id="val-spDef">???</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill fill-spDef" id="bar-spDef" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-speed">
+            <span class="stat-label">Speed</span>
+            <span class="stat-value" id="val-speed">???</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill fill-speed" id="bar-speed" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gameplay Input Section -->
+      <section class="gameplay-section">
+        <div id="game-active-panel">
+          <div class="search-container">
+            <input 
+              type="text" 
+              id="guess-input" 
+              placeholder="Type a Pokémon name (e.g. Venusaur)..." 
+              autocomplete="off"
+            />
+            <div id="autocomplete-list" class="autocomplete-dropdown"></div>
+          </div>
+          <div class="action-row">
+            <button id="guess-btn" class="accent-btn">Submit Guess</button>
+          </div>
+          <div id="error-message" class="error-message"></div>
+        </div>
+
+        <!-- End Game Panel (hidden by default) -->
+        <div id="game-over-panel" style="display: none;">
+          <div class="end-card">
+            <h2 id="end-status-title">Victory!</h2>
+            <p id="end-status-desc">You guessed the daily Pokémon!</p>
+            
+            <div class="target-reveal-card-container">
+              <div class="guess-card correct-card target-reveal-card">
+                <div class="guess-num">Target Reveal</div>
+                <div id="target-sprite-container" class="guess-sprite-container"></div>
+                <h3 id="target-name" class="target-reveal-name">???</h3>
+              </div>
+            </div>
+
+            <!-- Streak & Stats Dashboard -->
+            <div class="stats-dashboard">
+              <div class="stat-bubble">
+                <span class="stat-num" id="stat-played">0</span>
+                <span class="stat-label">Played</span>
+              </div>
+              <div class="stat-bubble">
+                <span class="stat-num" id="stat-win-pct">0%</span>
+                <span class="stat-label">Win %</span>
+              </div>
+              <div class="stat-bubble">
+                <span class="stat-num" id="stat-current-streak">0</span>
+                <span class="stat-label">Streak</span>
+              </div>
+              <div class="stat-bubble">
+                <span class="stat-num" id="stat-max-streak">0</span>
+                <span class="stat-label">Max Streak</span>
+              </div>
+            </div>
+
+            <p class="tomorrow-prompt">Come back tomorrow to keep your streak alive!</p>
+
+            <div class="share-actions-row">
+              <button id="share-btn" class="accent-btn">Copy Result Image</button>
+              <button id="download-btn" class="secondary-btn">Download PNG</button>
+            </div>
+            <div id="share-feedback" class="share-feedback"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Guess History Section -->
+      <section class="history-section" id="history-section" style="display: none;">
+        <h2>Guesses Made (<span id="guess-count-label">0</span>/6)</h2>
+        <div class="guesses-grid" id="guesses-grid">
+          <!-- Dynamically populated cards -->
+        </div>
+      </section>
+    </main>
+    <Footer />
+    <!-- Developer Console Overlay (only visible on localhost) -->
+    <div id="dev-console" class="dev-console" style="display: none;">
+      <span id="dev-target-answer" class="dev-answer">Target: Loading...</span>
+      <button id="dev-reset-btn" class="dev-btn">Dev: Reset & Randomize Target</button>
+      <div class="dev-streak-tool">
+        <input type="number" id="dev-streak-input" class="dev-streak-input" placeholder="Streak" min="0" />
+        <button id="dev-streak-btn" class="dev-btn">Set Streak</button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { champlePokemonList, type ChamplePokemon } from '../../lib/chample-data';
+  import { createSpriteWidget, resetWidgets } from 'pmd-visualizer';
+
+  // ── Date-Based Target Selection ────────────────────────
+  // Epoch date: May 20, 2026
+  const EPOCH_DATE = new Date('2026-05-20T00:00:00').getTime();
+  
+  function getDailyTarget(): { pokemon: ChamplePokemon; dayNumber: number } {
+    const today = new Date();
+    // Midnight normalized timestamp
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const diffMs = todayMidnight - EPOCH_DATE;
+    const dayNumber = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    
+    // Check for dev override target first
+    try {
+      const devOverride = sessionStorage.getItem('chample-dev-override-target');
+      if (devOverride) {
+        const found = champlePokemonList.find(p => p.name === devOverride);
+        if (found) {
+          return { pokemon: found, dayNumber };
+        }
+      }
+    } catch (e) {
+      console.error('Failed to read dev target override', e);
+    }
+
+    // Seeded random number generation so changing days results in stable Pokémon selection
+    // Using a simple LCG or array indexing
+    const index = dayNumber % champlePokemonList.length;
+    return {
+      pokemon: champlePokemonList[index],
+      dayNumber
+    };
+  }
+
+  const { pokemon: targetPokemon, dayNumber } = getDailyTarget();
+
+  // ── Game State ──────────────────────────────────────────
+  interface GameState {
+    guesses: string[]; // names of guessed Pokemon
+    completed: boolean;
+    won: boolean;
+    day: number;
+    targetName?: string; // target Pokémon name to support resets and overrides
+  }
+
+  let state: GameState = {
+    guesses: [],
+    completed: false,
+    won: false,
+    day: dayNumber,
+    targetName: targetPokemon.name
+  };
+
+  const STORAGE_KEY = 'chample-daily-state';
+
+  function loadState() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Only restore if the day matches today AND targetName matches
+        if (parsed.day === dayNumber && parsed.targetName === targetPokemon.name) {
+          state = parsed;
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load state from localStorage', e);
+    }
+  }
+
+  function saveState() {
+    try {
+      state.targetName = targetPokemon.name;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error('Failed to save state to localStorage', e);
+    }
+  }
+
+  // ── Dom Elements ───────────────────────────────────────
+  const guessInput = document.getElementById('guess-input') as HTMLInputElement;
+  const autocompleteList = document.getElementById('autocomplete-list') as HTMLDivElement;
+  const guessBtn = document.getElementById('guess-btn') as HTMLButtonElement;
+  const errorMessage = document.getElementById('error-message') as HTMLDivElement;
+  const gameActivePanel = document.getElementById('game-active-panel') as HTMLDivElement;
+  const gameOverPanel = document.getElementById('game-over-panel') as HTMLDivElement;
+  const endStatusTitle = document.getElementById('end-status-title') as HTMLHeadingElement;
+  const endStatusDesc = document.getElementById('end-status-desc') as HTMLParagraphElement;
+  const targetNameEl = document.getElementById('target-name') as HTMLHeadingElement;
+
+  const targetSpriteContainer = document.getElementById('target-sprite-container') as HTMLDivElement;
+  const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
+  const downloadBtn = document.getElementById('download-btn') as HTMLButtonElement;
+  const shareFeedback = document.getElementById('share-feedback') as HTMLDivElement;
+  const historySection = document.getElementById('history-section') as HTMLDivElement;
+  const guessesGrid = document.getElementById('guesses-grid') as HTMLDivElement;
+  const guessCountLabel = document.getElementById('guess-count-label') as HTMLSpanElement;
+  const statPlayedEl = document.getElementById('stat-played') as HTMLSpanElement;
+  const statWinPctEl = document.getElementById('stat-win-pct') as HTMLSpanElement;
+  const statCurrentStreakEl = document.getElementById('stat-current-streak') as HTMLSpanElement;
+  const statMaxStreakEl = document.getElementById('stat-max-streak') as HTMLSpanElement;
+
+  // Stat Cards Dom mapping
+  const statsKeys = ['hp', 'attack', 'defense', 'spAtk', 'spDef', 'speed'] as const;
+  type StatKey = typeof statsKeys[number];
+
+  const statDom = {
+    hp: { val: document.getElementById('val-hp')!, bar: document.getElementById('bar-hp')! },
+    attack: { val: document.getElementById('val-attack')!, bar: document.getElementById('bar-attack')! },
+    defense: { val: document.getElementById('val-defense')!, bar: document.getElementById('bar-defense')! },
+    spAtk: { val: document.getElementById('val-spAtk')!, bar: document.getElementById('bar-spAtk')! },
+    spDef: { val: document.getElementById('val-spDef')!, bar: document.getElementById('bar-spDef')! },
+    speed: { val: document.getElementById('val-speed')!, bar: document.getElementById('bar-speed')! },
+  };
+
+  // ── Autocomplete Logic ─────────────────────────────────
+  let activeDropdownIndex = -1;
+
+  function showAutocomplete(val: string) {
+    autocompleteList.innerHTML = '';
+    activeDropdownIndex = -1;
+
+    if (!val.trim()) {
+      autocompleteList.style.display = 'none';
+      return;
+    }
+
+    const filtered = champlePokemonList.filter(p => 
+      p.displayName.toLowerCase().includes(val.toLowerCase()) && 
+      !state.guesses.includes(p.name)
+    ).slice(0, 8); // Max 8 suggestions
+
+    if (filtered.length === 0) {
+      autocompleteList.style.display = 'none';
+      return;
+    }
+
+    filtered.forEach((pokemon, idx) => {
+      const div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.dataset.name = pokemon.name;
+      div.textContent = pokemon.displayName;
+      
+      div.addEventListener('click', () => {
+        guessInput.value = pokemon.displayName;
+        autocompleteList.style.display = 'none';
+        guessInput.focus();
+      });
+
+      autocompleteList.appendChild(div);
+    });
+
+    autocompleteList.style.display = 'block';
+  }
+
+  guessInput.addEventListener('input', (e) => {
+    showAutocomplete((e.target as HTMLInputElement).value);
+  });
+
+  // Keyboard navigation for dropdown
+  guessInput.addEventListener('keydown', (e) => {
+    const items = autocompleteList.querySelectorAll('.autocomplete-item');
+    if (autocompleteList.style.display === 'none' || items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeDropdownIndex = (activeDropdownIndex + 1) % items.length;
+      highlightDropdownItem(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeDropdownIndex = (activeDropdownIndex - 1 + items.length) % items.length;
+      highlightDropdownItem(items);
+    } else if (e.key === 'Enter') {
+      if (activeDropdownIndex >= 0 && activeDropdownIndex < items.length) {
+        e.preventDefault();
+        const selected = items[activeDropdownIndex] as HTMLElement;
+        guessInput.value = selected.textContent || '';
+        autocompleteList.style.display = 'none';
+      }
+    } else if (e.key === 'Escape') {
+      autocompleteList.style.display = 'none';
+    }
+  });
+
+  function highlightDropdownItem(items: NodeListOf<Element>) {
+    items.forEach((item, idx) => {
+      if (idx === activeDropdownIndex) {
+        item.classList.add('highlighted');
+        // Scroll into view
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('highlighted');
+      }
+    });
+  }
+
+  // Close dropdown on click outside
+  document.addEventListener('click', (e) => {
+    if (e.target !== guessInput && e.target !== autocompleteList) {
+      autocompleteList.style.display = 'none';
+    }
+  });
+
+  // ── Core Game Mechanics ────────────────────────────────
+  
+  // Update the target stats panels based on incorrect guess count
+  function updateStatsPanel() {
+    const incorrectCount = getIncorrectCount();
+    
+    // Reveal speed from the start; other stats reveal with incorrect guesses
+    statsKeys.forEach((key) => {
+      let isRevealed = state.completed;
+      if (!isRevealed) {
+        if (key === 'speed') {
+          isRevealed = true;
+        } else if (key === 'hp' && incorrectCount >= 1) {
+          isRevealed = true;
+        } else if (key === 'attack' && incorrectCount >= 2) {
+          isRevealed = true;
+        } else if (key === 'defense' && incorrectCount >= 3) {
+          isRevealed = true;
+        } else if (key === 'spAtk' && incorrectCount >= 4) {
+          isRevealed = true;
+        } else if (key === 'spDef' && incorrectCount >= 5) {
+          isRevealed = true;
+        }
+      }
+      const dom = statDom[key];
+      
+      if (isRevealed) {
+        const val = targetPokemon.stats[key];
+        dom.val.textContent = String(val);
+        // Max base stat value in VGC is usually 255. Set percentage width.
+        const percent = Math.min(100, Math.max(5, (val / 200) * 100));
+        dom.bar.style.width = `${percent}%`;
+        dom.val.classList.add('revealed');
+      } else {
+        dom.val.textContent = '???';
+        dom.bar.style.width = '0%';
+        dom.val.classList.remove('revealed');
+      }
+    });
+  }
+
+  function getIncorrectCount(): number {
+    // If we've won, incorrect count is simply the guesses up to the correct one
+    const winIdx = state.guesses.indexOf(targetPokemon.name);
+    if (winIdx !== -1) {
+      return winIdx;
+    }
+    return state.guesses.length;
+  }
+
+  async function appendHistoryCard(mon: ChamplePokemon, index: number) {
+    const card = document.createElement('div');
+    const isCorrect = mon.name === targetPokemon.name;
+    card.className = `guess-card ${isCorrect ? 'correct-card' : ''}`;
+
+    const containerId = `guess-sprite-${index}-${Date.now()}`;
+
+    card.innerHTML = `
+      <span class="guess-num">Guess #${index + 1}</span>
+      <div class="guess-sprite-container" id="${containerId}">
+        <span class="sprite-loading">...</span>
+      </div>
+    `;
+
+    guessesGrid.appendChild(card);
+    historySection.style.display = 'block';
+
+    const spriteContainer = card.querySelector(`#${containerId}`) as HTMLDivElement;
+    try {
+      const widgetCanvas = await createSpriteWidget(mon.id);
+      if (spriteContainer) {
+        spriteContainer.innerHTML = '';
+        if (widgetCanvas) {
+          widgetCanvas.className = 'pmd-guess-sprite';
+          spriteContainer.appendChild(widgetCanvas);
+        } else {
+          // Fallback to static PokeAPI sprite
+          const fallbackImg = document.createElement('img');
+          fallbackImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${mon.id}.png`;
+          fallbackImg.alt = mon.displayName;
+          fallbackImg.className = 'fallback-guess-sprite';
+          spriteContainer.appendChild(fallbackImg);
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to load PMD sprite for ${mon.displayName}`, e);
+      if (spriteContainer) {
+        spriteContainer.innerHTML = '';
+        const fallbackImg = document.createElement('img');
+        fallbackImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${mon.id}.png`;
+        fallbackImg.alt = mon.displayName;
+        fallbackImg.className = 'fallback-guess-sprite';
+        spriteContainer.appendChild(fallbackImg);
+      }
+    }
+  }
+
+  function renderExistingGuesses() {
+    guessesGrid.innerHTML = '';
+    state.guesses.forEach((guessName, index) => {
+      const mon = champlePokemonList.find(p => p.name === guessName);
+      if (mon) appendHistoryCard(mon, index);
+    });
+    
+    guessCountLabel.textContent = String(state.guesses.length);
+  }
+
+  interface GameStats {
+    currentStreak: number;
+    maxStreak: number;
+    gamesPlayed: number;
+    gamesWon: number;
+    lastPlayedDay: number;
+    lastWonDay: number;
+  }
+
+  let stats: GameStats = {
+    currentStreak: 0,
+    maxStreak: 0,
+    gamesPlayed: 0,
+    gamesWon: 0,
+    lastPlayedDay: -1,
+    lastWonDay: -1
+  };
+
+  const STATS_KEY = 'chample-overall-stats';
+
+  function loadStats() {
+    try {
+      const stored = localStorage.getItem(STATS_KEY);
+      if (stored) {
+        stats = JSON.parse(stored);
+        
+        // If they missed playing yesterday, current streak resets to 0
+        if (stats.lastWonDay !== dayNumber && stats.lastWonDay !== dayNumber - 1) {
+          stats.currentStreak = 0;
+          saveStats();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load stats', e);
+    }
+  }
+
+  function saveStats() {
+    try {
+      localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    } catch (e) {
+      console.error('Failed to save stats', e);
+    }
+  }
+
+  function updateOverallStats() {
+    if (stats.lastPlayedDay === dayNumber) {
+      return;
+    }
+
+    stats.gamesPlayed += 1;
+    stats.lastPlayedDay = dayNumber;
+
+    if (state.won) {
+      stats.gamesWon += 1;
+      if (stats.lastWonDay === dayNumber - 1) {
+        stats.currentStreak += 1;
+      } else {
+        stats.currentStreak = 1;
+      }
+      stats.lastWonDay = dayNumber;
+      if (stats.currentStreak > stats.maxStreak) {
+        stats.maxStreak = stats.currentStreak;
+      }
+    } else {
+      stats.currentStreak = 0;
+    }
+
+    saveStats();
+  }
+
+  function populateStatsDashboard() {
+    statPlayedEl.textContent = String(stats.gamesPlayed);
+    const winPct = stats.gamesPlayed > 0 
+      ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) 
+      : 0;
+    statWinPctEl.textContent = `${winPct}%`;
+    statCurrentStreakEl.textContent = String(stats.currentStreak);
+    statMaxStreakEl.textContent = String(stats.maxStreak);
+
+    const pageStreakVal = document.getElementById('page-streak-val');
+    if (pageStreakVal) {
+      pageStreakVal.textContent = String(stats.currentStreak);
+    }
+    const pageStreakContainer = document.getElementById('page-streak-container');
+    if (pageStreakContainer) {
+      pageStreakContainer.style.display = stats.currentStreak > 0 ? 'flex' : 'none';
+    }
+  }
+
+  function submitGuess() {
+    errorMessage.textContent = '';
+    const text = guessInput.value.trim().toLowerCase();
+    
+    const matched = champlePokemonList.find(p => p.displayName.toLowerCase() === text);
+    if (!matched) {
+      errorMessage.textContent = 'Please choose a valid Regulation M-A Pokémon from the list.';
+      return;
+    }
+
+    if (state.guesses.includes(matched.name)) {
+      errorMessage.textContent = 'You have already guessed this Pokémon.';
+      return;
+    }
+
+    // Add to guesses list
+    state.guesses.push(matched.name);
+    guessInput.value = '';
+    
+    // Check win/loss condition
+    if (matched.name === targetPokemon.name) {
+      state.completed = true;
+      state.won = true;
+    } else if (state.guesses.length >= 6) {
+      state.completed = true;
+      state.won = false;
+    }
+
+    saveState();
+    appendHistoryCard(matched, state.guesses.length - 1);
+    guessCountLabel.textContent = String(state.guesses.length);
+    updateStatsPanel();
+
+    if (state.completed) {
+      triggerEndGame();
+    }
+  }
+
+  function getCuteFeedbackText(guessCount: number, won: boolean): string {
+    if (!won) {
+      return "So close! The Pokémon world believes in you! 🌟";
+    }
+    switch (guessCount) {
+      case 1:
+        return "Psychic master! Reading the code? 🔮✨";
+      case 2:
+        return "Incredible! Champion level instincts! 🏆⚡";
+      case 3:
+        return "Superb Poké-knowledge! Top-tier! 🎒⭐";
+      case 4:
+        return "Well done! A solid win for the team! 🎉";
+      case 5:
+        return "Phew! Saved by the skin of your teeth! 🍀";
+      case 6:
+        return "Whew! Down to the wire, but you clutched it! 💥";
+      default:
+        return "Nice job! You found the daily Pokémon!";
+    }
+  }
+
+  async function triggerEndGame() {
+    updateOverallStats();
+    populateStatsDashboard();
+    renderExistingGuesses();
+    gameActivePanel.style.display = 'none';
+    gameOverPanel.style.display = 'block';
+
+    if (state.won) {
+      endStatusTitle.textContent = 'Victory!';
+      endStatusDesc.textContent = getCuteFeedbackText(state.guesses.length, true);
+      endStatusTitle.style.color = 'var(--accent)';
+    } else {
+      endStatusTitle.textContent = 'Game Over';
+      endStatusDesc.textContent = getCuteFeedbackText(state.guesses.length, false);
+      endStatusTitle.style.color = '#ff5050';
+    }
+
+    targetNameEl.textContent = targetPokemon.displayName;
+
+
+    // Load sprite widget from pmd-visualizer
+    targetSpriteContainer.innerHTML = '<span class="sprite-loading">Summoning sprite...</span>';
+    const canvas = await createSpriteWidget(targetPokemon.id);
+    targetSpriteContainer.innerHTML = '';
+    if (canvas) {
+      canvas.className = 'pmd-guess-sprite';
+      targetSpriteContainer.appendChild(canvas);
+    } else {
+      // Fallback to static official artwork image
+      const img = document.createElement('img');
+      img.src = targetPokemon.artwork;
+      img.className = 'fallback-guess-sprite';
+      img.alt = targetPokemon.displayName;
+      targetSpriteContainer.appendChild(img);
+    }
+  }
+
+  // ── Share Image Generator ─────────────────────────────
+  function drawMiniPokeball(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+    // 1. Shadow / Outer Glow (subtle dark outline)
+    ctx.strokeStyle = '#0e0e11';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 2. Base white fill (for the bottom half and under-layer)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Red top half
+    ctx.fillStyle = '#e12c2c'; // Premium Pokéball red
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI, 0, false);
+    ctx.fill();
+
+    // 4. Horizontal black middle band
+    ctx.strokeStyle = '#1e1e24'; // Dark charcoal black
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx - r + 1, cy);
+    ctx.lineTo(cx + r - 1, cy);
+    ctx.stroke();
+
+    // 5. Outer button circle (black)
+    ctx.fillStyle = '#1e1e24';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Inner button circle (white)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 7. Subtle white shine reflection arc on top-left
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.65, Math.PI * 1.15, Math.PI * 1.45);
+    ctx.stroke();
+  }
+
+  async function generateShareImage(): Promise<Blob | null> {
+    const canvas = document.createElement('canvas');
+    canvas.width = 420;
+    
+    // Dynamically calculate canvas height based on guess count
+    const guessCount = Math.max(1, state.guesses.length);
+    const numRows = Math.ceil(guessCount / 2);
+    
+    const cardWidth = 84;
+    const cardHeight = 110;
+    const colGap = 24;
+    const rowGap = 16;
+    const startY = 155; // Pushed down to fit the cute feedback text
+    
+    const gridHeight = numRows * cardHeight + (numRows - 1) * rowGap;
+    const canvasHeight = startY + gridHeight + 60; // 60px padding at the bottom
+    canvas.height = canvasHeight;
+
+    const ctx = canvas.getContext('2d')!;
+
+    // Enable pixelated rendering for crisp pixel sprites
+    ctx.imageSmoothingEnabled = false;
+
+    // Read active theme CSS variables from the DOM
+    const styles = window.getComputedStyle(document.documentElement);
+    const accentColor = styles.getPropertyValue('--accent').trim() || '#ff3e3e';
+    const accentRgb = styles.getPropertyValue('--accent-rgb').trim() || '255, 62, 62';
+    const bgPage = styles.getPropertyValue('--bg-page').trim() || '#0e0e11';
+    const bgCard = styles.getPropertyValue('--bg-card').trim() || '#16161b';
+    const textNormal = styles.getPropertyValue('--text').trim() || '#ffffff';
+    const textMuted = styles.getPropertyValue('--text-muted').trim() || '#8f8f9e';
+
+    // 1. Draw Background
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, bgPage);
+    grad.addColorStop(1, bgCard);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Border (accentuated theme color)
+    ctx.strokeStyle = `rgba(${accentRgb}, 0.25)`;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+
+    // Accent line at top
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(4, 4, canvas.width - 8, 6);
+
+    // 2. Title & Header
+    ctx.fillStyle = accentColor;
+    ctx.font = 'bold 26px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CHAMPLE', canvas.width / 2, 50);
+
+    ctx.fillStyle = textMuted;
+    ctx.font = '14px monospace';
+    ctx.fillText(`Day #${dayNumber} • Regulation M-A`, canvas.width / 2, 75);
+
+    // Result
+    const resultText = state.won 
+      ? `Victory! Guessed in ${state.guesses.length}/6`
+      : 'Game Over • Ran out of guesses';
+    ctx.fillStyle = state.won ? '#22c55e' : '#ef4444';
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText(resultText, canvas.width / 2, 100);
+
+    // Draw Streak (Always visible on share screenshot)
+    ctx.fillStyle = '#ff9f43';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText(`Streak: ${stats.currentStreak} 🔥`, canvas.width / 2, 118);
+
+    // Draw Cute Feedback Text
+    const cuteText = getCuteFeedbackText(state.guesses.length, state.won);
+    ctx.fillStyle = textNormal;
+    ctx.font = 'italic 11px monospace';
+    ctx.fillText(cuteText, canvas.width / 2, 136);
+
+    // 3. Draw Guess Grid (only show the actual guesses made)
+    const totalWidth = 2 * cardWidth + colGap;
+    const startX = (canvas.width - totalWidth) / 2;
+
+    for (let i = 0; i < guessCount; i++) {
+      const row = Math.floor(i / 2);
+      const col = i % 2;
+      
+      // Center the card horizontally if it is the only card in its row (odd count)
+      const isSingleInRow = (i === guessCount - 1) && (guessCount % 2 === 1);
+      const x = isSingleInRow 
+        ? (canvas.width - cardWidth) / 2
+        : startX + col * (cardWidth + colGap);
+      const y = startY + row * (cardHeight + rowGap);
+
+      // Card Background (matches theme card background color)
+      ctx.fillStyle = bgCard;
+      ctx.fillRect(x, y, cardWidth, cardHeight);
+
+      const isCorrect = state.guesses[i] === targetPokemon.name;
+      
+      // Solid border
+      ctx.strokeStyle = isCorrect ? '#22c55e' : `rgba(${accentRgb}, 0.35)`;
+      ctx.lineWidth = isCorrect ? 2.5 : 1.5;
+      ctx.strokeRect(x, y, cardWidth, cardHeight);
+
+      // Draw a beautiful retro Pokeball instead of the actual sprite to keep it spoiler-free!
+      const cx = x + cardWidth / 2;
+      const cy = y + 64;
+      drawMiniPokeball(ctx, cx, cy, 18);
+
+      // Draw Label (#1, #2, etc.) inside the card at the top
+      ctx.fillStyle = accentColor;
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`#${i + 1}`, x + cardWidth / 2, y + 16);
+
+      // Subtle divider line inside card
+      ctx.strokeStyle = `rgba(${accentRgb}, 0.15)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, y + 22);
+      ctx.lineTo(x + cardWidth - 8, y + 22);
+      ctx.stroke();
+    }
+
+    // 4. Footer
+    ctx.fillStyle = textMuted;
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('adam.kenawell.family/projects/chample', canvas.width / 2, canvas.height - 30);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png');
+    });
+  }
+
+  async function copyPNGToClipboard() {
+    showShareFeedback('Generating image...');
+
+    const blob = await generateShareImage();
+    if (!blob) {
+      showShareFeedback('Failed to generate image.', true);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ]);
+      showShareFeedback('Image copied to clipboard! 📋');
+    } catch (err) {
+      console.error('Clipboard copy failed. Downloading instead.', err);
+      // Auto-fallback to download
+      downloadPNGFromBlob(blob);
+      showShareFeedback('Copy failed. Downloaded PNG instead!');
+    }
+  }
+
+  async function downloadPNG() {
+    showShareFeedback('Generating image...');
+
+    const blob = await generateShareImage();
+    if (!blob) {
+      showShareFeedback('Failed to generate image.', true);
+      return;
+    }
+    downloadPNGFromBlob(blob);
+    showShareFeedback('Downloaded PNG file! 💾');
+  }
+
+  function downloadPNGFromBlob(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chample-day-${dayNumber}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  let feedbackTimeout: number;
+  function showShareFeedback(msg: string, isError = false) {
+    clearTimeout(feedbackTimeout);
+    shareFeedback.textContent = msg;
+    shareFeedback.className = 'share-feedback visible';
+    if (isError) {
+      shareFeedback.style.color = '#ff5050';
+    } else {
+      shareFeedback.style.color = 'var(--accent)';
+    }
+    feedbackTimeout = window.setTimeout(() => {
+      shareFeedback.classList.remove('visible');
+    }, 3000);
+  }
+
+  shareBtn.addEventListener('click', copyPNGToClipboard);
+  downloadBtn.addEventListener('click', downloadPNG);
+
+  // ── Listeners ──────────────────────────────────────────
+  guessBtn.addEventListener('click', submitGuess);
+  
+  guessInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      submitGuess();
+    }
+  });
+
+  // Initialize
+  function initGame() {
+    resetWidgets();
+    loadState();
+    loadStats();
+    renderExistingGuesses();
+    updateStatsPanel();
+    populateStatsDashboard();
+
+    if (state.completed) {
+      triggerEndGame();
+    } else {
+      gameActivePanel.style.display = 'block';
+      gameOverPanel.style.display = 'none';
+    }
+  }
+
+  // Astro page-load handler
+  document.addEventListener('astro:page-load', initGame);
+
+  // ── Developer Actions Console ──────────────────────────
+  const devConsole = document.getElementById('dev-console') as HTMLDivElement;
+  const devResetBtn = document.getElementById('dev-reset-btn') as HTMLButtonElement;
+  const devStreakInput = document.getElementById('dev-streak-input') as HTMLInputElement;
+  const devStreakBtn = document.getElementById('dev-streak-btn') as HTMLButtonElement;
+
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    if (devConsole) {
+      devConsole.style.display = 'flex';
+      const devAnswerEl = document.getElementById('dev-target-answer');
+      if (devAnswerEl) {
+        devAnswerEl.textContent = `Target: ${targetPokemon.displayName} (${targetPokemon.id})`;
+      }
+    }
+  }
+
+  if (devResetBtn) {
+    devResetBtn.addEventListener('click', () => {
+      // Clear current daily guess state
+      localStorage.removeItem(STORAGE_KEY);
+      
+      // Pick a random target Pokémon name that is NOT the current one (to guarantee a new guess experience)
+      let newTarget = targetPokemon;
+      if (champlePokemonList.length > 1) {
+        while (newTarget.name === targetPokemon.name) {
+          newTarget = champlePokemonList[Math.floor(Math.random() * champlePokemonList.length)];
+        }
+      }
+      sessionStorage.setItem('chample-dev-override-target', newTarget.name);
+      
+      // Reload page to start fresh
+      window.location.reload();
+    });
+  }
+
+  if (devStreakBtn && devStreakInput) {
+    devStreakBtn.addEventListener('click', () => {
+      const val = parseInt(devStreakInput.value, 10);
+      if (!isNaN(val) && val >= 0) {
+        stats.currentStreak = val;
+        if (stats.currentStreak > stats.maxStreak) {
+          stats.maxStreak = stats.currentStreak;
+        }
+        stats.lastWonDay = dayNumber; // Prevent midnight transition check from wiping it immediately
+        saveStats();
+        
+        // Update both the endgame dashboard and normal dashboard elements instantly
+        populateStatsDashboard();
+        
+        const statCurrentStreakEl = document.getElementById('stat-current-streak');
+        if (statCurrentStreakEl) {
+          statCurrentStreakEl.textContent = String(stats.currentStreak);
+        }
+        const statMaxStreakEl = document.getElementById('stat-max-streak');
+        if (statMaxStreakEl) {
+          statMaxStreakEl.textContent = String(stats.maxStreak);
+        }
+        
+        alert(`Dev: Streak set to ${val}!`);
+      }
+    });
+  }
+</script>
+
+<style>
+  .chample-container {
+    flex: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  .chample-hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .chample-hero h1 {
+    font-size: 2.2rem;
+    color: var(--accent);
+    margin-bottom: 0.35rem;
+  }
+
+  .chample-hero .tagline {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.75rem;
+  }
+
+  .chample-hero .description {
+    font-size: 0.95rem;
+    color: var(--text);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .streak-badge-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.25rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .streak-badge {
+    background: rgba(255, 159, 67, 0.12);
+    border: 1px solid rgba(255, 159, 67, 0.25);
+    color: #ff9f43;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(255, 159, 67, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .streak-badge-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+  }
+
+  .flame-icon {
+    font-size: 0.95rem;
+    filter: drop-shadow(0 0 4px rgba(255, 159, 67, 0.5));
+    animation: flame-pulse 1.5s infinite alternate ease-in-out;
+  }
+
+  @keyframes flame-pulse {
+    0% { transform: scale(1.0); }
+    100% { transform: scale(1.18); }
+  }
+
+  h2 {
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
+    padding-bottom: 0.4rem;
+  }
+
+  /* Stats Grid UI */
+  .stats-panel-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--text-muted);
+    font-family: monospace;
+    transition: color 0.5s;
+  }
+
+  .stat-value.revealed {
+    color: var(--accent);
+    animation: pulse-reveal 0.4s ease-out;
+  }
+
+  @keyframes pulse-reveal {
+    0% { transform: scale(1); text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.8); }
+    100% { transform: scale(1); text-shadow: none; }
+  }
+
+  .progress-bar-bg {
+    height: 6px;
+    background: rgba(var(--accent-rgb), 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  /* Specific base stats colors */
+  .fill-hp { background: #ff5959; box-shadow: 0 0 8px rgba(255, 89, 89, 0.4); }
+  .fill-attack { background: #f5ac78; box-shadow: 0 0 8px rgba(245, 172, 120, 0.4); }
+  .fill-defense { background: #fae078; box-shadow: 0 0 8px rgba(250, 224, 120, 0.4); }
+  .fill-spAtk { background: #9db7f5; box-shadow: 0 0 8px rgba(157, 183, 245, 0.4); }
+  .fill-spDef { background: #a7db8d; box-shadow: 0 0 8px rgba(167, 219, 141, 0.4); }
+  .fill-speed { background: #fa92b2; box-shadow: 0 0 8px rgba(250, 146, 178, 0.4); }
+
+  /* Input Panel styling */
+  .gameplay-section {
+    margin-bottom: 3rem;
+  }
+
+  .search-container {
+    position: relative;
+    width: 100%;
+  }
+
+  #guess-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 1.1rem;
+    padding: 0.8rem 1.2rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #guess-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.25);
+  }
+
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  .autocomplete-item {
+    padding: 0.7rem 1.2rem;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .autocomplete-item:hover,
+  .autocomplete-item.highlighted {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .action-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.2rem;
+  }
+
+  #guess-btn {
+    padding: 0.6rem 2.2rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    font-weight: bold;
+  }
+
+  .error-message {
+    text-align: center;
+    color: #ff5050;
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    min-height: 1.2rem;
+  }
+
+  /* End Game Panel */
+  .end-card {
+    background: rgba(var(--accent-rgb), 0.04);
+    border: 2px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: card-appear 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes card-appear {
+    0% { opacity: 0; transform: translateY(15px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .end-card h2 {
+    font-size: 1.8rem;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  #end-status-desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .target-reveal-card-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+  }
+
+  .target-reveal-card {
+    min-width: 140px;
+    max-width: 160px;
+  }
+
+  .target-reveal-name {
+    font-size: 1.05rem !important;
+    color: var(--accent);
+    margin: 0;
+    text-align: center;
+    border-top: 1px solid rgba(var(--accent-rgb), 0.15);
+    width: 100%;
+    padding-top: 0.4rem;
+  }
+
+  .sprite-loading {
+    font-size: 0.65rem;
+    color: var(--text-faint);
+  }
+
+  #share-btn {
+    padding: 0.6rem 2.5rem;
+    font-size: 0.95rem;
+  }
+
+  .share-feedback {
+    font-size: 0.8rem;
+    color: var(--accent);
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: opacity 0.3s, transform 0.3s;
+    height: 1rem;
+  }
+
+  .share-feedback.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* History Section Table */
+  .history-section {
+    margin-top: 2rem;
+    animation: fade-in 0.3s ease-out;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Visual Guesses Grid styles */
+  .guesses-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  :global(.guess-card) {
+    background: var(--bg-card);
+    border: 2px solid rgba(var(--accent-rgb), 0.35);
+    border-radius: 12px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.65rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  :global(.guess-card:hover) {
+    transform: translateY(-8px) scale(1.05);
+    border-color: var(--accent);
+    box-shadow: 0 12px 30px rgba(var(--accent-rgb), 0.3);
+  }
+
+  :global(.guess-card.correct-card) {
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    background: linear-gradient(to bottom, var(--bg-card), rgba(34, 197, 94, 0.08));
+  }
+
+
+  :global(.guess-card.correct-card:hover) {
+    box-shadow: 0 12px 30px rgba(34, 197, 94, 0.45);
+    border-color: #22c55e;
+  }
+
+  :global(.guess-num) {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-family: monospace;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.15);
+    width: 100%;
+    text-align: center;
+    padding-bottom: 0.35rem;
+  }
+
+  :global(.guess-sprite-container) {
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: visible;
+  }
+
+  :global(.guess-sprite-container img) {
+    width: 125%;
+    height: 125%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  @media (max-width: 580px) {
+    .guesses-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      max-width: 360px;
+    }
+  }
+
+  /* Share panel improvements */
+  .share-actions-row {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 480px) {
+    .share-actions-row {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .share-actions-row button {
+      width: 100%;
+      max-width: 240px;
+    }
+  }
+
+  .secondary-btn {
+    background: transparent;
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    color: var(--accent);
+    padding: 0.6rem 2rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .secondary-btn:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+    border-color: var(--accent);
+  }
+
+  /* Streak Dashboard & Tomorrow Prompt */
+  .stats-dashboard {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 1.2rem 0;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .stat-bubble {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .stat-bubble .stat-num {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+    font-family: monospace;
+  }
+
+  .stat-bubble .stat-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+
+  .tomorrow-prompt {
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-weight: bold;
+    margin: 0.5rem 0 1rem;
+    text-align: center;
+    animation: pulse-glow 2s infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    0% { opacity: 0.8; text-shadow: 0 0 4px rgba(var(--accent-rgb), 0.1); }
+    100% { opacity: 1; text-shadow: 0 0 12px rgba(var(--accent-rgb), 0.6); }
+  }
+
+  :global(.pmd-guess-sprite) {
+    image-rendering: pixelated;
+    width: 125%;
+    height: 125%;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+
+  :global(.fallback-guess-sprite) {
+    width: 125%;
+    height: 125%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  /* Developer Console Overlay */
+  .dev-console {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    background: rgba(15, 15, 20, 0.95);
+    border: 1px dashed #ff4a4a;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    box-shadow: 0 0 15px rgba(255, 74, 74, 0.25);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .dev-answer {
+    color: #ff4a4a;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    user-select: all;
+  }
+
+  .dev-btn {
+    background: #ff4a4a;
+    color: #ffffff !important;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .dev-btn:hover {
+    background: #e03636;
+    transform: scale(1.03);
+  }
+
+  .dev-btn:active {
+    transform: scale(0.98);
+  }
+
+  .dev-streak-tool {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-left: 1px solid rgba(255, 74, 74, 0.3);
+    padding-left: 0.75rem;
+  }
+
+  .dev-streak-input {
+    width: 60px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 74, 74, 0.4);
+    border-radius: 4px;
+    color: #fff;
+    padding: 0.25rem 0.4rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .dev-streak-input:focus {
+    outline: none;
+    border-color: #ff4a4a;
+  }
+</style>
