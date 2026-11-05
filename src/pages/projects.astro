@@ -6,7 +6,14 @@ import Footer from '../components/Footer.astro';
 const base = import.meta.env.BASE_URL;
 
 // Add projects here as objects with title, description, tech[], and url.
-const projects: { title: string; description: string; tech: string[]; url: string }[] = [];
+const projects: { title: string; description: string; tech: string[]; url: string }[] = [
+  {
+    title: 'Poké Emblem',
+    description: 'A browser-based tactical RPG combining Fire Emblem Awakening grid combat, growth rates, and supports with Pokémon Mystery Dungeon: Explorers of Sky visuals, dungeon tilesets, and portraits.',
+    tech: ['TypeScript', 'Astro', 'PMD Sprites & Portraits', 'Tactical RPG', 'Firebase Cloud Save'],
+    url: `${base}projects/poke-emblem`,
+  },
+];
 ---
 
 <Layout title="Projects — Adam Kenawell" description="Side projects and experiments from Adam Kenawell.">
