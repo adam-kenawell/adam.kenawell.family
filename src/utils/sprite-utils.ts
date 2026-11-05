@@ -6,14 +6,25 @@ export interface FrameInfo {
 
 const SPRITE_BASE = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite';
 
-export function spriteUrl(pokemonId: number, action: string): string {
-  const id = String(pokemonId).padStart(4, '0');
-  return `${SPRITE_BASE}/${id}/${action}-Anim.png`;
+function normalizeAssetPath(pokemonIdOrPath: number | string): string {
+  if (typeof pokemonIdOrPath === 'number') {
+    return String(pokemonIdOrPath).padStart(4, '0');
+  }
+  const trimmed = pokemonIdOrPath.trim();
+  if (/^\d+$/.test(trimmed)) {
+    return trimmed.padStart(4, '0');
+  }
+  return trimmed;
 }
 
-function animDataUrl(pokemonId: number): string {
-  const id = String(pokemonId).padStart(4, '0');
-  return `${SPRITE_BASE}/${id}/AnimData.xml`;
+export function spriteUrl(pokemonIdOrPath: number | string, action: string): string {
+  const path = normalizeAssetPath(pokemonIdOrPath);
+  return `${SPRITE_BASE}/${path}/${action}-Anim.png`;
+}
+
+function animDataUrl(pokemonIdOrPath: number | string): string {
+  const path = normalizeAssetPath(pokemonIdOrPath);
+  return `${SPRITE_BASE}/${path}/AnimData.xml`;
 }
 
 export function loadImage(url: string): Promise<HTMLImageElement | null> {
@@ -26,9 +37,11 @@ export function loadImage(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
-export async function fetchAnimData(pokemonId: number): Promise<Record<string, { w: number; h: number }>> {
+export async function fetchAnimData(
+  pokemonIdOrPath: number | string
+): Promise<Record<string, { w: number; h: number }>> {
   try {
-    const res = await fetch(animDataUrl(pokemonId));
+    const res = await fetch(animDataUrl(pokemonIdOrPath));
     const text = await res.text();
     const doc = new DOMParser().parseFromString(text, 'text/xml');
     const anims = doc.querySelectorAll('Anim');
@@ -136,14 +149,19 @@ function startWidgetLoop(): void {
   requestAnimationFrame(tick);
 }
 
-export async function createSpriteWidget(pokemonId: number, scale = 2): Promise<HTMLCanvasElement | null> {
-  if (pokemonId <= 0) return null;
+export async function createSpriteWidget(
+  pokemonIdOrPath: number | string,
+  scale = 2
+): Promise<HTMLCanvasElement | null> {
+  if (typeof pokemonIdOrPath === 'number' && pokemonIdOrPath <= 0) return null;
+  if (typeof pokemonIdOrPath === 'string' && pokemonIdOrPath.trim().length === 0) return null;
+
   const [animDims, walkImg, idleImg, attackImg, sleepImg] = await Promise.all([
-    fetchAnimData(pokemonId),
-    loadImage(spriteUrl(pokemonId, 'Walk')),
-    loadImage(spriteUrl(pokemonId, 'Idle')),
-    loadImage(spriteUrl(pokemonId, 'Attack')),
-    loadImage(spriteUrl(pokemonId, 'Sleep')),
+    fetchAnimData(pokemonIdOrPath),
+    loadImage(spriteUrl(pokemonIdOrPath, 'Walk')),
+    loadImage(spriteUrl(pokemonIdOrPath, 'Idle')),
+    loadImage(spriteUrl(pokemonIdOrPath, 'Attack')),
+    loadImage(spriteUrl(pokemonIdOrPath, 'Sleep')),
   ]);
   if (!walkImg && !idleImg) return null;
 

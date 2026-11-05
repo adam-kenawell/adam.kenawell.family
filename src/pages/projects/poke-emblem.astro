@@ -14,39 +14,176 @@ import Footer from '../../components/Footer.astro';
     <main class="poke-emblem-shell">
       <div id="poke-emblem-root" class="pmd-viewport">
         <!-- Persistent Mobile / PC Menu & Back Button (Rule 2 & Rule 3) -->
-        <button id="pmd-corner-menu-btn" class="pmd-window pmd-corner-btn" type="button" aria-label="Menu or Back">
+        <button
+          id="pmd-corner-menu-btn"
+          class="pmd-window pmd-corner-btn"
+          type="button"
+          aria-label="Menu or Back"
+        >
           Menu / Back
         </button>
 
         <!-- Authentic PMD: Explorers of Sky Title Window -->
-        <section class="pmd-window pmd-title-card">
+        <section id="pmd-title-screen" class="pmd-window pmd-title-card">
           <div class="pmd-badge-row">
-            <div id="pmd-bulbasaur-slot" class="pmd-sprite-slot" title="Click or tap Bulbasaur to attack!"></div>
-            <div class="pmd-badge">DEV BUILD · STEP 0 SHELL</div>
+            <div id="pmd-hero-sprite-slot" class="pmd-sprite-slot" title="Tap or click sprite to attack!"></div>
+            <div id="pmd-build-badge" class="pmd-badge">DEV BUILD · STEP 1 REGISTRIES &amp; SAVE</div>
           </div>
+
           <h1 class="pmd-title">POKÉ EMBLEM</h1>
           <p class="pmd-subtitle">Echoes of the Dragon Lineage</p>
 
-          <p class="pmd-desc">
-            Fire Emblem Awakening tactical grid combat meets Pokémon Mystery Dungeon: Explorers of Sky sprites, dungeon tilesets, and portraits.
+          <p id="pmd-save-summary" class="pmd-desc">
+            Checking local &amp; Cloud Firestore campaign data...
           </p>
 
           <div class="pmd-actions">
-            <button class="pmd-btn pmd-btn-primary" id="btn-new-game" type="button">
-              New Campaign (Quiz)
+            <button class="pmd-btn pmd-btn-primary" id="btn-continue" type="button" disabled>
+              Continue Campaign
             </button>
-            <button class="pmd-btn" id="btn-continue" type="button" disabled>
-              Continue Save (No Save Found)
+            <button class="pmd-btn" id="btn-new-demo-save" type="button">
+              Initialize Prologue Trio Save
+            </button>
+            <button class="pmd-btn" id="btn-open-inspector" type="button">
+              Step 1 Save &amp; Registry Inspector
             </button>
             <button class="pmd-btn" id="btn-cloud-sync" type="button">
               Google Cloud Save Sync
             </button>
           </div>
 
-          <p id="pmd-status-msg" class="pmd-status">
-            Ready to begin Step 1: Core Data Schemas, Manual Balance Registries &amp; SaveStateManager.
+          <p id="pmd-status-msg" class="pmd-status" aria-live="polite">
+            Initializing registries...
           </p>
         </section>
+
+        <!-- Step 1 Save & Registry Inspector Window -->
+        <section id="pmd-inspector-modal" class="pmd-window pmd-inspector" hidden>
+          <header class="pmd-inspector-header">
+            <div>
+              <h2 class="pmd-inspector-title">STEP 1 · SYSTEM &amp; ROSTER INSPECTOR</h2>
+              <p id="pmd-inspector-sub" class="pmd-inspector-sub">
+                Right-click (PC), long-press, or tap Menu / Back to close.
+              </p>
+            </div>
+          </header>
+
+          <nav class="pmd-tabs" aria-label="Inspector Tabs">
+            <button type="button" class="pmd-btn pmd-tab-btn is-active" data-tab="squad">
+              Squad &amp; Nicknames
+            </button>
+            <button type="button" class="pmd-btn pmd-tab-btn" data-tab="registry">
+              Registry Audit
+            </button>
+            <button type="button" class="pmd-btn pmd-tab-btn" data-tab="sync">
+              Cloud &amp; Backup
+            </button>
+          </nav>
+
+          <!-- TAB 1: SQUAD & NICKNAMES -->
+          <div id="tab-panel-squad" class="pmd-tab-panel">
+            <div id="squad-empty-state" class="pmd-empty-box" hidden>
+              <p>No active save file in localStorage yet.</p>
+              <button type="button" id="btn-empty-create-save" class="pmd-btn pmd-btn-primary">
+                Create Prologue Trio Save (Dratini + Bulbasaur + Happiny)
+              </button>
+            </div>
+            <div id="squad-cards-grid" class="pmd-squad-grid"></div>
+          </div>
+
+          <!-- TAB 2: REGISTRY AUDIT -->
+          <div id="tab-panel-registry" class="pmd-tab-panel" hidden>
+            <div id="registry-audit-banner" class="pmd-audit-banner"></div>
+            <div id="registry-metrics-grid" class="pmd-metrics-grid"></div>
+            <div id="registry-errors-box" class="pmd-errors-box" hidden></div>
+          </div>
+
+          <!-- TAB 3: CLOUD & BACKUP -->
+          <div id="tab-panel-sync" class="pmd-tab-panel" hidden>
+            <div class="pmd-sync-grid">
+              <div class="pmd-subcard">
+                <h3 class="pmd-subcard-title">Local Storage (`poke_emblem_save_v1`)</h3>
+                <p id="sync-local-details" class="pmd-subcard-text">—</p>
+                <div class="pmd-inline-btns">
+                  <button type="button" id="btn-export-json" class="pmd-btn">Export Save JSON</button>
+                  <button type="button" id="btn-open-import" class="pmd-btn">Import Save JSON</button>
+                  <button type="button" id="btn-clear-save" class="pmd-btn pmd-btn-danger">
+                    Clear Local Save
+                  </button>
+                </div>
+              </div>
+
+              <div class="pmd-subcard">
+                <h3 class="pmd-subcard-title">Google Auth + Cloud Firestore (`saves/&#123;uid&#125;`)</h3>
+                <p id="sync-cloud-details" class="pmd-subcard-text">—</p>
+                <div class="pmd-inline-btns">
+                  <button type="button" id="btn-google-auth-toggle" class="pmd-btn pmd-btn-primary">
+                    Sign in with Google
+                  </button>
+                  <button type="button" id="btn-reconcile-now" class="pmd-btn">
+                    Reconcile Timestamps Now
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="json-io-box" class="pmd-subcard pmd-json-box" hidden>
+              <h3 id="json-io-title" class="pmd-subcard-title">Save Backup JSON</h3>
+              <textarea
+                id="json-io-textarea"
+                class="pmd-textarea"
+                rows="6"
+                spellcheck="false"
+                aria-label="Save JSON payload"
+              ></textarea>
+              <div class="pmd-inline-btns">
+                <button type="button" id="btn-confirm-import" class="pmd-btn pmd-btn-primary" hidden>
+                  Validate &amp; Import JSON
+                </button>
+                <button type="button" id="btn-download-json" class="pmd-btn" hidden>
+                  Download .json File
+                </button>
+                <button type="button" id="btn-close-json-box" class="pmd-btn">Close</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reusable PMD Nickname Modal (Pointer-driven, PC + Mobile) -->
+        <div id="pmd-nickname-backdrop" class="pmd-modal-backdrop" hidden>
+          <div class="pmd-window pmd-nickname-dialog" role="dialog" aria-modal="true" aria-labelledby="nickname-modal-title">
+            <h3 id="nickname-modal-title" class="pmd-inspector-title">Edit Pokémon Nickname</h3>
+            <p id="nickname-modal-species" class="pmd-inspector-sub"></p>
+
+            <input
+              id="nickname-input"
+              type="text"
+              maxlength="16"
+              class="pmd-text-input"
+              placeholder="Enter nickname (max 16 chars)"
+              autocomplete="off"
+            />
+
+            <div class="pmd-preset-row">
+              <span class="pmd-preset-label">Quick Presets:</span>
+              <button type="button" class="pmd-btn pmd-chip-btn" data-preset="Bahamut">Bahamut</button>
+              <button type="button" class="pmd-btn pmd-chip-btn" data-preset="Sprout">Sprout</button>
+              <button type="button" class="pmd-btn pmd-chip-btn" data-preset="Clover">Clover</button>
+            </div>
+
+            <div class="pmd-inline-btns pmd-modal-actions">
+              <button type="button" id="btn-save-nickname" class="pmd-btn pmd-btn-primary">
+                Save Nickname
+              </button>
+              <button type="button" id="btn-reset-nickname" class="pmd-btn">
+                Default Name
+              </button>
+              <button type="button" id="btn-cancel-nickname" class="pmd-btn">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 
@@ -56,45 +193,596 @@ import Footer from '../../components/Footer.astro';
 
 <script>
   import { createSpriteWidget, resetSpriteWidgets } from '../../utils/sprite-utils';
+  import {
+    getItemById,
+    getMoveById,
+    getPersonalSkillById,
+    getRegistryValidationSummary,
+    getSpeciesById,
+  } from '../../poke-emblem/data/index';
+  import { InMemoryCloudSyncAdapter } from '../../poke-emblem/state/firebaseSync';
+  import { SaveStateManager } from '../../poke-emblem/state/SaveStateManager';
 
-  async function initPokeEmblemShell() {
-    resetSpriteWidgets();
-    const statusEl = document.getElementById('pmd-status-msg');
-    const newGameBtn = document.getElementById('btn-new-game');
-    const cloudBtn = document.getElementById('btn-cloud-sync');
-    const menuBtn = document.getElementById('pmd-corner-menu-btn');
-    const bulbasaurSlot = document.getElementById('pmd-bulbasaur-slot');
+  // Rule 2: Unified Pointer Tap Binder (distinguishes clean tap/click from touch-scroll drag; zero keyboard listeners)
+  function bindPointerTap(el: HTMLElement | null, handler: (ev: PointerEvent) => void): void {
+    if (!el) return;
+    let startX = 0;
+    let startY = 0;
+    let activePointerId: number | null = null;
 
-    if (bulbasaurSlot) {
-      bulbasaurSlot.innerHTML = '';
-      // Bulbasaur = National Dex #1
-      const spriteCanvas = await createSpriteWidget(1, 2);
-      if (spriteCanvas) {
-        bulbasaurSlot.appendChild(spriteCanvas);
-      }
-    }
+    el.addEventListener('pointerdown', (ev: PointerEvent) => {
+      if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+      activePointerId = ev.pointerId;
+      startX = ev.clientX;
+      startY = ev.clientY;
+    });
 
-    newGameBtn?.addEventListener('pointerdown', () => {
-      if (statusEl) {
-        statusEl.textContent = 'Starting Quiz & SaveStateManager will be wired in Steps 1–3!';
+    el.addEventListener('pointerup', (ev: PointerEvent) => {
+      if (activePointerId !== ev.pointerId) return;
+      activePointerId = null;
+      if ((el as HTMLButtonElement).disabled) return;
+      const moved = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+      if (moved <= 12) {
+        handler(ev);
       }
     });
 
-    cloudBtn?.addEventListener('pointerdown', () => {
-      if (statusEl) {
-        statusEl.textContent = 'Firebase Google Auth + Cloud Firestore hybrid sync will be wired in Step 1!';
-      }
-    });
-
-    menuBtn?.addEventListener('pointerdown', () => {
-      if (statusEl) {
-        statusEl.textContent = 'PMD System Menu / Back button triggered via unified Pointer Event.';
-      }
+    el.addEventListener('pointercancel', () => {
+      activePointerId = null;
     });
   }
 
-  initPokeEmblemShell();
-  document.addEventListener('astro:after-swap', initPokeEmblemShell);
+  let currentManager: SaveStateManager | null = null;
+
+  async function initPokeEmblemApp() {
+    resetSpriteWidgets();
+    currentManager?.dispose();
+
+    const manager = new SaveStateManager();
+    currentManager = manager;
+
+    const validation = getRegistryValidationSummary();
+
+    // Expose debug/test bridge for Playwright cross-device verification
+    (window as unknown as Record<string, unknown>).__POKE_EMBLEM_DEBUG__ = {
+      saveManager: manager,
+      SaveStateManager,
+      InMemoryCloudSyncAdapter,
+      getRegistryValidationSummary,
+    };
+
+    const viewportEl = document.getElementById('poke-emblem-root');
+    const titleScreen = document.getElementById('pmd-title-screen');
+    const inspectorModal = document.getElementById('pmd-inspector-modal');
+    const cornerMenuBtn = document.getElementById('pmd-corner-menu-btn');
+    const heroSpriteSlot = document.getElementById('pmd-hero-sprite-slot');
+    const saveSummaryEl = document.getElementById('pmd-save-summary');
+    const statusMsgEl = document.getElementById('pmd-status-msg');
+
+    const btnContinue = document.getElementById('btn-continue') as HTMLButtonElement | null;
+    const btnNewDemoSave = document.getElementById('btn-new-demo-save');
+    const btnOpenInspector = document.getElementById('btn-open-inspector');
+    const btnCloudSync = document.getElementById('btn-cloud-sync');
+    const btnEmptyCreateSave = document.getElementById('btn-empty-create-save');
+
+    const squadEmptyState = document.getElementById('squad-empty-state');
+    const squadCardsGrid = document.getElementById('squad-cards-grid');
+
+    const auditBanner = document.getElementById('registry-audit-banner');
+    const metricsGrid = document.getElementById('registry-metrics-grid');
+    const errorsBox = document.getElementById('registry-errors-box');
+
+    const syncLocalDetails = document.getElementById('sync-local-details');
+    const syncCloudDetails = document.getElementById('sync-cloud-details');
+    const btnExportJson = document.getElementById('btn-export-json') as HTMLButtonElement | null;
+    const btnOpenImport = document.getElementById('btn-open-import');
+    const btnClearSave = document.getElementById('btn-clear-save') as HTMLButtonElement | null;
+    const btnGoogleAuthToggle = document.getElementById('btn-google-auth-toggle');
+    const btnReconcileNow = document.getElementById('btn-reconcile-now') as HTMLButtonElement | null;
+
+    const jsonIoBox = document.getElementById('json-io-box');
+    const jsonIoTitle = document.getElementById('json-io-title');
+    const jsonIoTextarea = document.getElementById('json-io-textarea') as HTMLTextAreaElement | null;
+    const btnConfirmImport = document.getElementById('btn-confirm-import');
+    const btnDownloadJson = document.getElementById('btn-download-json');
+    const btnCloseJsonBox = document.getElementById('btn-close-json-box');
+
+    const nicknameBackdrop = document.getElementById('pmd-nickname-backdrop');
+    const nicknameSpeciesEl = document.getElementById('nickname-modal-species');
+    const nicknameInput = document.getElementById('nickname-input') as HTMLInputElement | null;
+    const btnSaveNickname = document.getElementById('btn-save-nickname');
+    const btnResetNickname = document.getElementById('btn-reset-nickname');
+    const btnCancelNickname = document.getElementById('btn-cancel-nickname');
+
+    let activeTab: 'squad' | 'registry' | 'sync' = 'squad';
+    let editingUnitId: string | null = null;
+    let renderedHeroAsset = '';
+
+    function setStatus(msg: string): void {
+      if (statusMsgEl) statusMsgEl.textContent = msg;
+    }
+
+    function openInspector(tab?: 'squad' | 'registry' | 'sync'): void {
+      if (tab) switchTab(tab);
+      if (titleScreen) titleScreen.hidden = true;
+      if (inspectorModal) inspectorModal.hidden = false;
+      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Back';
+    }
+
+    function closeInspector(): void {
+      if (inspectorModal) inspectorModal.hidden = true;
+      if (titleScreen) titleScreen.hidden = false;
+      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Menu / Back';
+    }
+
+    function switchTab(nextTab: 'squad' | 'registry' | 'sync'): void {
+      activeTab = nextTab;
+      document.querySelectorAll<HTMLElement>('.pmd-tab-btn').forEach((btn) => {
+        btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
+      });
+      const panels: Record<'squad' | 'registry' | 'sync', HTMLElement | null> = {
+        squad: document.getElementById('tab-panel-squad'),
+        registry: document.getElementById('tab-panel-registry'),
+        sync: document.getElementById('tab-panel-sync'),
+      };
+      (Object.keys(panels) as Array<'squad' | 'registry' | 'sync'>).forEach((k) => {
+        if (panels[k]) panels[k]!.hidden = k !== nextTab;
+      });
+    }
+
+    function openNicknameModal(instanceId: string): void {
+      const save = manager.getSave();
+      const unit = save?.roster.find((u) => u.instanceId === instanceId);
+      if (!unit || !nicknameBackdrop || !nicknameInput) return;
+      const sp = getSpeciesById(unit.speciesId);
+      editingUnitId = instanceId;
+      if (nicknameSpeciesEl) {
+        nicknameSpeciesEl.textContent = `Species: ${sp?.name ?? unit.speciesId} (Lv. ${unit.level}) · Persists across evolutions & Cloud Sync`;
+      }
+      nicknameInput.value = unit.nickname;
+      nicknameBackdrop.hidden = false;
+    }
+
+    function closeNicknameModal(): void {
+      editingUnitId = null;
+      if (nicknameBackdrop) nicknameBackdrop.hidden = true;
+    }
+
+    // Unified Back / System Menu action (invoked by corner button, PC right-click, or mobile long-press)
+    function handleSystemMenuOrBack(): void {
+      if (nicknameBackdrop && !nicknameBackdrop.hidden) {
+        closeNicknameModal();
+        setStatus('Closed Nickname Editor.');
+        return;
+      }
+      if (jsonIoBox && !jsonIoBox.hidden) {
+        jsonIoBox.hidden = true;
+        return;
+      }
+      if (inspectorModal && !inspectorModal.hidden) {
+        closeInspector();
+        setStatus('Returned to Poké Emblem Title Screen.');
+        return;
+      }
+      openInspector(activeTab);
+    }
+
+    // Render static Registry Audit summary
+    function renderRegistryAudit(): void {
+      if (!auditBanner || !metricsGrid) return;
+      const c = validation.counts;
+      auditBanner.className = validation.valid
+        ? 'pmd-audit-banner is-valid'
+        : 'pmd-audit-banner is-invalid';
+      auditBanner.textContent = validation.valid
+        ? `SCHEMA & FACTION AUDIT PASSED · 0 ERRORS · Sole Shared Line: ${c.sharedLines.join(', ')}`
+        : `SCHEMA AUDIT FAILED · ${validation.errors.length} Error(s)`;
+
+      const metrics: Array<[string, string]> = [
+        ['Total Species Stages', String(c.totalSpecies)],
+        ['Evolutionary Lines', String(c.totalLines)],
+        ['Dragon Lords', `${c.dragonLordLines} lines`],
+        ['Starter Partners', `${c.starterPartnerLines} lines`],
+        ['Q1–Q9 Quiz Pool', `${c.quizRecruitLines} lines`],
+        ['Story Chapter Recruits', `${c.storyRecruitLines} lines`],
+        ['Paralogue Recruits', `${c.paralogueRecruitLines} lines`],
+        ['Enemy Roster Lines', `${c.enemyLines} lines`],
+        ['Moves (1R / 2R / Sup)', `${c.totalMoves} (${c.physicalMoves}/${c.specialMoves}/${c.supportHealMoves})`],
+        ['Pure Stat Moves', `${c.pureStatChangeMoves} (Rule 4)`],
+        ['Items & TMs', `${c.totalItems} (${c.tmCount} TMs)`],
+        ['Personal Skills', String(c.totalPersonalSkills)],
+      ];
+
+      metricsGrid.innerHTML = '';
+      for (const [label, value] of metrics) {
+        const card = document.createElement('div');
+        card.className = 'pmd-metric-card';
+        card.innerHTML = `<span class="pmd-metric-label">${label}</span><strong class="pmd-metric-val">${value}</strong>`;
+        metricsGrid.appendChild(card);
+      }
+
+      if (errorsBox) {
+        if (validation.errors.length > 0) {
+          errorsBox.hidden = false;
+          errorsBox.textContent = validation.errors.join('\n');
+        } else {
+          errorsBox.hidden = true;
+        }
+      }
+    }
+
+    async function updateHeroSprite(assetId: string): Promise<void> {
+      if (!heroSpriteSlot || renderedHeroAsset === assetId) return;
+      renderedHeroAsset = assetId;
+      heroSpriteSlot.innerHTML = '';
+      const canvas = await createSpriteWidget(assetId, 2);
+      if (canvas && renderedHeroAsset === assetId) {
+        heroSpriteSlot.appendChild(canvas);
+      }
+    }
+
+    async function renderSquadCards(): Promise<void> {
+      const save = manager.getSave();
+      if (!squadCardsGrid || !squadEmptyState) return;
+      squadCardsGrid.innerHTML = '';
+
+      if (!save || save.roster.length === 0) {
+        squadEmptyState.hidden = false;
+        return;
+      }
+      squadEmptyState.hidden = true;
+
+      for (const unit of save.roster) {
+        const sp = getSpeciesById(unit.speciesId);
+        const skill = sp ? getPersonalSkillById(sp.personalSkillId) : undefined;
+        const held = unit.heldItemId ? getItemById(unit.heldItemId) : undefined;
+        const cons = unit.consumableItemId ? getItemById(unit.consumableItemId) : undefined;
+
+        const card = document.createElement('article');
+        card.className = 'pmd-unit-card';
+        card.dataset.instanceId = unit.instanceId;
+
+        const topRow = document.createElement('div');
+        topRow.className = 'pmd-unit-top';
+
+        const spriteBox = document.createElement('div');
+        spriteBox.className = 'pmd-unit-sprite';
+        topRow.appendChild(spriteBox);
+
+        const identity = document.createElement('div');
+        identity.className = 'pmd-unit-id';
+
+        const nameLine = document.createElement('div');
+        nameLine.className = 'pmd-unit-name-line';
+        const nickEl = document.createElement('strong');
+        nickEl.className = 'pmd-unit-nickname';
+        nickEl.dataset.testid = `unit-nickname-${unit.speciesId}`;
+        nickEl.textContent = unit.nickname;
+        nameLine.appendChild(nickEl);
+
+        if (unit.isLord) {
+          const lordTag = document.createElement('span');
+          lordTag.className = 'pmd-mini-tag is-gold';
+          lordTag.textContent = 'LORD';
+          nameLine.appendChild(lordTag);
+        }
+        identity.appendChild(nameLine);
+
+        const metaLine = document.createElement('div');
+        metaLine.className = 'pmd-unit-meta';
+        metaLine.textContent = `${sp?.name ?? unit.speciesId} · Lv.${unit.level} · ${(sp?.types ?? []).join('/')} · ${sp?.traversalClass ?? 'Grounded'}`;
+        identity.appendChild(metaLine);
+
+        const skillLine = document.createElement('div');
+        skillLine.className = 'pmd-unit-skill';
+        skillLine.textContent = `Skill: ${skill?.name ?? sp?.personalSkillId ?? '—'}`;
+        identity.appendChild(skillLine);
+
+        topRow.appendChild(identity);
+
+        const renameBtn = document.createElement('button');
+        renameBtn.type = 'button';
+        renameBtn.className = 'pmd-btn pmd-rename-btn';
+        renameBtn.dataset.testid = `btn-rename-${unit.speciesId}`;
+        renameBtn.textContent = 'Rename';
+        bindPointerTap(renameBtn, () => openNicknameModal(unit.instanceId));
+        topRow.appendChild(renameBtn);
+
+        card.appendChild(topRow);
+
+        const st = unit.currentStats;
+        const statsLine = document.createElement('div');
+        statsLine.className = 'pmd-stats-strip';
+        statsLine.textContent = `HP ${st.hp} | Atk ${st.atk} | Def ${st.def} | SpA ${st.spa} | SpD ${st.spd} | Spe ${st.spe} | Mov ${st.mov}`;
+        card.appendChild(statsLine);
+
+        const movesRow = document.createElement('div');
+        movesRow.className = 'pmd-moves-row';
+        for (const moveId of unit.activeMoveIds) {
+          const mv = getMoveById(moveId);
+          const isEquipped = unit.equippedMoveId === moveId;
+          const isOffensive = mv && (mv.category === 'Physical' || mv.category === 'Special');
+          const moveBtn = document.createElement('button');
+          moveBtn.type = 'button';
+          moveBtn.className = `pmd-btn pmd-move-pill${isEquipped ? ' is-equipped' : ''}`;
+          moveBtn.disabled = !isOffensive;
+          const rangeLabel = mv ? (mv.range[0] === mv.range[1] ? `R${mv.range[0]}` : `R${mv.range[0]}-${mv.range[1]}`) : '';
+          moveBtn.textContent = `${isEquipped ? '[E] ' : ''}${mv?.name ?? moveId} (${rangeLabel})`;
+          if (isOffensive) {
+            bindPointerTap(moveBtn, () => {
+              manager.setEquippedMove(unit.instanceId, moveId);
+              setStatus(`${unit.nickname} equipped ${mv?.name ?? moveId} [E] for Enemy Phase.`);
+            });
+          }
+          movesRow.appendChild(moveBtn);
+        }
+        card.appendChild(movesRow);
+
+        const itemsLine = document.createElement('div');
+        itemsLine.className = 'pmd-unit-items';
+        itemsLine.textContent = `Held: ${held?.name ?? 'None'} · Consumable: ${cons?.name ?? 'None'}`;
+        card.appendChild(itemsLine);
+
+        squadCardsGrid.appendChild(card);
+
+        if (sp) {
+          void createSpriteWidget(sp.pmdAssetId, 2).then((canvas) => {
+            if (canvas && spriteBox.isConnected) {
+              spriteBox.appendChild(canvas);
+            }
+          });
+        }
+      }
+    }
+
+    function renderAll(): void {
+      const save = manager.getSave();
+      const sync = manager.getSyncStatus();
+
+      if (save) {
+        const lordUnit = save.roster.find((u) => u.isLord) ?? save.roster[0];
+        const lordSp = lordUnit ? getSpeciesById(lordUnit.speciesId) : undefined;
+        const updatedIso = new Date(save.lastUpdated).toISOString();
+
+        if (btnContinue) {
+          btnContinue.disabled = false;
+          btnContinue.textContent = `Continue (${lordUnit?.nickname ?? 'Lord'} · ${save.roster.length} Units)`;
+        }
+        if (saveSummaryEl) {
+          saveSummaryEl.textContent = `Active Save: Lord ${lordUnit?.nickname ?? '—'} (${lordSp?.name ?? '—'}) · Gold ${save.gold}G · Updated ${updatedIso}`;
+        }
+        if (syncLocalDetails) {
+          syncLocalDetails.textContent = `Save ID: ${save.saveId} · Units: ${save.roster.length} · Convoy Stacks: ${save.convoy.length} · lastUpdated: ${updatedIso} (${save.lastUpdated})`;
+        }
+        if (btnExportJson) btnExportJson.disabled = false;
+        if (btnClearSave) btnClearSave.disabled = false;
+        void updateHeroSprite(lordSp?.pmdAssetId ?? '0001');
+      } else {
+        if (btnContinue) {
+          btnContinue.disabled = true;
+          btnContinue.textContent = 'Continue Campaign (No Save Found)';
+        }
+        if (saveSummaryEl) {
+          saveSummaryEl.textContent =
+            'Fire Emblem Awakening tactical grid combat meets Pokémon Mystery Dungeon: Explorers of Sky sprites, dungeon tilesets, and portraits.';
+        }
+        if (syncLocalDetails) {
+          syncLocalDetails.textContent = 'No save stored in localStorage (`poke_emblem_save_v1`).';
+        }
+        if (btnExportJson) btnExportJson.disabled = true;
+        if (btnClearSave) btnClearSave.disabled = true;
+        void updateHeroSprite('0001');
+      }
+
+      if (syncCloudDetails && btnGoogleAuthToggle && btnReconcileNow) {
+        if (!sync.isFirebaseConfigured) {
+          syncCloudDetails.textContent =
+            'Offline / Local Mode: Add PUBLIC_FIREBASE_* keys to `.env` (see `.env.example` & `firestore.rules`) to enable live Google Sign-In & Cloud Firestore sync.';
+          btnGoogleAuthToggle.textContent = 'Firebase Setup Info';
+          btnReconcileNow.disabled = true;
+        } else if (sync.user) {
+          const who = sync.user.email ?? sync.user.displayName ?? sync.user.uid;
+          const resText = sync.lastResolution ? ` · Last Sync: ${sync.lastResolution}` : '';
+          syncCloudDetails.textContent = `Signed in as ${who} (saves/${sync.user.uid})${resText}${sync.errorMessage ? ` · Error: ${sync.errorMessage}` : ''}`;
+          btnGoogleAuthToggle.textContent = 'Sign Out';
+          btnReconcileNow.disabled = false;
+        } else {
+          syncCloudDetails.textContent = `Firebase Connected · Not signed in.${sync.errorMessage ? ` (${sync.errorMessage})` : ''}`;
+          btnGoogleAuthToggle.textContent = 'Sign in with Google';
+          btnReconcileNow.disabled = true;
+        }
+      }
+
+      void renderSquadCards();
+    }
+
+    function createDefaultPrologueSave(): void {
+      manager.createNewCampaignSave({
+        lordSpeciesId: 'dratini',
+        partnerSpeciesId: 'bulbasaur',
+        healerSpeciesId: 'happiny',
+      });
+      setStatus('Initialized Prologue Trio save (Dratini, Bulbasaur, Happiny) in localStorage!');
+      openInspector('squad');
+    }
+
+    // Bind unified Pointer Event handlers (Rule 2: Zero keyboard event listeners!)
+    bindPointerTap(cornerMenuBtn, () => handleSystemMenuOrBack());
+
+    // PC Right-Click parity + Mobile Long-Press parity on viewport background
+    viewportEl?.addEventListener('contextmenu', (ev: MouseEvent) => {
+      ev.preventDefault();
+      handleSystemMenuOrBack();
+    });
+
+    let longPressTimer: number | null = null;
+    let lpStartX = 0;
+    let lpStartY = 0;
+    viewportEl?.addEventListener('pointerdown', (ev: PointerEvent) => {
+      if (ev.pointerType !== 'touch') return;
+      const target = ev.target as HTMLElement | null;
+      if (target?.closest('button, input, textarea')) return;
+      lpStartX = ev.clientX;
+      lpStartY = ev.clientY;
+      longPressTimer = window.setTimeout(() => {
+        longPressTimer = null;
+        handleSystemMenuOrBack();
+      }, 520);
+    });
+    viewportEl?.addEventListener('pointermove', (ev: PointerEvent) => {
+      if (longPressTimer !== null && Math.hypot(ev.clientX - lpStartX, ev.clientY - lpStartY) > 12) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    });
+    viewportEl?.addEventListener('pointerup', () => {
+      if (longPressTimer !== null) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    });
+    viewportEl?.addEventListener('pointercancel', () => {
+      if (longPressTimer !== null) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    });
+
+    bindPointerTap(btnContinue, () => openInspector('squad'));
+    bindPointerTap(btnNewDemoSave, () => createDefaultPrologueSave());
+    bindPointerTap(btnEmptyCreateSave, () => createDefaultPrologueSave());
+    bindPointerTap(btnOpenInspector, () => openInspector('squad'));
+
+    // OAuth popup buttons use pointer `click` activation so iOS Safari & Android Chrome permit `signInWithPopup`
+    btnCloudSync?.addEventListener('click', () => {
+      openInspector('sync');
+      if (manager.getSyncStatus().isFirebaseConfigured && !manager.getSyncStatus().user) {
+        void manager.signInWithGoogleAndSync().catch((err: unknown) => {
+          setStatus(err instanceof Error ? err.message : 'Google Sign-In cancelled.');
+        });
+      }
+    });
+
+    document.querySelectorAll<HTMLElement>('.pmd-tab-btn').forEach((tabBtn) => {
+      bindPointerTap(tabBtn, () => {
+        const t = tabBtn.dataset.tab as 'squad' | 'registry' | 'sync' | undefined;
+        if (t) switchTab(t);
+      });
+    });
+
+    // Nickname Modal Controls
+    document.querySelectorAll<HTMLElement>('.pmd-chip-btn').forEach((chip) => {
+      bindPointerTap(chip, () => {
+        if (nicknameInput && chip.dataset.preset) {
+          nicknameInput.value = chip.dataset.preset;
+        }
+      });
+    });
+
+    bindPointerTap(btnSaveNickname, () => {
+      if (!editingUnitId || !nicknameInput) return;
+      const updated = manager.renamePokemon(editingUnitId, nicknameInput.value);
+      closeNicknameModal();
+      setStatus(`Saved nickname "${updated.nickname}" to localStorage!`);
+    });
+
+    bindPointerTap(btnResetNickname, () => {
+      if (!editingUnitId) return;
+      const updated = manager.renamePokemon(editingUnitId, '');
+      closeNicknameModal();
+      setStatus(`Reset nickname to species default "${updated.nickname}".`);
+    });
+
+    bindPointerTap(btnCancelNickname, () => closeNicknameModal());
+
+    // Cloud & JSON Backup Controls (pointer `click` preserves transient activation for Google OAuth popup on mobile)
+    btnGoogleAuthToggle?.addEventListener('click', () => {
+      const sync = manager.getSyncStatus();
+      if (!sync.isFirebaseConfigured) {
+        setStatus('Configure PUBLIC_FIREBASE_* in `.env` (see `.env.example`) to enable live Google Sign-In.');
+        return;
+      }
+      if (sync.user) {
+        void manager.signOutFromGoogle().then(() => setStatus('Signed out of Google Cloud Sync.'));
+      } else {
+        void manager
+          .signInWithGoogleAndSync()
+          .then((res) => setStatus(`Google Cloud Sync complete (${res}).`))
+          .catch((err: unknown) => setStatus(err instanceof Error ? err.message : 'Google Sign-In failed.'));
+      }
+    });
+
+    bindPointerTap(btnReconcileNow, () => {
+      void manager.reconcileWithCloud().then((res) => {
+        setStatus(`Timestamp reconciliation complete: ${res}`);
+      });
+    });
+
+    bindPointerTap(btnExportJson, () => {
+      if (!jsonIoBox || !jsonIoTextarea || !jsonIoTitle || !btnConfirmImport || !btnDownloadJson) return;
+      jsonIoTitle.textContent = 'Exported Save JSON Backup';
+      jsonIoTextarea.value = manager.exportSaveJson();
+      jsonIoTextarea.readOnly = true;
+      btnConfirmImport.hidden = true;
+      btnDownloadJson.hidden = false;
+      jsonIoBox.hidden = false;
+    });
+
+    bindPointerTap(btnDownloadJson, () => {
+      const json = manager.exportSaveJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `poke-emblem-save-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('Downloaded JSON save backup.');
+    });
+
+    bindPointerTap(btnOpenImport, () => {
+      if (!jsonIoBox || !jsonIoTextarea || !jsonIoTitle || !btnConfirmImport || !btnDownloadJson) return;
+      jsonIoTitle.textContent = 'Paste Save JSON Backup to Import';
+      jsonIoTextarea.value = '';
+      jsonIoTextarea.readOnly = false;
+      btnConfirmImport.hidden = false;
+      btnDownloadJson.hidden = true;
+      jsonIoBox.hidden = false;
+    });
+
+    bindPointerTap(btnConfirmImport, () => {
+      if (!jsonIoTextarea || !jsonIoBox) return;
+      try {
+        manager.importSaveJson(jsonIoTextarea.value);
+        jsonIoBox.hidden = true;
+        setStatus('Successfully validated and imported JSON save backup!');
+        switchTab('squad');
+      } catch (err) {
+        setStatus(err instanceof Error ? err.message : 'Failed to import JSON.');
+      }
+    });
+
+    bindPointerTap(btnCloseJsonBox, () => {
+      if (jsonIoBox) jsonIoBox.hidden = true;
+    });
+
+    bindPointerTap(btnClearSave, () => {
+      manager.clearLocalSave();
+      setStatus('Cleared local campaign save from localStorage.');
+    });
+
+    renderRegistryAudit();
+    manager.subscribe(() => renderAll());
+
+    setStatus(
+      validation.valid
+        ? `Registries verified (${validation.counts.totalSpecies} species, ${validation.counts.totalMoves} moves, ${validation.counts.totalItems} items · 0 errors).`
+        : `Registry validation reported ${validation.errors.length} error(s).`
+    );
+  }
+
+  initPokeEmblemApp();
+  document.addEventListener('astro:after-swap', initPokeEmblemApp);
 </script>
 
 <style>
@@ -103,7 +791,7 @@ import Footer from '../../components/Footer.astro';
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 1rem;
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
@@ -112,13 +800,13 @@ import Footer from '../../components/Footer.astro';
   .pmd-viewport {
     position: relative;
     width: 100%;
-    min-height: 540px;
+    min-height: 580px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 3.5rem 1.25rem 2rem;
+    padding: 4rem 1.25rem 2rem;
     border-radius: 8px;
-    background: radial-gradient(circle at center, rgba(24, 40, 72, 0.75) 0%, rgba(10, 14, 24, 0.92) 100%);
+    background: radial-gradient(circle at center, rgba(24, 40, 72, 0.78) 0%, rgba(10, 14, 24, 0.94) 100%);
     border: 2px solid rgba(88, 200, 248, 0.35);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
     user-select: none;
@@ -127,7 +815,7 @@ import Footer from '../../components/Footer.astro';
 
   /* Authentic PMD: Explorers of Sky Double-Layered Window Frame (Rule 3) */
   .pmd-window {
-    background: rgba(16, 24, 40, 0.92);
+    background: rgba(16, 24, 40, 0.94);
     border: 3px solid #48b8e8;
     outline: 2px solid #f8d048;
     outline-offset: -6px;
@@ -142,15 +830,15 @@ import Footer from '../../components/Footer.astro';
 
   .pmd-corner-btn {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    min-height: 44px;
-    min-width: 110px;
-    padding: 0.45rem 0.9rem;
+    top: 0.9rem;
+    right: 0.9rem;
+    min-height: 46px;
+    min-width: 112px;
+    padding: 0.45rem 0.95rem;
     font-size: 0.8rem;
     color: #f8d048;
     cursor: pointer;
-    z-index: 10;
+    z-index: 20;
     transition: transform 0.15s, background-color 0.15s;
   }
 
@@ -161,35 +849,46 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-title-card {
-    max-width: 560px;
+    max-width: 580px;
     width: 100%;
     padding: 2rem 1.75rem;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 0.95rem;
+  }
+
+  .pmd-title-card[hidden],
+  .pmd-inspector[hidden],
+  .pmd-tab-panel[hidden],
+  .pmd-modal-backdrop[hidden],
+  .pmd-empty-box[hidden],
+  .pmd-json-box[hidden],
+  .pmd-errors-box[hidden] {
+    display: none !important;
   }
 
   .pmd-badge-row {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
     gap: 0.6rem;
   }
 
   .pmd-sprite-slot {
-    min-width: 48px;
-    min-height: 48px;
+    min-width: 52px;
+    min-height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .pmd-badge {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: #48b8e8;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 0.2rem 0.65rem;
     border: 1px solid rgba(72, 184, 232, 0.5);
@@ -198,7 +897,7 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-title {
-    font-size: 2.1rem;
+    font-size: 2.05rem;
     color: #f8d048;
     letter-spacing: 0.08em;
     line-height: 1.2;
@@ -208,33 +907,35 @@ import Footer from '../../components/Footer.astro';
   .pmd-subtitle {
     font-size: 0.95rem;
     color: #90d8f8;
-    margin-top: -0.4rem;
+    margin-top: -0.35rem;
   }
 
   .pmd-desc {
-    font-size: 0.85rem;
-    color: rgba(248, 248, 248, 0.88);
-    line-height: 1.6;
-    max-width: 460px;
+    font-size: 0.82rem;
+    color: rgba(248, 248, 248, 0.9);
+    line-height: 1.55;
+    max-width: 490px;
+    word-break: break-word;
   }
 
   .pmd-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.65rem;
     width: 100%;
-    max-width: 340px;
-    margin-top: 0.5rem;
+    max-width: 360px;
+    margin-top: 0.35rem;
   }
 
   .pmd-btn {
     min-height: 46px;
-    padding: 0.6rem 1.1rem;
+    min-width: 46px;
+    padding: 0.55rem 1rem;
     background: rgba(24, 40, 68, 0.95);
     border: 2px solid #48b8e8;
     border-radius: 4px;
     color: #f8f8f8;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     cursor: pointer;
     text-shadow: 1px 1px 0 #081020;
     transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
@@ -248,9 +949,16 @@ import Footer from '../../components/Footer.astro';
     transform: translateY(-1px);
   }
 
-  .pmd-btn-primary {
+  .pmd-btn-primary,
+  .pmd-tab-btn.is-active {
     border-color: #f8d048;
     color: #f8d048;
+    background: rgba(36, 58, 96, 0.98);
+  }
+
+  .pmd-btn-danger {
+    border-color: #f07878;
+    color: #ffd0d0;
   }
 
   .pmd-btn:disabled {
@@ -259,26 +967,331 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-status {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
+    margin-top: 0.35rem;
+    font-size: 0.74rem;
     color: #90d8f8;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.75rem 0;
     border-top: 1px solid rgba(72, 184, 232, 0.3);
     width: 100%;
   }
 
-  @media (max-width: 600px) {
+  /* Inspector Layout */
+  .pmd-inspector {
+    width: 100%;
+    max-width: 960px;
+    padding: 1.5rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pmd-inspector-title {
+    font-size: 1.1rem;
+    color: #f8d048;
+    letter-spacing: 0.05em;
+  }
+
+  .pmd-inspector-sub {
+    font-size: 0.75rem;
+    color: #90d8f8;
+  }
+
+  .pmd-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .pmd-tab-btn {
+    flex: 1 1 160px;
+  }
+
+  .pmd-tab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .pmd-empty-box {
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px dashed rgba(72, 184, 232, 0.45);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .pmd-squad-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 0.85rem;
+  }
+
+  :global(.pmd-unit-card) {
+    background: rgba(10, 18, 34, 0.88);
+    border: 2px solid rgba(72, 184, 232, 0.65);
+    border-radius: 6px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  :global(.pmd-unit-top) {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  :global(.pmd-unit-sprite) {
+    min-width: 52px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(24, 40, 68, 0.6);
+    border-radius: 4px;
+    border: 1px solid rgba(72, 184, 232, 0.35);
+  }
+
+  :global(.pmd-unit-id) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :global(.pmd-unit-name-line) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  :global(.pmd-unit-nickname) {
+    font-size: 0.95rem;
+    color: #f8d048;
+    word-break: break-word;
+  }
+
+  :global(.pmd-mini-tag) {
+    font-size: 0.62rem;
+    padding: 0.08rem 0.38rem;
+    border-radius: 3px;
+    border: 1px solid #f8d048;
+    color: #f8d048;
+    background: rgba(248, 208, 72, 0.14);
+  }
+
+  :global(.pmd-unit-meta),
+  :global(.pmd-unit-skill),
+  :global(.pmd-unit-items) {
+    font-size: 0.72rem;
+    color: rgba(248, 248, 248, 0.85);
+    line-height: 1.4;
+  }
+
+  :global(.pmd-rename-btn) {
+    min-height: 44px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  :global(.pmd-stats-strip) {
+    font-size: 0.7rem;
+    color: #90d8f8;
+    background: rgba(8, 14, 26, 0.75);
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(72, 184, 232, 0.25);
+  }
+
+  :global(.pmd-moves-row) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  :global(.pmd-move-pill) {
+    min-height: 44px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.72rem;
+  }
+
+  :global(.pmd-move-pill.is-equipped) {
+    border-color: #78e890;
+    color: #b8ffca;
+    background: rgba(24, 68, 48, 0.85);
+  }
+
+  /* Registry Audit */
+  .pmd-audit-banner {
+    padding: 0.65rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  .pmd-audit-banner.is-valid {
+    background: rgba(20, 68, 44, 0.85);
+    border: 2px solid #68d888;
+    color: #c8ffd8;
+  }
+
+  .pmd-audit-banner.is-invalid {
+    background: rgba(88, 24, 24, 0.85);
+    border: 2px solid #f07878;
+    color: #ffd0d0;
+  }
+
+  .pmd-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 0.65rem;
+  }
+
+  :global(.pmd-metric-card) {
+    background: rgba(10, 18, 34, 0.85);
+    border: 1px solid rgba(72, 184, 232, 0.45);
+    border-radius: 5px;
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  :global(.pmd-metric-label) {
+    font-size: 0.68rem;
+    color: #90d8f8;
+  }
+
+  :global(.pmd-metric-val) {
+    font-size: 0.9rem;
+    color: #f8d048;
+  }
+
+  .pmd-errors-box {
+    white-space: pre-wrap;
+    font-size: 0.72rem;
+    color: #ffd0d0;
+    background: rgba(60, 16, 16, 0.8);
+    padding: 0.75rem;
+    border-radius: 4px;
+  }
+
+  /* Sync & Backup */
+  .pmd-sync-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .pmd-subcard {
+    background: rgba(10, 18, 34, 0.86);
+    border: 1px solid rgba(72, 184, 232, 0.5);
+    border-radius: 6px;
+    padding: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .pmd-subcard-title {
+    font-size: 0.86rem;
+    color: #f8d048;
+  }
+
+  .pmd-subcard-text {
+    font-size: 0.75rem;
+    color: rgba(248, 248, 248, 0.88);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .pmd-inline-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pmd-textarea,
+  .pmd-text-input {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: rgba(6, 12, 24, 0.95);
+    border: 2px solid #48b8e8;
+    border-radius: 4px;
+    color: #f8f8f8;
+    font-size: 0.85rem;
+    user-select: text;
+  }
+
+  .pmd-text-input {
+    min-height: 46px;
+  }
+
+  .pmd-textarea:focus,
+  .pmd-text-input:focus {
+    outline: 2px solid #f8d048;
+    border-color: #f8d048;
+  }
+
+  /* Nickname Modal */
+  .pmd-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 8, 16, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 100;
+  }
+
+  .pmd-nickname-dialog {
+    width: 100%;
+    max-width: 440px;
+    padding: 1.5rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .pmd-preset-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .pmd-preset-label {
+    font-size: 0.72rem;
+    color: #90d8f8;
+  }
+
+  .pmd-chip-btn {
+    min-height: 44px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+  }
+
+  .pmd-modal-actions {
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 640px) {
     .poke-emblem-shell {
-      padding: 0.75rem 0.5rem;
+      padding: 0.6rem 0.45rem;
     }
 
     .pmd-viewport {
-      min-height: 480px;
-      padding: 3.75rem 0.75rem 1.25rem;
+      min-height: 500px;
+      padding: 4rem 0.65rem 1.25rem;
     }
 
-    .pmd-title-card {
-      padding: 1.5rem 1.1rem;
+    .pmd-title-card,
+    .pmd-inspector {
+      padding: 1.25rem 0.9rem;
     }
 
     .pmd-title {

@@ -42,8 +42,8 @@ The LLM agent must implement *Poké Emblem* in the following 10 sequential steps
     * **Local & Cloud Hybrid Sync:** Every save action writes immediately to `localStorage` and, if the user is authenticated via Google Sign-In, writes the save state payload to `saves/{uid}` in Cloud Firestore (protected by Firestore security rules restricting read/write to `request.auth.uid == uid`).
     * **Cross-Device Timestamp Resolution:** When loading the game on a second device (e.g., switching from PC to mobile) or signing in with Google for the first time on a device, compare the `lastUpdated` timestamp in Firestore against `localStorage` and load the newer state (syncing local guest progress up to Firestore if the local save is newer).
 * **Step 1 Verification Checklist:**
-  * [ ] Confirm all 8 Dragon Lords, starter Partners, Q1–Q9 quiz recruits, Paralogue recruits (Slakoth, Eevee, Nidoran♂/♀, Teddiursa, Hoppip, and Paralogue 6 Gastly), and enemy lines validate against the schema with zero unintended player/enemy overlap.
-  * [ ] Confirm saving, loading, and renaming a Pokémon's nickname persists cleanly across page reloads in `localStorage` and syncs accurately to Cloud Firestore when signed in with a Google Account across desktop and mobile sessions.
+  * [x] Confirm all 8 Dragon Lords, starter Partners, Q1–Q9 quiz recruits, Paralogue recruits (Slakoth, Eevee, Nidoran♂/♀, Teddiursa, Hoppip, and Paralogue 6 Gastly), and enemy lines validate against the schema with zero unintended player/enemy overlap.
+  * [x] Confirm saving, loading, and renaming a Pokémon's nickname persists cleanly across page reloads in `localStorage` and syncs accurately to Cloud Firestore when signed in with a Google Account across desktop and mobile sessions.
 
 ### Step 2: PMD Asset Loader, UI Window Framework & Portrait Dialogue Engine
 
