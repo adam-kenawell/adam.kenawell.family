@@ -13,135 +13,125 @@ import Footer from '../../components/Footer.astro';
 
     <main class="poke-emblem-shell">
       <div id="poke-emblem-root" class="pmd-viewport">
-        <!-- Persistent Mobile / PC Menu & Back Button (Rule 2 & Rule 3) -->
+        <!-- Admin-Only Dev Tools Button (Top-Left, strictly visible ONLY for adam.kenawell.family@gmail.com) -->
+        <button
+          id="pmd-dev-tools-btn"
+          class="pmd-window pmd-corner-btn pmd-corner-left"
+          type="button"
+          hidden
+        >
+          Dev Tools
+        </button>
+
+        <!-- Persistent Mobile / PC Menu & Back Button (Top-Right, Rule 2 & Rule 3) -->
         <button
           id="pmd-corner-menu-btn"
-          class="pmd-window pmd-corner-btn"
+          class="pmd-window pmd-corner-btn pmd-corner-right"
           type="button"
           aria-label="Menu or Back"
         >
-          Menu / Back
+          Menu
         </button>
 
         <!-- Authentic PMD: Explorers of Sky Title Window -->
         <section id="pmd-title-screen" class="pmd-window pmd-title-card">
-          <div class="pmd-badge-row">
-            <div id="pmd-hero-sprite-slot" class="pmd-sprite-slot" title="Tap or click sprite to attack!"></div>
-            <div id="pmd-build-badge" class="pmd-badge">DEV BUILD · STEP 1 REGISTRIES &amp; SAVE</div>
-          </div>
-
           <h1 class="pmd-title">POKÉ EMBLEM</h1>
           <p class="pmd-subtitle">Echoes of the Dragon Lineage</p>
 
           <p id="pmd-save-summary" class="pmd-desc">
-            Checking local &amp; Cloud Firestore campaign data...
+            Command your Pokémon squad across five kingdoms in a tactical RPG adventure.
           </p>
 
           <div class="pmd-actions">
             <button class="pmd-btn pmd-btn-primary" id="btn-continue" type="button" disabled>
-              Continue Campaign
+              Continue
             </button>
-            <button class="pmd-btn" id="btn-new-demo-save" type="button">
-              Initialize Prologue Trio Save
-            </button>
-            <button class="pmd-btn" id="btn-open-inspector" type="button">
-              Step 1 Save &amp; Registry Inspector
+            <button class="pmd-btn" id="btn-new-game" type="button">
+              New Game
             </button>
             <button class="pmd-btn" id="btn-cloud-sync" type="button">
-              Google Cloud Save Sync
+              Cloud Save
             </button>
           </div>
 
-          <p id="pmd-status-msg" class="pmd-status" aria-live="polite">
-            Initializing registries...
-          </p>
+          <p id="pmd-status-msg" class="pmd-status" aria-live="polite" hidden></p>
         </section>
 
-        <!-- Step 1 Save & Registry Inspector Window -->
-        <section id="pmd-inspector-modal" class="pmd-window pmd-inspector" hidden>
-          <header class="pmd-inspector-header">
-            <div>
-              <h2 class="pmd-inspector-title">STEP 1 · SYSTEM &amp; ROSTER INSPECTOR</h2>
-              <p id="pmd-inspector-sub" class="pmd-inspector-sub">
-                Right-click (PC), long-press, or tap Menu / Back to close.
-              </p>
-            </div>
+        <!-- Player Campaign Menu (Clean RPG UI — Party, Nicknames, Loadout & Cloud Save) -->
+        <section id="pmd-campaign-menu" class="pmd-window pmd-panel" hidden>
+          <header class="pmd-panel-header">
+            <h2 class="pmd-panel-title">CAMPAIGN MENU</h2>
+            <p class="pmd-panel-sub">
+              Manage your party, nicknames, equipped moves, and cloud save.
+            </p>
           </header>
 
-          <nav class="pmd-tabs" aria-label="Inspector Tabs">
+          <nav class="pmd-tabs" aria-label="Campaign Menu Tabs">
             <button type="button" class="pmd-btn pmd-tab-btn is-active" data-tab="squad">
-              Squad &amp; Nicknames
-            </button>
-            <button type="button" class="pmd-btn pmd-tab-btn" data-tab="registry">
-              Registry Audit
+              Party
             </button>
             <button type="button" class="pmd-btn pmd-tab-btn" data-tab="sync">
-              Cloud &amp; Backup
+              Cloud &amp; Save
             </button>
           </nav>
 
-          <!-- TAB 1: SQUAD & NICKNAMES -->
+          <!-- TAB 1: PARTY -->
           <div id="tab-panel-squad" class="pmd-tab-panel">
             <div id="squad-empty-state" class="pmd-empty-box" hidden>
-              <p>No active save file in localStorage yet.</p>
+              <p>No active campaign yet. Start a new adventure to assemble your squad!</p>
               <button type="button" id="btn-empty-create-save" class="pmd-btn pmd-btn-primary">
-                Create Prologue Trio Save (Dratini + Bulbasaur + Happiny)
+                New Game
               </button>
             </div>
             <div id="squad-cards-grid" class="pmd-squad-grid"></div>
           </div>
 
-          <!-- TAB 2: REGISTRY AUDIT -->
-          <div id="tab-panel-registry" class="pmd-tab-panel" hidden>
-            <div id="registry-audit-banner" class="pmd-audit-banner"></div>
-            <div id="registry-metrics-grid" class="pmd-metrics-grid"></div>
-            <div id="registry-errors-box" class="pmd-errors-box" hidden></div>
-          </div>
-
-          <!-- TAB 3: CLOUD & BACKUP -->
+          <!-- TAB 2: CLOUD & SAVE -->
           <div id="tab-panel-sync" class="pmd-tab-panel" hidden>
             <div class="pmd-sync-grid">
               <div class="pmd-subcard">
-                <h3 class="pmd-subcard-title">Local Storage (`poke_emblem_save_v1`)</h3>
-                <p id="sync-local-details" class="pmd-subcard-text">—</p>
+                <h3 class="pmd-subcard-title">Cloud Save</h3>
+                <p id="sync-cloud-details" class="pmd-subcard-text">
+                  Sign in with Google to automatically sync your adventure across PC and mobile.
+                </p>
                 <div class="pmd-inline-btns">
-                  <button type="button" id="btn-export-json" class="pmd-btn">Export Save JSON</button>
-                  <button type="button" id="btn-open-import" class="pmd-btn">Import Save JSON</button>
-                  <button type="button" id="btn-clear-save" class="pmd-btn pmd-btn-danger">
-                    Clear Local Save
+                  <button type="button" id="btn-google-auth-toggle" class="pmd-btn pmd-btn-primary">
+                    Sign in with Google
+                  </button>
+                  <button type="button" id="btn-reconcile-now" class="pmd-btn" hidden>
+                    Sync Now
                   </button>
                 </div>
               </div>
 
               <div class="pmd-subcard">
-                <h3 class="pmd-subcard-title">Google Auth + Cloud Firestore (`saves/&#123;uid&#125;`)</h3>
-                <p id="sync-cloud-details" class="pmd-subcard-text">—</p>
+                <h3 class="pmd-subcard-title">Save Data</h3>
+                <p id="sync-local-details" class="pmd-subcard-text">No save file on this device.</p>
                 <div class="pmd-inline-btns">
-                  <button type="button" id="btn-google-auth-toggle" class="pmd-btn pmd-btn-primary">
-                    Sign in with Google
-                  </button>
-                  <button type="button" id="btn-reconcile-now" class="pmd-btn">
-                    Reconcile Timestamps Now
+                  <button type="button" id="btn-export-json" class="pmd-btn">Export Backup</button>
+                  <button type="button" id="btn-open-import" class="pmd-btn">Import Backup</button>
+                  <button type="button" id="btn-clear-save" class="pmd-btn pmd-btn-danger">
+                    Delete Save
                   </button>
                 </div>
               </div>
             </div>
 
             <div id="json-io-box" class="pmd-subcard pmd-json-box" hidden>
-              <h3 id="json-io-title" class="pmd-subcard-title">Save Backup JSON</h3>
+              <h3 id="json-io-title" class="pmd-subcard-title">Save Backup</h3>
               <textarea
                 id="json-io-textarea"
                 class="pmd-textarea"
-                rows="6"
+                rows="5"
                 spellcheck="false"
-                aria-label="Save JSON payload"
+                aria-label="Save backup data"
               ></textarea>
               <div class="pmd-inline-btns">
                 <button type="button" id="btn-confirm-import" class="pmd-btn pmd-btn-primary" hidden>
-                  Validate &amp; Import JSON
+                  Restore Backup
                 </button>
                 <button type="button" id="btn-download-json" class="pmd-btn" hidden>
-                  Download .json File
+                  Download Backup File
                 </button>
                 <button type="button" id="btn-close-json-box" class="pmd-btn">Close</button>
               </div>
@@ -149,23 +139,49 @@ import Footer from '../../components/Footer.astro';
           </div>
         </section>
 
+        <!-- Admin-Only Dev Tools Modal (Accessible ONLY when signed in as adam.kenawell.family@gmail.com) -->
+        <section id="pmd-devtools-modal" class="pmd-window pmd-panel" hidden>
+          <header class="pmd-panel-header">
+            <h2 class="pmd-panel-title">DEV TOOLS</h2>
+            <p class="pmd-panel-sub">
+              Balance registries, faction validation, and Cloud Firestore sync diagnostics.
+            </p>
+          </header>
+
+          <div class="pmd-subcard">
+            <h3 class="pmd-subcard-title">Save &amp; Cloud Sync Diagnostics</h3>
+            <p id="devtools-sync-diagnostics" class="pmd-subcard-text">—</p>
+          </div>
+
+          <div class="pmd-tab-panel">
+            <div id="registry-audit-banner" class="pmd-audit-banner"></div>
+            <div id="registry-metrics-grid" class="pmd-metrics-grid"></div>
+            <div id="registry-errors-box" class="pmd-errors-box" hidden></div>
+          </div>
+        </section>
+
         <!-- Reusable PMD Nickname Modal (Pointer-driven, PC + Mobile) -->
         <div id="pmd-nickname-backdrop" class="pmd-modal-backdrop" hidden>
-          <div class="pmd-window pmd-nickname-dialog" role="dialog" aria-modal="true" aria-labelledby="nickname-modal-title">
-            <h3 id="nickname-modal-title" class="pmd-inspector-title">Edit Pokémon Nickname</h3>
-            <p id="nickname-modal-species" class="pmd-inspector-sub"></p>
+          <div
+            class="pmd-window pmd-nickname-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nickname-modal-title"
+          >
+            <h3 id="nickname-modal-title" class="pmd-panel-title">Give a Nickname</h3>
+            <p id="nickname-modal-species" class="pmd-panel-sub"></p>
 
             <input
               id="nickname-input"
               type="text"
               maxlength="16"
               class="pmd-text-input"
-              placeholder="Enter nickname (max 16 chars)"
+              placeholder="Enter nickname (up to 16 characters)"
               autocomplete="off"
             />
 
             <div class="pmd-preset-row">
-              <span class="pmd-preset-label">Quick Presets:</span>
+              <span class="pmd-preset-label">Suggestions:</span>
               <button type="button" class="pmd-btn pmd-chip-btn" data-preset="Bahamut">Bahamut</button>
               <button type="button" class="pmd-btn pmd-chip-btn" data-preset="Sprout">Sprout</button>
               <button type="button" class="pmd-btn pmd-chip-btn" data-preset="Clover">Clover</button>
@@ -173,7 +189,7 @@ import Footer from '../../components/Footer.astro';
 
             <div class="pmd-inline-btns pmd-modal-actions">
               <button type="button" id="btn-save-nickname" class="pmd-btn pmd-btn-primary">
-                Save Nickname
+                Confirm
               </button>
               <button type="button" id="btn-reset-nickname" class="pmd-btn">
                 Default Name
@@ -200,50 +216,90 @@ import Footer from '../../components/Footer.astro';
     getRegistryValidationSummary,
     getSpeciesById,
   } from '../../poke-emblem/data/index';
-  import { InMemoryCloudSyncAdapter } from '../../poke-emblem/state/firebaseSync';
+  import {
+    InMemoryCloudSyncAdapter,
+    type CloudSyncAdapter,
+  } from '../../poke-emblem/state/firebaseSync';
   import { SaveStateManager } from '../../poke-emblem/state/SaveStateManager';
 
+  const ADMIN_EMAIL = 'adam.kenawell.family@gmail.com';
+
   // Rule 2: Unified Pointer Tap Binder (distinguishes clean tap/click from touch-scroll drag; zero keyboard listeners)
-  function bindPointerTap(el: HTMLElement | null, handler: (ev: PointerEvent) => void): void {
+  function bindPointerTap(
+    el: HTMLElement | null,
+    handler: (ev: PointerEvent) => void,
+    signal?: AbortSignal
+  ): void {
     if (!el) return;
     let startX = 0;
     let startY = 0;
     let activePointerId: number | null = null;
 
-    el.addEventListener('pointerdown', (ev: PointerEvent) => {
-      if (ev.button !== 0 && ev.pointerType === 'mouse') return;
-      activePointerId = ev.pointerId;
-      startX = ev.clientX;
-      startY = ev.clientY;
-    });
+    el.addEventListener(
+      'pointerdown',
+      (ev: PointerEvent) => {
+        if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+        activePointerId = ev.pointerId;
+        startX = ev.clientX;
+        startY = ev.clientY;
+      },
+      signal ? { signal } : undefined
+    );
 
-    el.addEventListener('pointerup', (ev: PointerEvent) => {
-      if (activePointerId !== ev.pointerId) return;
-      activePointerId = null;
-      if ((el as HTMLButtonElement).disabled) return;
-      const moved = Math.hypot(ev.clientX - startX, ev.clientY - startY);
-      if (moved <= 12) {
-        handler(ev);
-      }
-    });
+    el.addEventListener(
+      'pointerup',
+      (ev: PointerEvent) => {
+        if (activePointerId !== ev.pointerId) return;
+        activePointerId = null;
+        if ((el as HTMLButtonElement).disabled) return;
+        const moved = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+        if (moved <= 12) {
+          handler(ev);
+        }
+      },
+      signal ? { signal } : undefined
+    );
 
-    el.addEventListener('pointercancel', () => {
-      activePointerId = null;
-    });
+    el.addEventListener(
+      'pointercancel',
+      () => {
+        activePointerId = null;
+      },
+      signal ? { signal } : undefined
+    );
+  }
+
+  function formatFriendlyTimestamp(epochMs: number): string {
+    try {
+      return new Date(epochMs).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    } catch {
+      return 'Recently';
+    }
   }
 
   let currentManager: SaveStateManager | null = null;
+  let uiAbortController: AbortController | null = null;
 
   async function initPokeEmblemApp() {
     resetSpriteWidgets();
     currentManager?.dispose();
+    uiAbortController?.abort();
+    uiAbortController = new AbortController();
+    const signal = uiAbortController.signal;
 
-    const manager = new SaveStateManager();
+    const injectedAdapter = (window as unknown as Record<string, unknown>)
+      .__POKE_EMBLEM_TEST_CLOUD_ADAPTER__ as CloudSyncAdapter | undefined;
+
+    const manager = new SaveStateManager(undefined, injectedAdapter);
     currentManager = manager;
 
     const validation = getRegistryValidationSummary();
 
-    // Expose debug/test bridge for Playwright cross-device verification
     (window as unknown as Record<string, unknown>).__POKE_EMBLEM_DEBUG__ = {
       saveManager: manager,
       SaveStateManager,
@@ -253,21 +309,22 @@ import Footer from '../../components/Footer.astro';
 
     const viewportEl = document.getElementById('poke-emblem-root');
     const titleScreen = document.getElementById('pmd-title-screen');
-    const inspectorModal = document.getElementById('pmd-inspector-modal');
+    const campaignMenu = document.getElementById('pmd-campaign-menu');
+    const devToolsModal = document.getElementById('pmd-devtools-modal');
+    const devToolsBtn = document.getElementById('pmd-dev-tools-btn');
     const cornerMenuBtn = document.getElementById('pmd-corner-menu-btn');
-    const heroSpriteSlot = document.getElementById('pmd-hero-sprite-slot');
     const saveSummaryEl = document.getElementById('pmd-save-summary');
     const statusMsgEl = document.getElementById('pmd-status-msg');
 
     const btnContinue = document.getElementById('btn-continue') as HTMLButtonElement | null;
-    const btnNewDemoSave = document.getElementById('btn-new-demo-save');
-    const btnOpenInspector = document.getElementById('btn-open-inspector');
+    const btnNewGame = document.getElementById('btn-new-game');
     const btnCloudSync = document.getElementById('btn-cloud-sync');
     const btnEmptyCreateSave = document.getElementById('btn-empty-create-save');
 
     const squadEmptyState = document.getElementById('squad-empty-state');
     const squadCardsGrid = document.getElementById('squad-cards-grid');
 
+    const devToolsSyncDiagnostics = document.getElementById('devtools-sync-diagnostics');
     const auditBanner = document.getElementById('registry-audit-banner');
     const metricsGrid = document.getElementById('registry-metrics-grid');
     const errorsBox = document.getElementById('registry-errors-box');
@@ -294,40 +351,57 @@ import Footer from '../../components/Footer.astro';
     const btnResetNickname = document.getElementById('btn-reset-nickname');
     const btnCancelNickname = document.getElementById('btn-cancel-nickname');
 
-    let activeTab: 'squad' | 'registry' | 'sync' = 'squad';
+    let activeTab: 'squad' | 'sync' = 'squad';
     let editingUnitId: string | null = null;
-    let renderedHeroAsset = '';
 
-    function setStatus(msg: string): void {
-      if (statusMsgEl) statusMsgEl.textContent = msg;
+    function isAdminSignedIn(): boolean {
+      const email = manager.getSyncStatus().user?.email?.trim().toLowerCase() ?? '';
+      return email === ADMIN_EMAIL;
     }
 
-    function openInspector(tab?: 'squad' | 'registry' | 'sync'): void {
+    function setStatus(msg: string): void {
+      if (!statusMsgEl) return;
+      const trimmed = msg.trim();
+      statusMsgEl.textContent = trimmed;
+      statusMsgEl.hidden = trimmed.length === 0;
+    }
+
+    function showTitleScreen(): void {
+      if (campaignMenu) campaignMenu.hidden = true;
+      if (devToolsModal) devToolsModal.hidden = true;
+      if (titleScreen) titleScreen.hidden = false;
+      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Menu';
+    }
+
+    function openCampaignMenu(tab?: 'squad' | 'sync'): void {
       if (tab) switchTab(tab);
       if (titleScreen) titleScreen.hidden = true;
-      if (inspectorModal) inspectorModal.hidden = false;
+      if (devToolsModal) devToolsModal.hidden = true;
+      if (campaignMenu) campaignMenu.hidden = false;
       if (cornerMenuBtn) cornerMenuBtn.textContent = 'Back';
     }
 
-    function closeInspector(): void {
-      if (inspectorModal) inspectorModal.hidden = true;
-      if (titleScreen) titleScreen.hidden = false;
-      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Menu / Back';
+    function toggleDevTools(): void {
+      if (!isAdminSignedIn() || !devToolsModal) return;
+      if (!devToolsModal.hidden) {
+        showTitleScreen();
+        return;
+      }
+      if (titleScreen) titleScreen.hidden = true;
+      if (campaignMenu) campaignMenu.hidden = true;
+      devToolsModal.hidden = false;
+      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Back';
     }
 
-    function switchTab(nextTab: 'squad' | 'registry' | 'sync'): void {
+    function switchTab(nextTab: 'squad' | 'sync'): void {
       activeTab = nextTab;
       document.querySelectorAll<HTMLElement>('.pmd-tab-btn').forEach((btn) => {
         btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
       });
-      const panels: Record<'squad' | 'registry' | 'sync', HTMLElement | null> = {
-        squad: document.getElementById('tab-panel-squad'),
-        registry: document.getElementById('tab-panel-registry'),
-        sync: document.getElementById('tab-panel-sync'),
-      };
-      (Object.keys(panels) as Array<'squad' | 'registry' | 'sync'>).forEach((k) => {
-        if (panels[k]) panels[k]!.hidden = k !== nextTab;
-      });
+      const squadPanel = document.getElementById('tab-panel-squad');
+      const syncPanel = document.getElementById('tab-panel-sync');
+      if (squadPanel) squadPanel.hidden = nextTab !== 'squad';
+      if (syncPanel) syncPanel.hidden = nextTab !== 'sync';
     }
 
     function openNicknameModal(instanceId: string): void {
@@ -337,7 +411,7 @@ import Footer from '../../components/Footer.astro';
       const sp = getSpeciesById(unit.speciesId);
       editingUnitId = instanceId;
       if (nicknameSpeciesEl) {
-        nicknameSpeciesEl.textContent = `Species: ${sp?.name ?? unit.speciesId} (Lv. ${unit.level}) · Persists across evolutions & Cloud Sync`;
+        nicknameSpeciesEl.textContent = `${sp?.name ?? unit.speciesId} · Lv. ${unit.level}`;
       }
       nicknameInput.value = unit.nickname;
       nicknameBackdrop.hidden = false;
@@ -352,22 +426,23 @@ import Footer from '../../components/Footer.astro';
     function handleSystemMenuOrBack(): void {
       if (nicknameBackdrop && !nicknameBackdrop.hidden) {
         closeNicknameModal();
-        setStatus('Closed Nickname Editor.');
         return;
       }
       if (jsonIoBox && !jsonIoBox.hidden) {
         jsonIoBox.hidden = true;
         return;
       }
-      if (inspectorModal && !inspectorModal.hidden) {
-        closeInspector();
-        setStatus('Returned to Poké Emblem Title Screen.');
+      if (devToolsModal && !devToolsModal.hidden) {
+        showTitleScreen();
         return;
       }
-      openInspector(activeTab);
+      if (campaignMenu && !campaignMenu.hidden) {
+        showTitleScreen();
+        return;
+      }
+      openCampaignMenu(activeTab);
     }
 
-    // Render static Registry Audit summary
     function renderRegistryAudit(): void {
       if (!auditBanner || !metricsGrid) return;
       const c = validation.counts;
@@ -408,16 +483,6 @@ import Footer from '../../components/Footer.astro';
         } else {
           errorsBox.hidden = true;
         }
-      }
-    }
-
-    async function updateHeroSprite(assetId: string): Promise<void> {
-      if (!heroSpriteSlot || renderedHeroAsset === assetId) return;
-      renderedHeroAsset = assetId;
-      heroSpriteSlot.innerHTML = '';
-      const canvas = await createSpriteWidget(assetId, 2);
-      if (canvas && renderedHeroAsset === assetId) {
-        heroSpriteSlot.appendChild(canvas);
       }
     }
 
@@ -470,12 +535,12 @@ import Footer from '../../components/Footer.astro';
 
         const metaLine = document.createElement('div');
         metaLine.className = 'pmd-unit-meta';
-        metaLine.textContent = `${sp?.name ?? unit.speciesId} · Lv.${unit.level} · ${(sp?.types ?? []).join('/')} · ${sp?.traversalClass ?? 'Grounded'}`;
+        metaLine.textContent = `${sp?.name ?? unit.speciesId} · Lv. ${unit.level} · ${(sp?.types ?? []).join('/')}`;
         identity.appendChild(metaLine);
 
         const skillLine = document.createElement('div');
         skillLine.className = 'pmd-unit-skill';
-        skillLine.textContent = `Skill: ${skill?.name ?? sp?.personalSkillId ?? '—'}`;
+        skillLine.textContent = `Ability: ${skill?.name ?? sp?.personalSkillId ?? '—'}`;
         identity.appendChild(skillLine);
 
         topRow.appendChild(identity);
@@ -493,7 +558,7 @@ import Footer from '../../components/Footer.astro';
         const st = unit.currentStats;
         const statsLine = document.createElement('div');
         statsLine.className = 'pmd-stats-strip';
-        statsLine.textContent = `HP ${st.hp} | Atk ${st.atk} | Def ${st.def} | SpA ${st.spa} | SpD ${st.spd} | Spe ${st.spe} | Mov ${st.mov}`;
+        statsLine.textContent = `HP ${st.hp} · Atk ${st.atk} · Def ${st.def} · SpA ${st.spa} · SpD ${st.spd} · Spe ${st.spe} · Mov ${st.mov}`;
         card.appendChild(statsLine);
 
         const movesRow = document.createElement('div');
@@ -511,7 +576,6 @@ import Footer from '../../components/Footer.astro';
           if (isOffensive) {
             bindPointerTap(moveBtn, () => {
               manager.setEquippedMove(unit.instanceId, moveId);
-              setStatus(`${unit.nickname} equipped ${mv?.name ?? moveId} [E] for Enemy Phase.`);
             });
           }
           movesRow.appendChild(moveBtn);
@@ -520,7 +584,7 @@ import Footer from '../../components/Footer.astro';
 
         const itemsLine = document.createElement('div');
         itemsLine.className = 'pmd-unit-items';
-        itemsLine.textContent = `Held: ${held?.name ?? 'None'} · Consumable: ${cons?.name ?? 'None'}`;
+        itemsLine.textContent = `Held: ${held?.name ?? 'None'} · Item: ${cons?.name ?? 'None'}`;
         card.appendChild(itemsLine);
 
         squadCardsGrid.appendChild(card);
@@ -538,247 +602,331 @@ import Footer from '../../components/Footer.astro';
     function renderAll(): void {
       const save = manager.getSave();
       const sync = manager.getSyncStatus();
+      const adminActive = isAdminSignedIn();
+
+      // Strictly gate Top-Left Dev Tools button & modal to adam.kenawell.family@gmail.com
+      if (devToolsBtn) {
+        devToolsBtn.hidden = !adminActive;
+      }
+      if (!adminActive && devToolsModal && !devToolsModal.hidden) {
+        showTitleScreen();
+      }
 
       if (save) {
         const lordUnit = save.roster.find((u) => u.isLord) ?? save.roster[0];
         const lordSp = lordUnit ? getSpeciesById(lordUnit.speciesId) : undefined;
-        const updatedIso = new Date(save.lastUpdated).toISOString();
+        const friendlyDate = formatFriendlyTimestamp(save.lastUpdated);
 
         if (btnContinue) {
           btnContinue.disabled = false;
-          btnContinue.textContent = `Continue (${lordUnit?.nickname ?? 'Lord'} · ${save.roster.length} Units)`;
+          btnContinue.textContent = `Continue (${lordUnit?.nickname ?? 'Campaign'})`;
         }
         if (saveSummaryEl) {
-          saveSummaryEl.textContent = `Active Save: Lord ${lordUnit?.nickname ?? '—'} (${lordSp?.name ?? '—'}) · Gold ${save.gold}G · Updated ${updatedIso}`;
+          saveSummaryEl.textContent = `Lord ${lordUnit?.nickname ?? '—'} (${lordSp?.name ?? '—'}) · Party: ${save.roster.length} · ${save.gold.toLocaleString()}G`;
         }
         if (syncLocalDetails) {
-          syncLocalDetails.textContent = `Save ID: ${save.saveId} · Units: ${save.roster.length} · Convoy Stacks: ${save.convoy.length} · lastUpdated: ${updatedIso} (${save.lastUpdated})`;
+          syncLocalDetails.textContent = `Lord ${lordUnit?.nickname ?? '—'} · ${save.roster.length} Pokémon · ${save.gold.toLocaleString()}G · Saved ${friendlyDate}`;
         }
         if (btnExportJson) btnExportJson.disabled = false;
         if (btnClearSave) btnClearSave.disabled = false;
-        void updateHeroSprite(lordSp?.pmdAssetId ?? '0001');
       } else {
         if (btnContinue) {
           btnContinue.disabled = true;
-          btnContinue.textContent = 'Continue Campaign (No Save Found)';
+          btnContinue.textContent = 'Continue';
         }
         if (saveSummaryEl) {
           saveSummaryEl.textContent =
-            'Fire Emblem Awakening tactical grid combat meets Pokémon Mystery Dungeon: Explorers of Sky sprites, dungeon tilesets, and portraits.';
+            'Command your Pokémon squad across five kingdoms in a tactical RPG adventure.';
         }
         if (syncLocalDetails) {
-          syncLocalDetails.textContent = 'No save stored in localStorage (`poke_emblem_save_v1`).';
+          syncLocalDetails.textContent = 'No save file on this device yet.';
         }
         if (btnExportJson) btnExportJson.disabled = true;
         if (btnClearSave) btnClearSave.disabled = true;
-        void updateHeroSprite('0001');
       }
 
-      if (syncCloudDetails && btnGoogleAuthToggle && btnReconcileNow) {
+      if (syncCloudDetails && btnGoogleAuthToggle && btnReconcileNow && btnCloudSync) {
         if (!sync.isFirebaseConfigured) {
-          syncCloudDetails.textContent =
-            'Offline / Local Mode: Add PUBLIC_FIREBASE_* keys to `.env` (see `.env.example` & `firestore.rules`) to enable live Google Sign-In & Cloud Firestore sync.';
-          btnGoogleAuthToggle.textContent = 'Firebase Setup Info';
-          btnReconcileNow.disabled = true;
-        } else if (sync.user) {
-          const who = sync.user.email ?? sync.user.displayName ?? sync.user.uid;
-          const resText = sync.lastResolution ? ` · Last Sync: ${sync.lastResolution}` : '';
-          syncCloudDetails.textContent = `Signed in as ${who} (saves/${sync.user.uid})${resText}${sync.errorMessage ? ` · Error: ${sync.errorMessage}` : ''}`;
-          btnGoogleAuthToggle.textContent = 'Sign Out';
-          btnReconcileNow.disabled = false;
-        } else {
-          syncCloudDetails.textContent = `Firebase Connected · Not signed in.${sync.errorMessage ? ` (${sync.errorMessage})` : ''}`;
+          syncCloudDetails.textContent = 'Cloud sync is currently unavailable. Your progress saves automatically to this browser.';
           btnGoogleAuthToggle.textContent = 'Sign in with Google';
-          btnReconcileNow.disabled = true;
+          (btnGoogleAuthToggle as HTMLButtonElement).disabled = true;
+          btnReconcileNow.hidden = true;
+          btnCloudSync.textContent = 'Cloud Save';
+        } else if (sync.user) {
+          const who = sync.user.email ?? sync.user.displayName ?? 'Google Account';
+          syncCloudDetails.textContent = sync.errorMessage
+            ? `Signed in as ${who} · ${sync.errorMessage}`
+            : `Signed in as ${who} · Progress syncs automatically across your devices.`;
+          btnGoogleAuthToggle.textContent = 'Sign Out';
+          (btnGoogleAuthToggle as HTMLButtonElement).disabled = false;
+          btnReconcileNow.hidden = false;
+          btnCloudSync.textContent = 'Cloud Save (Synced)';
+        } else {
+          syncCloudDetails.textContent = sync.errorMessage
+            ? `Could not complete sign-in: ${sync.errorMessage}`
+            : 'Sign in with Google to automatically sync your adventure across PC and mobile.';
+          btnGoogleAuthToggle.textContent = 'Sign in with Google';
+          (btnGoogleAuthToggle as HTMLButtonElement).disabled = false;
+          btnReconcileNow.hidden = true;
+          btnCloudSync.textContent = 'Cloud Save';
         }
+      }
+
+      if (devToolsSyncDiagnostics) {
+        const iso = save ? new Date(save.lastUpdated).toISOString() : 'none';
+        const uidPath = sync.user ? `saves/${sync.user.uid}` : 'unauthenticated';
+        devToolsSyncDiagnostics.textContent = [
+          `Save ID: ${save?.saveId ?? 'none'}`,
+          `Schema: v${save?.schemaVersion ?? '—'}`,
+          `lastUpdated: ${iso}${save ? ` (${save.lastUpdated})` : ''}`,
+          `Firestore Doc: ${uidPath}`,
+          `Last Resolution: ${sync.lastResolution ?? 'none'}`,
+        ].join(' · ');
       }
 
       void renderSquadCards();
     }
 
-    function createDefaultPrologueSave(): void {
+    function startNewGame(): void {
       manager.createNewCampaignSave({
         lordSpeciesId: 'dratini',
         partnerSpeciesId: 'bulbasaur',
         healerSpeciesId: 'happiny',
       });
-      setStatus('Initialized Prologue Trio save (Dratini, Bulbasaur, Happiny) in localStorage!');
-      openInspector('squad');
+      setStatus('');
+      openCampaignMenu('squad');
     }
 
     // Bind unified Pointer Event handlers (Rule 2: Zero keyboard event listeners!)
-    bindPointerTap(cornerMenuBtn, () => handleSystemMenuOrBack());
+    bindPointerTap(cornerMenuBtn, () => handleSystemMenuOrBack(), signal);
+    bindPointerTap(devToolsBtn, () => toggleDevTools(), signal);
 
     // PC Right-Click parity + Mobile Long-Press parity on viewport background
-    viewportEl?.addEventListener('contextmenu', (ev: MouseEvent) => {
-      ev.preventDefault();
-      handleSystemMenuOrBack();
-    });
+    viewportEl?.addEventListener(
+      'contextmenu',
+      (ev: MouseEvent) => {
+        ev.preventDefault();
+        handleSystemMenuOrBack();
+      },
+      { signal }
+    );
 
     let longPressTimer: number | null = null;
     let lpStartX = 0;
     let lpStartY = 0;
-    viewportEl?.addEventListener('pointerdown', (ev: PointerEvent) => {
-      if (ev.pointerType !== 'touch') return;
-      const target = ev.target as HTMLElement | null;
-      if (target?.closest('button, input, textarea')) return;
-      lpStartX = ev.clientX;
-      lpStartY = ev.clientY;
-      longPressTimer = window.setTimeout(() => {
-        longPressTimer = null;
-        handleSystemMenuOrBack();
-      }, 520);
-    });
-    viewportEl?.addEventListener('pointermove', (ev: PointerEvent) => {
-      if (longPressTimer !== null && Math.hypot(ev.clientX - lpStartX, ev.clientY - lpStartY) > 12) {
-        window.clearTimeout(longPressTimer);
-        longPressTimer = null;
-      }
-    });
-    viewportEl?.addEventListener('pointerup', () => {
-      if (longPressTimer !== null) {
-        window.clearTimeout(longPressTimer);
-        longPressTimer = null;
-      }
-    });
-    viewportEl?.addEventListener('pointercancel', () => {
-      if (longPressTimer !== null) {
-        window.clearTimeout(longPressTimer);
-        longPressTimer = null;
-      }
-    });
+    viewportEl?.addEventListener(
+      'pointerdown',
+      (ev: PointerEvent) => {
+        if (ev.pointerType !== 'touch') return;
+        const target = ev.target as HTMLElement | null;
+        if (target?.closest('button, input, textarea')) return;
+        lpStartX = ev.clientX;
+        lpStartY = ev.clientY;
+        longPressTimer = window.setTimeout(() => {
+          longPressTimer = null;
+          handleSystemMenuOrBack();
+        }, 520);
+      },
+      { signal }
+    );
+    viewportEl?.addEventListener(
+      'pointermove',
+      (ev: PointerEvent) => {
+        if (longPressTimer !== null && Math.hypot(ev.clientX - lpStartX, ev.clientY - lpStartY) > 12) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      },
+      { signal }
+    );
+    viewportEl?.addEventListener(
+      'pointerup',
+      () => {
+        if (longPressTimer !== null) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      },
+      { signal }
+    );
+    viewportEl?.addEventListener(
+      'pointercancel',
+      () => {
+        if (longPressTimer !== null) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      },
+      { signal }
+    );
 
-    bindPointerTap(btnContinue, () => openInspector('squad'));
-    bindPointerTap(btnNewDemoSave, () => createDefaultPrologueSave());
-    bindPointerTap(btnEmptyCreateSave, () => createDefaultPrologueSave());
-    bindPointerTap(btnOpenInspector, () => openInspector('squad'));
+    bindPointerTap(btnContinue, () => openCampaignMenu('squad'), signal);
+    bindPointerTap(btnNewGame, () => startNewGame(), signal);
+    bindPointerTap(btnEmptyCreateSave, () => startNewGame(), signal);
 
     // OAuth popup buttons use pointer `click` activation so iOS Safari & Android Chrome permit `signInWithPopup`
-    btnCloudSync?.addEventListener('click', () => {
-      openInspector('sync');
-      if (manager.getSyncStatus().isFirebaseConfigured && !manager.getSyncStatus().user) {
-        void manager.signInWithGoogleAndSync().catch((err: unknown) => {
-          setStatus(err instanceof Error ? err.message : 'Google Sign-In cancelled.');
-        });
-      }
-    });
+    btnCloudSync?.addEventListener(
+      'click',
+      () => {
+        openCampaignMenu('sync');
+        if (manager.getSyncStatus().isFirebaseConfigured && !manager.getSyncStatus().user) {
+          void manager.signInWithGoogleAndSync().catch(() => {
+            // User closed popup or cancelled; clean message handled in Cloud & Save panel
+          });
+        }
+      },
+      { signal }
+    );
 
     document.querySelectorAll<HTMLElement>('.pmd-tab-btn').forEach((tabBtn) => {
-      bindPointerTap(tabBtn, () => {
-        const t = tabBtn.dataset.tab as 'squad' | 'registry' | 'sync' | undefined;
-        if (t) switchTab(t);
-      });
+      bindPointerTap(
+        tabBtn,
+        () => {
+          const t = tabBtn.dataset.tab as 'squad' | 'sync' | undefined;
+          if (t) switchTab(t);
+        },
+        signal
+      );
     });
 
     // Nickname Modal Controls
     document.querySelectorAll<HTMLElement>('.pmd-chip-btn').forEach((chip) => {
-      bindPointerTap(chip, () => {
-        if (nicknameInput && chip.dataset.preset) {
-          nicknameInput.value = chip.dataset.preset;
+      bindPointerTap(
+        chip,
+        () => {
+          if (nicknameInput && chip.dataset.preset) {
+            nicknameInput.value = chip.dataset.preset;
+          }
+        },
+        signal
+      );
+    });
+
+    bindPointerTap(
+      btnSaveNickname,
+      () => {
+        if (!editingUnitId || !nicknameInput) return;
+        manager.renamePokemon(editingUnitId, nicknameInput.value);
+        closeNicknameModal();
+      },
+      signal
+    );
+
+    bindPointerTap(
+      btnResetNickname,
+      () => {
+        if (!editingUnitId) return;
+        manager.renamePokemon(editingUnitId, '');
+        closeNicknameModal();
+      },
+      signal
+    );
+
+    bindPointerTap(btnCancelNickname, () => closeNicknameModal(), signal);
+
+    // Cloud & Save Backup Controls
+    btnGoogleAuthToggle?.addEventListener(
+      'click',
+      () => {
+        const sync = manager.getSyncStatus();
+        if (!sync.isFirebaseConfigured) return;
+        if (sync.user) {
+          void manager.signOutFromGoogle();
+        } else {
+          void manager.signInWithGoogleAndSync().catch(() => {
+            // Handled via sync status state
+          });
         }
-      });
-    });
+      },
+      { signal }
+    );
 
-    bindPointerTap(btnSaveNickname, () => {
-      if (!editingUnitId || !nicknameInput) return;
-      const updated = manager.renamePokemon(editingUnitId, nicknameInput.value);
-      closeNicknameModal();
-      setStatus(`Saved nickname "${updated.nickname}" to localStorage!`);
-    });
+    bindPointerTap(
+      btnReconcileNow,
+      () => {
+        void manager.reconcileWithCloud();
+      },
+      signal
+    );
 
-    bindPointerTap(btnResetNickname, () => {
-      if (!editingUnitId) return;
-      const updated = manager.renamePokemon(editingUnitId, '');
-      closeNicknameModal();
-      setStatus(`Reset nickname to species default "${updated.nickname}".`);
-    });
+    bindPointerTap(
+      btnExportJson,
+      () => {
+        if (!jsonIoBox || !jsonIoTextarea || !jsonIoTitle || !btnConfirmImport || !btnDownloadJson) return;
+        jsonIoTitle.textContent = 'Export Save Backup';
+        jsonIoTextarea.value = manager.exportSaveJson();
+        jsonIoTextarea.readOnly = true;
+        btnConfirmImport.hidden = true;
+        btnDownloadJson.hidden = false;
+        jsonIoBox.hidden = false;
+      },
+      signal
+    );
 
-    bindPointerTap(btnCancelNickname, () => closeNicknameModal());
+    bindPointerTap(
+      btnDownloadJson,
+      () => {
+        const json = manager.exportSaveJson();
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `poke-emblem-save-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      signal
+    );
 
-    // Cloud & JSON Backup Controls (pointer `click` preserves transient activation for Google OAuth popup on mobile)
-    btnGoogleAuthToggle?.addEventListener('click', () => {
-      const sync = manager.getSyncStatus();
-      if (!sync.isFirebaseConfigured) {
-        setStatus('Configure PUBLIC_FIREBASE_* in `.env` (see `.env.example`) to enable live Google Sign-In.');
-        return;
-      }
-      if (sync.user) {
-        void manager.signOutFromGoogle().then(() => setStatus('Signed out of Google Cloud Sync.'));
-      } else {
-        void manager
-          .signInWithGoogleAndSync()
-          .then((res) => setStatus(`Google Cloud Sync complete (${res}).`))
-          .catch((err: unknown) => setStatus(err instanceof Error ? err.message : 'Google Sign-In failed.'));
-      }
-    });
+    bindPointerTap(
+      btnOpenImport,
+      () => {
+        if (!jsonIoBox || !jsonIoTextarea || !jsonIoTitle || !btnConfirmImport || !btnDownloadJson) return;
+        jsonIoTitle.textContent = 'Import Save Backup';
+        jsonIoTextarea.value = '';
+        jsonIoTextarea.readOnly = false;
+        btnConfirmImport.hidden = false;
+        btnDownloadJson.hidden = true;
+        jsonIoBox.hidden = false;
+      },
+      signal
+    );
 
-    bindPointerTap(btnReconcileNow, () => {
-      void manager.reconcileWithCloud().then((res) => {
-        setStatus(`Timestamp reconciliation complete: ${res}`);
-      });
-    });
+    bindPointerTap(
+      btnConfirmImport,
+      () => {
+        if (!jsonIoTextarea || !jsonIoBox) return;
+        try {
+          manager.importSaveJson(jsonIoTextarea.value);
+          jsonIoBox.hidden = true;
+          switchTab('squad');
+        } catch (err) {
+          if (jsonIoTitle) {
+            jsonIoTitle.textContent = err instanceof Error ? `Invalid Backup: ${err.message}` : 'Invalid Backup File';
+          }
+        }
+      },
+      signal
+    );
 
-    bindPointerTap(btnExportJson, () => {
-      if (!jsonIoBox || !jsonIoTextarea || !jsonIoTitle || !btnConfirmImport || !btnDownloadJson) return;
-      jsonIoTitle.textContent = 'Exported Save JSON Backup';
-      jsonIoTextarea.value = manager.exportSaveJson();
-      jsonIoTextarea.readOnly = true;
-      btnConfirmImport.hidden = true;
-      btnDownloadJson.hidden = false;
-      jsonIoBox.hidden = false;
-    });
+    bindPointerTap(
+      btnCloseJsonBox,
+      () => {
+        if (jsonIoBox) jsonIoBox.hidden = true;
+      },
+      signal
+    );
 
-    bindPointerTap(btnDownloadJson, () => {
-      const json = manager.exportSaveJson();
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `poke-emblem-save-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setStatus('Downloaded JSON save backup.');
-    });
-
-    bindPointerTap(btnOpenImport, () => {
-      if (!jsonIoBox || !jsonIoTextarea || !jsonIoTitle || !btnConfirmImport || !btnDownloadJson) return;
-      jsonIoTitle.textContent = 'Paste Save JSON Backup to Import';
-      jsonIoTextarea.value = '';
-      jsonIoTextarea.readOnly = false;
-      btnConfirmImport.hidden = false;
-      btnDownloadJson.hidden = true;
-      jsonIoBox.hidden = false;
-    });
-
-    bindPointerTap(btnConfirmImport, () => {
-      if (!jsonIoTextarea || !jsonIoBox) return;
-      try {
-        manager.importSaveJson(jsonIoTextarea.value);
-        jsonIoBox.hidden = true;
-        setStatus('Successfully validated and imported JSON save backup!');
-        switchTab('squad');
-      } catch (err) {
-        setStatus(err instanceof Error ? err.message : 'Failed to import JSON.');
-      }
-    });
-
-    bindPointerTap(btnCloseJsonBox, () => {
-      if (jsonIoBox) jsonIoBox.hidden = true;
-    });
-
-    bindPointerTap(btnClearSave, () => {
-      manager.clearLocalSave();
-      setStatus('Cleared local campaign save from localStorage.');
-    });
+    bindPointerTap(
+      btnClearSave,
+      () => {
+        manager.clearLocalSave();
+      },
+      signal
+    );
 
     renderRegistryAudit();
     manager.subscribe(() => renderAll());
-
-    setStatus(
-      validation.valid
-        ? `Registries verified (${validation.counts.totalSpecies} species, ${validation.counts.totalMoves} moves, ${validation.counts.totalItems} items · 0 errors).`
-        : `Registry validation reported ${validation.errors.length} error(s).`
-    );
   }
 
   initPokeEmblemApp();
@@ -800,11 +948,11 @@ import Footer from '../../components/Footer.astro';
   .pmd-viewport {
     position: relative;
     width: 100%;
-    min-height: 580px;
+    min-height: 560px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 4rem 1.25rem 2rem;
+    padding: 4.35rem 1.25rem 2rem;
     border-radius: 8px;
     background: radial-gradient(circle at center, rgba(24, 40, 72, 0.78) 0%, rgba(10, 14, 24, 0.94) 100%);
     border: 2px solid rgba(88, 200, 248, 0.35);
@@ -831,15 +979,23 @@ import Footer from '../../components/Footer.astro';
   .pmd-corner-btn {
     position: absolute;
     top: 0.9rem;
-    right: 0.9rem;
     min-height: 46px;
-    min-width: 112px;
+    min-width: 108px;
     padding: 0.45rem 0.95rem;
     font-size: 0.8rem;
     color: #f8d048;
     cursor: pointer;
     z-index: 20;
     transition: transform 0.15s, background-color 0.15s;
+  }
+
+  .pmd-corner-left {
+    left: 0.9rem;
+    color: #90d8f8;
+  }
+
+  .pmd-corner-right {
+    right: 0.9rem;
   }
 
   .pmd-corner-btn:hover,
@@ -849,55 +1005,31 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-title-card {
-    max-width: 580px;
+    max-width: 540px;
     width: 100%;
-    padding: 2rem 1.75rem;
+    padding: 2.35rem 1.85rem;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.95rem;
+    gap: 1rem;
   }
 
+  .pmd-corner-btn[hidden],
   .pmd-title-card[hidden],
-  .pmd-inspector[hidden],
+  .pmd-panel[hidden],
   .pmd-tab-panel[hidden],
   .pmd-modal-backdrop[hidden],
   .pmd-empty-box[hidden],
   .pmd-json-box[hidden],
-  .pmd-errors-box[hidden] {
+  .pmd-errors-box[hidden],
+  .pmd-status[hidden],
+  .pmd-btn[hidden] {
     display: none !important;
   }
 
-  .pmd-badge-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .pmd-sprite-slot {
-    min-width: 52px;
-    min-height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pmd-badge {
-    font-size: 0.68rem;
-    color: #48b8e8;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0.2rem 0.65rem;
-    border: 1px solid rgba(72, 184, 232, 0.5);
-    border-radius: 4px;
-    background: rgba(8, 16, 32, 0.6);
-  }
-
   .pmd-title {
-    font-size: 2.05rem;
+    font-size: 2.2rem;
     color: #f8d048;
     letter-spacing: 0.08em;
     line-height: 1.2;
@@ -911,20 +1043,20 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-desc {
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     color: rgba(248, 248, 248, 0.9);
-    line-height: 1.55;
-    max-width: 490px;
+    line-height: 1.6;
+    max-width: 450px;
     word-break: break-word;
   }
 
   .pmd-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.7rem;
     width: 100%;
-    max-width: 360px;
-    margin-top: 0.35rem;
+    max-width: 320px;
+    margin-top: 0.4rem;
   }
 
   .pmd-btn {
@@ -935,7 +1067,7 @@ import Footer from '../../components/Footer.astro';
     border: 2px solid #48b8e8;
     border-radius: 4px;
     color: #f8f8f8;
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     cursor: pointer;
     text-shadow: 1px 1px 0 #081020;
     transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
@@ -968,31 +1100,31 @@ import Footer from '../../components/Footer.astro';
 
   .pmd-status {
     margin-top: 0.35rem;
-    font-size: 0.74rem;
+    font-size: 0.76rem;
     color: #90d8f8;
     padding: 0.5rem 0.75rem 0;
     border-top: 1px solid rgba(72, 184, 232, 0.3);
     width: 100%;
   }
 
-  /* Inspector Layout */
-  .pmd-inspector {
+  /* Campaign Menu & Dev Tools Panel Layout */
+  .pmd-panel {
     width: 100%;
-    max-width: 960px;
+    max-width: 920px;
     padding: 1.5rem 1.35rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  .pmd-inspector-title {
-    font-size: 1.1rem;
+  .pmd-panel-title {
+    font-size: 1.15rem;
     color: #f8d048;
     letter-spacing: 0.05em;
   }
 
-  .pmd-inspector-sub {
-    font-size: 0.75rem;
+  .pmd-panel-sub {
+    font-size: 0.76rem;
     color: #90d8f8;
   }
 
@@ -1124,7 +1256,7 @@ import Footer from '../../components/Footer.astro';
     background: rgba(24, 68, 48, 0.85);
   }
 
-  /* Registry Audit */
+  /* Dev Tools Audit */
   .pmd-audit-banner {
     padding: 0.65rem 0.9rem;
     border-radius: 4px;
@@ -1202,9 +1334,9 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-subcard-text {
-    font-size: 0.75rem;
+    font-size: 0.76rem;
     color: rgba(248, 248, 248, 0.88);
-    line-height: 1.5;
+    line-height: 1.55;
     word-break: break-word;
   }
 
@@ -1286,16 +1418,16 @@ import Footer from '../../components/Footer.astro';
 
     .pmd-viewport {
       min-height: 500px;
-      padding: 4rem 0.65rem 1.25rem;
+      padding: 4.35rem 0.65rem 1.25rem;
     }
 
     .pmd-title-card,
-    .pmd-inspector {
-      padding: 1.25rem 0.9rem;
+    .pmd-panel {
+      padding: 1.35rem 0.95rem;
     }
 
     .pmd-title {
-      font-size: 1.55rem;
+      font-size: 1.65rem;
     }
   }
 </style>
