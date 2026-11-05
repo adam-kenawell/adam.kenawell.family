@@ -6,38 +6,7 @@ import Footer from '../components/Footer.astro';
 const base = import.meta.env.BASE_URL;
 
 // Add projects here as objects with title, description, tech[], and url.
-const projects: { title: string; description: string; tech: string[]; url: string }[] = [
-  {
-    title: 'Local LLM Stack via Openclaw',
-    description: 'My personal setup for running large language models locally on consumer hardware. Built this site with it.',
-    tech: ['Openclaw', 'RTX 4070', 'Galaxy Book 4 Ultra', 'LLM', 'Agentic AI'],
-    url: `${base}projects/local-llm-stack`,
-  },
-  {
-    title: 'PokePaste Visualizer',
-    description: 'Paste a PokePaste team export and get a clean visual breakdown with sprites, stats, and moves.',
-    tech: ['Pokemon', 'PokeAPI', 'Astro', 'Client-side JS'],
-    url: `${base}projects/pokepaste-visualizer`,
-  },
-  {
-    title: 'Task Shard',
-    description: 'Shard your workflow. A lightweight kanban board with four lanes for tracking tasks.',
-    tech: ['TypeScript', 'Astro', 'localStorage', 'Kanban'],
-    url: `${base}projects/task-shard`,
-  },
-  {
-    title: 'Rescue Team AI',
-    description: "I'm an agentic nerd. I'm also a pokemon nerd. Let's smash them together. Pokemon nerd not required for use.",
-    tech: ['Python', 'Pydantic AI', 'Django', 'HTMX', 'TypeScript', 'Canvas'],
-    url: `${base}projects/rescue-team-ai`,
-  },
-  {
-    title: 'Chample',
-    description: 'A daily Pokémon guessing game based on the Pokémon Champions Regulation M-A. Guess the daily Pokémon as its stats are slowly revealed.',
-    tech: ['Pokemon', 'Astro', 'TypeScript', 'localStorage', 'Wordle'],
-    url: `${base}projects/chample`,
-  },
-];
+const projects: { title: string; description: string; tech: string[]; url: string }[] = [];
 ---
 
 <Layout title="Projects — Adam Kenawell" description="Side projects and experiments from Adam Kenawell.">

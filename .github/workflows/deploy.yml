@@ -21,22 +21,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout pmd-visualizer
-        uses: actions/checkout@v4
-        with:
-          repository: adam-kenawell/pmd-visualizer
-          token: ${{ secrets.PAT_TOKEN }}
-          path: pmd-visualizer
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Install dependencies
-        run: |
-          sed -i 's|file:../pmd-visualizer|file:./pmd-visualizer|' package.json
-          npm install
+        run: npm install
 
       - name: Build Astro
         run: npm run build

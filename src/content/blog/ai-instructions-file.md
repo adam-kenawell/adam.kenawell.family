@@ -5,7 +5,7 @@ excerpt: "I wrote a single instructions file that turns a generic AI coding assi
 categories: ["featured", "technical"]
 ---
 
-I wanted to share the agent instructions file I've been using alongside github copilot extension for vs code and Claude Opus 4.6.  This is the current version I've been using to help me build out rescue-team-ai:
+I wanted to share the agent instructions file I've been using alongside github copilot extension for vs code and Claude Opus 4.6.  This is the current version I've been using to help me build out my projects:
 
 ```markdown
 # READ EVERYTHING METICULOUSLY
