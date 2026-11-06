@@ -184,7 +184,6 @@ export class DevToolsHarness {
       spriteMount.innerHTML = '';
       this.previewSpriteActor = new PmdSpriteActor({
         speciesIdOrAssetId: this.selectedSpeciesId,
-        scale: 2,
         initialAction: this.selectedAction,
         initialDirection: this.selectedDirection,
         testId: 'devtools-sprite-canvas',
@@ -269,7 +268,6 @@ export class DevToolsHarness {
         const cell = document.createElement('div');
         cell.className = 'pmd-devtools-portrait-cell';
         const pv = new PmdPortraitView({
-          pixelScale: 2,
           testId: `devtools-portrait-${emotion}`,
         });
         const label = document.createElement('span');
@@ -423,7 +421,7 @@ export class DevToolsHarness {
       `Asset: ${snap.pmdAssetId}`,
       `Action: ${snap.action} (XML: ${snap.xmlAnimName} -> Sheet: ${snap.sheetName})`,
       `Dir: ${dirInfo?.label ?? snap.direction}`,
-      `Frame: ${snap.frameWidth}x${snap.frameHeight}px (${snap.frameCount}f × ${snap.rowCount}r)`,
+      `Frame: ${snap.frameWidth}x${snap.frameHeight}px · Scale: ${snap.scale}x (${snap.displayWidthPx}x${snap.displayHeightPx}px)`,
       `Smoothing: ${snap.imageSmoothingEnabled ? 'ON (ERROR)' : 'OFF (Pixelated)'}`,
       snap.synthesizedFallback ? 'Mode: Portrait Token Fallback' : 'Mode: Native PMD Sheet',
     ].join(' · ');

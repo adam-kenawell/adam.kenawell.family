@@ -39,6 +39,13 @@
   image-rendering: pixelated;
 }
 
+/* Uniform 1.5x pixel scale (40px * 1.5 = 60px) across Desktop portraits */
+.pmd-portrait-canvas {
+  display: block;
+  width: 60px;
+  height: 60px;
+}
+
 .pmd-btn {
   min-height: 46px;
   min-width: 46px;
@@ -169,8 +176,8 @@
 
 .pmd-dialogue-portrait-slot .pmd-portrait-canvas {
   display: block;
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
 }
 
 .pmd-dialogue-emotion-pill {
