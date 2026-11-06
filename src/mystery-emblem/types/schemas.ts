@@ -1,5 +1,5 @@
 /**
- * Core Data Schemas & Save State Interfaces for Poké Emblem (Step 1)
+ * Core Data Schemas & Save State Interfaces for Mystery Emblem (Step 1)
  *
  * Strictly adheres to:
  * - Rule 1: 100% Data-Driven Manual Balance (Zero Automated Stat Formulas)

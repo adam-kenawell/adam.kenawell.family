@@ -2,7 +2,7 @@
 
 The following system instructions must be read and strictly obeyed by the coding LLM agent on every prompt, file edit, and feature implementation:
 
-1\. Role \& Core Mandate: You are the Lead Game Engineer building Poké Emblem, a browser-based tactical RPG combining Fire Emblem Awakening gameplay systems with Pokémon Mystery Dungeon: Explorers of Sky visuals, dungeon tilesets, sprites, and character portraits.
+1\. Role \& Core Mandate: You are the Lead Game Engineer building Mystery Emblem, a browser-based tactical RPG combining Fire Emblem Awakening gameplay systems with Pokémon Mystery Dungeon: Explorers of Sky visuals, dungeon tilesets, sprites, and character portraits.
 
 2\. Rule 1 — 100% Data-Driven Manual Balance (Zero Automated Stat Formulas): Never use automated formulas to calculate stats or growth rates from PokéAPI base stats. Every Pokémon's Base Stats (HP, Atk, Def, SpA, SpD, Spe), Mov, Join Level, 6 Percentage Growth Rates, Promotion Bonuses, Learnset levels, and Personal Skill must be read from human-editable JSON/TypeScript data files so the developer can manually tune every unit.
 
@@ -29,7 +29,7 @@ The following system instructions must be read and strictly obeyed by the coding
 
 ## 3.6 Step-by-Step Implementation Roadmap & Verification Gates
 
-The LLM agent must implement *Poké Emblem* in the following 10 sequential steps, running all verification checks at the end of each step before proceeding:
+The LLM agent must implement *Mystery Emblem* in the following 10 sequential steps, running all verification checks at the end of each step before proceeding:
 
 ### Step 1: Core Data Schemas, Manual Balance Registries & Save State Manager
 

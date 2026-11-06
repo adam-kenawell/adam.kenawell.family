@@ -5,14 +5,14 @@ import Footer from '../../components/Footer.astro';
 ---
 
 <Layout
-  title="Poké Emblem — Tactical RPG"
+  title="Mystery Emblem — Tactical RPG"
   description="A browser-based tactical RPG combining Fire Emblem Awakening gameplay systems with Pokémon Mystery Dungeon: Explorers of Sky visuals."
 >
   <div class="page">
     <Header />
 
-    <main class="poke-emblem-shell">
-      <div id="poke-emblem-root" class="pmd-viewport">
+    <main class="mystery-emblem-shell">
+      <div id="mystery-emblem-root" class="pmd-viewport">
         <!-- Admin-Only Dev Tools Button (Top-Left, strictly visible ONLY for adam.kenawell.family@gmail.com) -->
         <button
           id="pmd-dev-tools-btn"
@@ -35,7 +35,7 @@ import Footer from '../../components/Footer.astro';
 
         <!-- Authentic PMD: Explorers of Sky Title Window -->
         <section id="pmd-title-screen" class="pmd-window pmd-title-card">
-          <h1 class="pmd-title">POKÉ EMBLEM</h1>
+          <h1 class="pmd-title">MYSTERY EMBLEM</h1>
           <p class="pmd-subtitle">Echoes of the Dragon Lineage</p>
 
           <p id="pmd-save-summary" class="pmd-desc">
@@ -215,12 +215,12 @@ import Footer from '../../components/Footer.astro';
     getPersonalSkillById,
     getRegistryValidationSummary,
     getSpeciesById,
-  } from '../../poke-emblem/data/index';
+  } from '../../mystery-emblem/data/index';
   import {
     InMemoryCloudSyncAdapter,
     type CloudSyncAdapter,
-  } from '../../poke-emblem/state/firebaseSync';
-  import { SaveStateManager } from '../../poke-emblem/state/SaveStateManager';
+  } from '../../mystery-emblem/state/firebaseSync';
+  import { SaveStateManager } from '../../mystery-emblem/state/SaveStateManager';
 
   const ADMIN_EMAIL = 'adam.kenawell.family@gmail.com';
 
@@ -285,7 +285,7 @@ import Footer from '../../components/Footer.astro';
   let currentManager: SaveStateManager | null = null;
   let uiAbortController: AbortController | null = null;
 
-  async function initPokeEmblemApp() {
+  async function initMysteryEmblemApp() {
     resetSpriteWidgets();
     currentManager?.dispose();
     uiAbortController?.abort();
@@ -293,21 +293,21 @@ import Footer from '../../components/Footer.astro';
     const signal = uiAbortController.signal;
 
     const injectedAdapter = (window as unknown as Record<string, unknown>)
-      .__POKE_EMBLEM_TEST_CLOUD_ADAPTER__ as CloudSyncAdapter | undefined;
+      .__MYSTERY_EMBLEM_TEST_CLOUD_ADAPTER__ as CloudSyncAdapter | undefined;
 
     const manager = new SaveStateManager(undefined, injectedAdapter);
     currentManager = manager;
 
     const validation = getRegistryValidationSummary();
 
-    (window as unknown as Record<string, unknown>).__POKE_EMBLEM_DEBUG__ = {
+    (window as unknown as Record<string, unknown>).__MYSTERY_EMBLEM_DEBUG__ = {
       saveManager: manager,
       SaveStateManager,
       InMemoryCloudSyncAdapter,
       getRegistryValidationSummary,
     };
 
-    const viewportEl = document.getElementById('poke-emblem-root');
+    const viewportEl = document.getElementById('mystery-emblem-root');
     const titleScreen = document.getElementById('pmd-title-screen');
     const campaignMenu = document.getElementById('pmd-campaign-menu');
     const devToolsModal = document.getElementById('pmd-devtools-modal');
@@ -871,7 +871,7 @@ import Footer from '../../components/Footer.astro';
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `poke-emblem-save-${Date.now()}.json`;
+        a.download = `mystery-emblem-save-${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
       },
@@ -929,12 +929,12 @@ import Footer from '../../components/Footer.astro';
     manager.subscribe(() => renderAll());
   }
 
-  initPokeEmblemApp();
-  document.addEventListener('astro:after-swap', initPokeEmblemApp);
+  initMysteryEmblemApp();
+  document.addEventListener('astro:after-swap', initMysteryEmblemApp);
 </script>
 
 <style>
-  .poke-emblem-shell {
+  .mystery-emblem-shell {
     flex: 1;
     display: flex;
     justify-content: center;
@@ -1412,7 +1412,7 @@ import Footer from '../../components/Footer.astro';
   }
 
   @media (max-width: 640px) {
-    .poke-emblem-shell {
+    .mystery-emblem-shell {
       padding: 0.6rem 0.45rem;
     }
 

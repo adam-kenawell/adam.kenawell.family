@@ -1,4 +1,4 @@
-# **Poké Emblem — LLM Master Spec & Game Design Document**
+# **Mystery Emblem — LLM Master Spec & Game Design Document**
 
 **Author:** Adam Kenawell  
 **Platform:** Web Browser (hosted on existing Pokémon Mystery Dungeon sprite/animation API site)  
@@ -554,7 +554,7 @@ Inspired by the Support system in *Fire Emblem Awakening*—but streamlined so i
 
 ## **3.1 Cross-Platform Requirement (PC & Mobile Parity)**
 
-* **Strict PC \+ Mobile Mandate for the LLM Agent:** Every feature, screen, menu modal, and canvas interaction built for *Poké Emblem* **must be 100% playable and responsive on both PC (Desktop Mouse) and Mobile (Touchscreen)** browsers.  
+* **Strict PC \+ Mobile Mandate for the LLM Agent:** Every feature, screen, menu modal, and canvas interaction built for *Mystery Emblem* **must be 100% playable and responsive on both PC (Desktop Mouse) and Mobile (Touchscreen)** browsers.  
 * **Agent Verification Checklist on Every Feature Addition:**  
   * **Unified Pointer Events:** Use unified Pointer Events (`pointerdown`, `pointermove`, `pointerup`) or paired Mouse \+ Touch handlers so panning, clicking nodes, selecting tiles, and navigating menus work identically with a mouse cursor or a finger tap.  
   * **Responsive Layout & Touch Targets:** All menus, unit cards, and action buttons must scale cleanly across desktop (`16:9`) and mobile (`portrait` or `landscape`) viewports, with touch-friendly button hitboxes (`minimum 44x44px`) and scrollable lists that support touch-drag.  
@@ -608,7 +608,7 @@ The agent must structure the game's menu flows after *Fire Emblem Awakening*, st
 
 The following system instructions must be read and strictly obeyed by the coding LLM agent on every prompt, file edit, and feature implementation:
 
-* **1\. Role & Core Mandate:** You are the Lead Game Engineer building *Poké Emblem*, a browser-based tactical RPG combining *Fire Emblem Awakening* gameplay systems with *Pokémon Mystery Dungeon: Explorers of Sky* visuals, dungeon tilesets, sprites, and character portraits.  
+* **1\. Role & Core Mandate:** You are the Lead Game Engineer building *Mystery Emblem*, a browser-based tactical RPG combining *Fire Emblem Awakening* gameplay systems with *Pokémon Mystery Dungeon: Explorers of Sky* visuals, dungeon tilesets, sprites, and character portraits.  
 * **2\. Rule 1 — 100% Data-Driven Manual Balance (Zero Automated Stat Formulas):** Never use automated formulas to calculate stats or growth rates from PokéAPI base stats. Every Pokémon's Base Stats (`HP`, `Atk`, `Def`, `SpA`, `SpD`, `Spe`), `Mov`, Join Level, 6 Percentage Growth Rates, Promotion Bonuses, Learnset levels, and Personal Skill must be read from human-editable JSON/TypeScript data files so the developer can manually tune every unit.  
 * **3\. Rule 2 — Strict PC & Mobile Parity (Unified Pointer Events Only):** Every screen, canvas interaction, and menu modal must work cleanly on both Desktop (Mouse) and Mobile (Touchscreen) browsers. Never bind or require keyboard keys (`WASD`, arrow keys, `Space`, `Enter`, `Esc`). Use unified Pointer Events (`pointerdown`, `pointermove`, `pointerup`) for clicking/tapping and click-and-drag/touch-drag camera panning. Always render an on-screen PMD-styled **Menu / Back** button (and support long-press) on mobile to mirror PC right-click behavior.  
 * **4\. Rule 3 — Authentic PMD Visual Skin & Asset Pipeline:** All UI windows, menus, combat forecasts, and dialogue boxes must use the *Pokémon Mystery Dungeon: Explorers of Sky* aesthetic (deep navy translucent backgrounds, double-layered pixel borders, and bitmap RPG typography). Pull all 8-directional unit animations and multi-emotion character portraits directly from the existing site's PMD Git repository endpoints.  
@@ -621,7 +621,7 @@ The following system instructions must be read and strictly obeyed by the coding
 
 ## **3.6 Step-by-Step Implementation Roadmap & Verification Gates**
 
-The LLM agent must implement *Poké Emblem* in the following 10 sequential steps, running all verification checks at the end of each step before proceeding:
+The LLM agent must implement *Mystery Emblem* in the following 10 sequential steps, running all verification checks at the end of each step before proceeding:
 
 ### **Step 1: Core Data Schemas, Manual Balance Registries & Save State Manager**
 

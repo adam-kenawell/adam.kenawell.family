@@ -157,7 +157,7 @@ export class InMemoryCloudSyncAdapter implements CloudSyncAdapter {
     sharedCloudStore: Map<string, SaveData> = new Map(),
     mockAccount: CloudUser = {
       uid: 'test-google-uid-001',
-      email: 'trainer@poke-emblem.dev',
+      email: 'trainer@mystery-emblem.dev',
       displayName: 'Dragon Tactician',
     }
   ) {

@@ -14,8 +14,9 @@ import {
   type CloudUser,
 } from './firebaseSync';
 
-export const SAVE_STORAGE_KEY = 'poke_emblem_save_v1';
-export const META_STORAGE_KEY = 'poke_emblem_meta_v1';
+export const SAVE_STORAGE_KEY = 'mystery_emblem_save_v1';
+const LEGACY_SAVE_STORAGE_KEY = 'poke_emblem_save_v1';
+export const META_STORAGE_KEY = 'mystery_emblem_meta_v1';
 
 export const SUPPORT_LEVEL_THRESHOLDS: readonly [number, number, number, number, number] = [
   5, 12, 22, 35, 50,
@@ -451,6 +452,7 @@ export class SaveStateManager {
 
   public clearLocalSave(): void {
     this.storage.removeItem(SAVE_STORAGE_KEY);
+    this.storage.removeItem(LEGACY_SAVE_STORAGE_KEY);
     this.currentSave = null;
     this.emitChange();
   }
@@ -593,7 +595,15 @@ export class SaveStateManager {
 
   private readValidLocalSave(): SaveData | null {
     try {
-      const raw = this.storage.getItem(SAVE_STORAGE_KEY);
+      let raw = this.storage.getItem(SAVE_STORAGE_KEY);
+      if (!raw) {
+        const legacy = this.storage.getItem(LEGACY_SAVE_STORAGE_KEY);
+        if (legacy) {
+          this.storage.setItem(SAVE_STORAGE_KEY, legacy);
+          this.storage.removeItem(LEGACY_SAVE_STORAGE_KEY);
+          raw = legacy;
+        }
+      }
       if (!raw) return null;
       const parsed = JSON.parse(raw) as unknown;
       const check = validateSaveData(parsed, SPECIES_MAP, MOVE_MAP, ITEM_MAP);

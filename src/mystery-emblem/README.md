@@ -1,6 +1,6 @@
-# Poké Emblem — Project Directory
+# Mystery Emblem — Project Directory
 
-This directory (`src/poke-emblem/`) houses all data registries, state management, UI components, scenes, and tactical engine modules for **Poké Emblem**.
+This directory (`src/mystery-emblem/`) houses all data registries, state management, UI components, scenes, and tactical engine modules for **Mystery Emblem**.
 
 ## Folder Structure
 
