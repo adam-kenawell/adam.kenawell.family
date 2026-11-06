@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
+import '../../mystery-emblem/ui/pmdWindow.css';
 ---
 
 <Layout
@@ -28,7 +29,7 @@ import Footer from '../../components/Footer.astro';
           id="pmd-corner-menu-btn"
           class="pmd-window pmd-corner-btn pmd-corner-right"
           type="button"
-          aria-label="Menu or Back"
+          aria-label="Open System Menu"
         >
           Menu
         </button>
@@ -144,19 +145,130 @@ import Footer from '../../components/Footer.astro';
           <header class="pmd-panel-header">
             <h2 class="pmd-panel-title">DEV TOOLS</h2>
             <p class="pmd-panel-sub">
-              Balance registries, faction validation, and Cloud Firestore sync diagnostics.
+              Admin diagnostics: balance registries, Cloud Sync, PMD sprites &amp; evolution stages, and portrait dialogue.
             </p>
           </header>
 
-          <div class="pmd-subcard">
-            <h3 class="pmd-subcard-title">Save &amp; Cloud Sync Diagnostics</h3>
-            <p id="devtools-sync-diagnostics" class="pmd-subcard-text">—</p>
-          </div>
+          <nav class="pmd-tabs" aria-label="Dev Tools Sub-Tabs">
+            <button
+              type="button"
+              class="pmd-btn pmd-tab-btn is-active"
+              data-devtab-btn="audit"
+              data-testid="devtools-tab-audit"
+            >
+              Registry &amp; Sync
+            </button>
+            <button
+              type="button"
+              class="pmd-btn pmd-tab-btn"
+              data-devtab-btn="sprites"
+              data-testid="devtools-tab-sprites"
+            >
+              Sprites &amp; Stages
+            </button>
+            <button
+              type="button"
+              class="pmd-btn pmd-tab-btn"
+              data-devtab-btn="dialogue"
+              data-testid="devtools-tab-dialogue"
+            >
+              Dialogue Test
+            </button>
+          </nav>
 
-          <div class="pmd-tab-panel">
+          <!-- DEV TAB 1: REGISTRY & CLOUD SYNC (Step 1) -->
+          <div class="pmd-tab-panel" data-devtab-panel="audit">
+            <div class="pmd-subcard">
+              <h3 class="pmd-subcard-title">Save &amp; Cloud Sync Diagnostics</h3>
+              <p id="devtools-sync-diagnostics" class="pmd-subcard-text">—</p>
+            </div>
+
             <div id="registry-audit-banner" class="pmd-audit-banner"></div>
             <div id="registry-metrics-grid" class="pmd-metrics-grid"></div>
             <div id="registry-errors-box" class="pmd-errors-box" hidden></div>
+          </div>
+
+          <!-- DEV TAB 2: PMD SPRITES, EMOTION PORTRAITS & EVOLUTION STAGES (Step 2) -->
+          <div class="pmd-tab-panel" data-devtab-panel="sprites" hidden>
+            <div class="pmd-subcard">
+              <h3 class="pmd-subcard-title">Species &amp; Evolutionary Stage Selector</h3>
+              <div id="devtools-line-presets" class="pmd-inline-btns"></div>
+              <select
+                id="devtools-species-select"
+                class="pmd-select"
+                aria-label="Inspect Pokémon Species"
+              ></select>
+              <div id="devtools-stage-buttons" class="pmd-inline-btns"></div>
+            </div>
+
+            <div class="pmd-devtools-sprite-layout">
+              <div class="pmd-subcard pmd-devtools-sprite-card">
+                <h3 class="pmd-subcard-title">8-Directional Map Sprite</h3>
+                <div id="devtools-sprite-stage" class="pmd-devtools-sprite-stage"></div>
+                <p id="devtools-sprite-meta" class="pmd-subcard-text">—</p>
+              </div>
+
+              <div class="pmd-subcard">
+                <h3 class="pmd-subcard-title">Actions (5) &amp; Directions (8)</h3>
+                <div id="devtools-action-buttons" class="pmd-inline-btns"></div>
+                <div id="devtools-direction-buttons" class="pmd-inline-btns"></div>
+              </div>
+            </div>
+
+            <div class="pmd-subcard">
+              <div class="pmd-devtools-row-between">
+                <h3 class="pmd-subcard-title">8-Emotion Character Portraits</h3>
+                <button
+                  type="button"
+                  id="devtools-portrait-mirror-btn"
+                  class="pmd-btn pmd-chip-btn"
+                  data-testid="devtools-portrait-mirror-btn"
+                >
+                  Facing: Left Slot (Default)
+                </button>
+              </div>
+              <div id="devtools-portrait-grid" class="pmd-devtools-portrait-grid"></div>
+            </div>
+
+            <div class="pmd-subcard">
+              <h3 class="pmd-subcard-title">Active Party Live Evolution Stage Swapper</h3>
+              <div id="devtools-roster-evo-box" class="pmd-devtools-roster-list"></div>
+            </div>
+          </div>
+
+          <!-- DEV TAB 3: PORTRAIT DIALOGUE OVERLAY HARNESS (Step 2) -->
+          <div class="pmd-tab-panel" data-devtab-panel="dialogue" hidden>
+            <div class="pmd-subcard">
+              <h3 class="pmd-subcard-title">Portrait Dialogue Engine (`DIALOGUE_OVERLAY`)</h3>
+              <p id="devtools-dialogue-cast" class="pmd-subcard-text">—</p>
+              <div class="pmd-inline-btns">
+                <button
+                  type="button"
+                  id="devtools-launch-dialogue"
+                  class="pmd-btn pmd-btn-primary"
+                  data-testid="devtools-launch-dialogue"
+                >
+                  Play Prologue Awakening Cutscene
+                </button>
+                <button
+                  type="button"
+                  id="devtools-cycle-lord-stage"
+                  class="pmd-btn"
+                  data-testid="devtools-cycle-lord-stage"
+                >
+                  Cycle Active Lord Stage
+                </button>
+                <button
+                  type="button"
+                  id="devtools-instant-dialogue-toggle"
+                  class="pmd-btn"
+                  data-testid="devtools-instant-dialogue-toggle"
+                >
+                  Text Reveal: Typewriter
+                </button>
+              </div>
+              <p id="devtools-dialogue-status" class="pmd-subcard-text">Ready.</p>
+            </div>
           </div>
         </section>
 
@@ -208,7 +320,14 @@ import Footer from '../../components/Footer.astro';
 </Layout>
 
 <script>
-  import { createSpriteWidget, resetSpriteWidgets } from '../../utils/sprite-utils';
+  import { resetSpriteWidgets } from '../../utils/sprite-utils';
+  import {
+    PMD_PORTRAIT_EMOTIONS,
+    PMD_SPRITE_ACTIONS,
+    clearPmdAssetCache,
+    loadSpeciesPortrait,
+    loadSpeciesSpriteBundle,
+  } from '../../mystery-emblem/assets/pmdAssetLoader';
   import {
     getItemById,
     getMoveById,
@@ -221,53 +340,19 @@ import Footer from '../../components/Footer.astro';
     type CloudSyncAdapter,
   } from '../../mystery-emblem/state/firebaseSync';
   import { SaveStateManager } from '../../mystery-emblem/state/SaveStateManager';
+  import { DevToolsHarness } from '../../mystery-emblem/ui/DevToolsHarness';
+  import { DialogueOverlay } from '../../mystery-emblem/ui/DialogueOverlay';
+  import {
+    PmdSpriteActor,
+    destroyAllPmdSpriteActors,
+  } from '../../mystery-emblem/ui/PmdSpriteCanvas';
+  import {
+    BackStackController,
+    bindBackGestureSurface,
+    bindPointerTap,
+  } from '../../mystery-emblem/ui/pointerControls';
 
   const ADMIN_EMAIL = 'adam.kenawell.family@gmail.com';
-
-  // Rule 2: Unified Pointer Tap Binder (distinguishes clean tap/click from touch-scroll drag; zero keyboard listeners)
-  function bindPointerTap(
-    el: HTMLElement | null,
-    handler: (ev: PointerEvent) => void,
-    signal?: AbortSignal
-  ): void {
-    if (!el) return;
-    let startX = 0;
-    let startY = 0;
-    let activePointerId: number | null = null;
-
-    el.addEventListener(
-      'pointerdown',
-      (ev: PointerEvent) => {
-        if (ev.button !== 0 && ev.pointerType === 'mouse') return;
-        activePointerId = ev.pointerId;
-        startX = ev.clientX;
-        startY = ev.clientY;
-      },
-      signal ? { signal } : undefined
-    );
-
-    el.addEventListener(
-      'pointerup',
-      (ev: PointerEvent) => {
-        if (activePointerId !== ev.pointerId) return;
-        activePointerId = null;
-        if ((el as HTMLButtonElement).disabled) return;
-        const moved = Math.hypot(ev.clientX - startX, ev.clientY - startY);
-        if (moved <= 12) {
-          handler(ev);
-        }
-      },
-      signal ? { signal } : undefined
-    );
-
-    el.addEventListener(
-      'pointercancel',
-      () => {
-        activePointerId = null;
-      },
-      signal ? { signal } : undefined
-    );
-  }
 
   function formatFriendlyTimestamp(epochMs: number): string {
     try {
@@ -283,10 +368,25 @@ import Footer from '../../components/Footer.astro';
   }
 
   let currentManager: SaveStateManager | null = null;
+  let currentDialogueOverlay: DialogueOverlay | null = null;
+  let currentDevToolsHarness: DevToolsHarness | null = null;
   let uiAbortController: AbortController | null = null;
+  const squadSpriteActors: PmdSpriteActor[] = [];
+
+  function clearSquadActors(): void {
+    while (squadSpriteActors.length > 0) {
+      squadSpriteActors.pop()?.destroy();
+    }
+  }
 
   async function initMysteryEmblemApp() {
     resetSpriteWidgets();
+    clearSquadActors();
+    destroyAllPmdSpriteActors();
+    currentDevToolsHarness?.destroy();
+    currentDevToolsHarness = null;
+    currentDialogueOverlay?.destroy();
+    currentDialogueOverlay = null;
     currentManager?.dispose();
     uiAbortController?.abort();
     uiAbortController = new AbortController();
@@ -300,19 +400,12 @@ import Footer from '../../components/Footer.astro';
 
     const validation = getRegistryValidationSummary();
 
-    (window as unknown as Record<string, unknown>).__MYSTERY_EMBLEM_DEBUG__ = {
-      saveManager: manager,
-      SaveStateManager,
-      InMemoryCloudSyncAdapter,
-      getRegistryValidationSummary,
-    };
-
     const viewportEl = document.getElementById('mystery-emblem-root');
     const titleScreen = document.getElementById('pmd-title-screen');
     const campaignMenu = document.getElementById('pmd-campaign-menu');
     const devToolsModal = document.getElementById('pmd-devtools-modal');
     const devToolsBtn = document.getElementById('pmd-dev-tools-btn');
-    const cornerMenuBtn = document.getElementById('pmd-corner-menu-btn');
+    const cornerMenuBtn = document.getElementById('pmd-corner-menu-btn') as HTMLButtonElement | null;
     const saveSummaryEl = document.getElementById('pmd-save-summary');
     const statusMsgEl = document.getElementById('pmd-status-msg');
 
@@ -354,6 +447,40 @@ import Footer from '../../components/Footer.astro';
     let activeTab: 'squad' | 'sync' = 'squad';
     let editingUnitId: string | null = null;
 
+    const backStack = new BackStackController(cornerMenuBtn, () => {
+      openCampaignMenu(activeTab);
+    });
+
+    const dialogueOverlay = viewportEl
+      ? new DialogueOverlay(viewportEl, manager, {
+          onStateChange: () => backStack.syncButtonLabel(),
+        })
+      : null;
+    currentDialogueOverlay = dialogueOverlay;
+
+    if (devToolsModal && dialogueOverlay) {
+      currentDevToolsHarness = new DevToolsHarness({
+        modalEl: devToolsModal,
+        saveManager: manager,
+        dialogueOverlay,
+        signal,
+      });
+    }
+
+    (window as unknown as Record<string, unknown>).__MYSTERY_EMBLEM_DEBUG__ = {
+      saveManager: manager,
+      SaveStateManager,
+      InMemoryCloudSyncAdapter,
+      getRegistryValidationSummary,
+      dialogueOverlay,
+      devToolsHarness: currentDevToolsHarness,
+      loadSpeciesSpriteBundle,
+      loadSpeciesPortrait,
+      clearPmdAssetCache,
+      PMD_SPRITE_ACTIONS,
+      PMD_PORTRAIT_EMOTIONS,
+    };
+
     function isAdminSignedIn(): boolean {
       const email = manager.getSyncStatus().user?.email?.trim().toLowerCase() ?? '';
       return email === ADMIN_EMAIL;
@@ -370,7 +497,7 @@ import Footer from '../../components/Footer.astro';
       if (campaignMenu) campaignMenu.hidden = true;
       if (devToolsModal) devToolsModal.hidden = true;
       if (titleScreen) titleScreen.hidden = false;
-      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Menu';
+      backStack.syncButtonLabel();
     }
 
     function openCampaignMenu(tab?: 'squad' | 'sync'): void {
@@ -378,7 +505,7 @@ import Footer from '../../components/Footer.astro';
       if (titleScreen) titleScreen.hidden = true;
       if (devToolsModal) devToolsModal.hidden = true;
       if (campaignMenu) campaignMenu.hidden = false;
-      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Back';
+      backStack.syncButtonLabel();
     }
 
     function toggleDevTools(): void {
@@ -390,12 +517,13 @@ import Footer from '../../components/Footer.astro';
       if (titleScreen) titleScreen.hidden = true;
       if (campaignMenu) campaignMenu.hidden = true;
       devToolsModal.hidden = false;
-      if (cornerMenuBtn) cornerMenuBtn.textContent = 'Back';
+      currentDevToolsHarness?.onSaveChanged();
+      backStack.syncButtonLabel();
     }
 
     function switchTab(nextTab: 'squad' | 'sync'): void {
       activeTab = nextTab;
-      document.querySelectorAll<HTMLElement>('.pmd-tab-btn').forEach((btn) => {
+      document.querySelectorAll<HTMLElement>('#pmd-campaign-menu .pmd-tab-btn').forEach((btn) => {
         btn.classList.toggle('is-active', btn.dataset.tab === nextTab);
       });
       const squadPanel = document.getElementById('tab-panel-squad');
@@ -415,33 +543,43 @@ import Footer from '../../components/Footer.astro';
       }
       nicknameInput.value = unit.nickname;
       nicknameBackdrop.hidden = false;
+      backStack.syncButtonLabel();
     }
 
     function closeNicknameModal(): void {
       editingUnitId = null;
       if (nicknameBackdrop) nicknameBackdrop.hidden = true;
+      backStack.syncButtonLabel();
     }
 
-    // Unified Back / System Menu action (invoked by corner button, PC right-click, or mobile long-press)
-    function handleSystemMenuOrBack(): void {
-      if (nicknameBackdrop && !nicknameBackdrop.hidden) {
-        closeNicknameModal();
-        return;
-      }
-      if (jsonIoBox && !jsonIoBox.hidden) {
-        jsonIoBox.hidden = true;
-        return;
-      }
-      if (devToolsModal && !devToolsModal.hidden) {
-        showTitleScreen();
-        return;
-      }
-      if (campaignMenu && !campaignMenu.hidden) {
-        showTitleScreen();
-        return;
-      }
-      openCampaignMenu(activeTab);
-    }
+    // Register navigation layers from lowest to highest LIFO priority
+    backStack.registerLayer({
+      id: 'campaign-menu',
+      isActive: () => Boolean(campaignMenu && !campaignMenu.hidden),
+      onBack: () => showTitleScreen(),
+    });
+    backStack.registerLayer({
+      id: 'devtools-modal',
+      isActive: () => Boolean(devToolsModal && !devToolsModal.hidden),
+      onBack: () => showTitleScreen(),
+    });
+    backStack.registerLayer({
+      id: 'json-io-box',
+      isActive: () => Boolean(jsonIoBox && !jsonIoBox.hidden),
+      onBack: () => {
+        if (jsonIoBox) jsonIoBox.hidden = true;
+      },
+    });
+    backStack.registerLayer({
+      id: 'dialogue-overlay',
+      isActive: () => Boolean(dialogueOverlay?.isOpen()),
+      onBack: () => dialogueOverlay?.close('cancelled'),
+    });
+    backStack.registerLayer({
+      id: 'nickname-modal',
+      isActive: () => Boolean(nicknameBackdrop && !nicknameBackdrop.hidden),
+      onBack: () => closeNicknameModal(),
+    });
 
     function renderRegistryAudit(): void {
       if (!auditBanner || !metricsGrid) return;
@@ -486,7 +624,8 @@ import Footer from '../../components/Footer.astro';
       }
     }
 
-    async function renderSquadCards(): Promise<void> {
+    function renderSquadCards(): void {
+      clearSquadActors();
       const save = manager.getSave();
       if (!squadCardsGrid || !squadEmptyState) return;
       squadCardsGrid.innerHTML = '';
@@ -497,7 +636,7 @@ import Footer from '../../components/Footer.astro';
       }
       squadEmptyState.hidden = true;
 
-      for (const unit of save.roster) {
+      save.roster.forEach((unit, slotIdx) => {
         const sp = getSpeciesById(unit.speciesId);
         const skill = sp ? getPersonalSkillById(sp.personalSkillId) : undefined;
         const held = unit.heldItemId ? getItemById(unit.heldItemId) : undefined;
@@ -506,6 +645,8 @@ import Footer from '../../components/Footer.astro';
         const card = document.createElement('article');
         card.className = 'pmd-unit-card';
         card.dataset.instanceId = unit.instanceId;
+        card.dataset.speciesId = unit.speciesId;
+        card.dataset.testid = `unit-card-slot-${slotIdx}`;
 
         const topRow = document.createElement('div');
         topRow.className = 'pmd-unit-top';
@@ -522,6 +663,7 @@ import Footer from '../../components/Footer.astro';
         const nickEl = document.createElement('strong');
         nickEl.className = 'pmd-unit-nickname';
         nickEl.dataset.testid = `unit-nickname-${unit.speciesId}`;
+        nickEl.dataset.slotNickname = String(slotIdx);
         nickEl.textContent = unit.nickname;
         nameLine.appendChild(nickEl);
 
@@ -535,6 +677,7 @@ import Footer from '../../components/Footer.astro';
 
         const metaLine = document.createElement('div');
         metaLine.className = 'pmd-unit-meta';
+        metaLine.dataset.testid = `unit-species-meta-slot-${slotIdx}`;
         metaLine.textContent = `${sp?.name ?? unit.speciesId} · Lv. ${unit.level} · ${(sp?.types ?? []).join('/')}`;
         identity.appendChild(metaLine);
 
@@ -550,7 +693,7 @@ import Footer from '../../components/Footer.astro';
         renameBtn.className = 'pmd-btn pmd-rename-btn';
         renameBtn.dataset.testid = `btn-rename-${unit.speciesId}`;
         renameBtn.textContent = 'Rename';
-        bindPointerTap(renameBtn, () => openNicknameModal(unit.instanceId));
+        bindPointerTap(renameBtn, () => openNicknameModal(unit.instanceId), { signal });
         topRow.appendChild(renameBtn);
 
         card.appendChild(topRow);
@@ -574,9 +717,13 @@ import Footer from '../../components/Footer.astro';
           const rangeLabel = mv ? (mv.range[0] === mv.range[1] ? `R${mv.range[0]}` : `R${mv.range[0]}-${mv.range[1]}`) : '';
           moveBtn.textContent = `${isEquipped ? '[E] ' : ''}${mv?.name ?? moveId} (${rangeLabel})`;
           if (isOffensive) {
-            bindPointerTap(moveBtn, () => {
-              manager.setEquippedMove(unit.instanceId, moveId);
-            });
+            bindPointerTap(
+              moveBtn,
+              () => {
+                manager.setEquippedMove(unit.instanceId, moveId);
+              },
+              { signal }
+            );
           }
           movesRow.appendChild(moveBtn);
         }
@@ -590,13 +737,17 @@ import Footer from '../../components/Footer.astro';
         squadCardsGrid.appendChild(card);
 
         if (sp) {
-          void createSpriteWidget(sp.pmdAssetId, 2).then((canvas) => {
-            if (canvas && spriteBox.isConnected) {
-              spriteBox.appendChild(canvas);
-            }
+          const actor = new PmdSpriteActor({
+            speciesIdOrAssetId: sp.id,
+            scale: 2,
+            interactiveTapAttack: true,
+            testId: `squad-sprite-slot-${slotIdx}`,
           });
+          squadSpriteActors.push(actor);
+          spriteBox.appendChild(actor.canvas);
+          void actor.ready();
         }
-      }
+      });
     }
 
     function renderAll(): void {
@@ -684,7 +835,9 @@ import Footer from '../../components/Footer.astro';
         ].join(' · ');
       }
 
-      void renderSquadCards();
+      renderSquadCards();
+      currentDevToolsHarness?.onSaveChanged();
+      backStack.syncButtonLabel();
     }
 
     function startNewGame(): void {
@@ -698,71 +851,21 @@ import Footer from '../../components/Footer.astro';
     }
 
     // Bind unified Pointer Event handlers (Rule 2: Zero keyboard event listeners!)
-    bindPointerTap(cornerMenuBtn, () => handleSystemMenuOrBack(), signal);
-    bindPointerTap(devToolsBtn, () => toggleDevTools(), signal);
+    bindPointerTap(cornerMenuBtn, () => backStack.triggerMenuOrBack(), {
+      signal,
+      stopPropagation: true,
+    });
+    bindPointerTap(devToolsBtn, () => toggleDevTools(), {
+      signal,
+      stopPropagation: true,
+    });
 
     // PC Right-Click parity + Mobile Long-Press parity on viewport background
-    viewportEl?.addEventListener(
-      'contextmenu',
-      (ev: MouseEvent) => {
-        ev.preventDefault();
-        handleSystemMenuOrBack();
-      },
-      { signal }
-    );
+    bindBackGestureSurface(viewportEl, () => backStack.triggerMenuOrBack(), { signal });
 
-    let longPressTimer: number | null = null;
-    let lpStartX = 0;
-    let lpStartY = 0;
-    viewportEl?.addEventListener(
-      'pointerdown',
-      (ev: PointerEvent) => {
-        if (ev.pointerType !== 'touch') return;
-        const target = ev.target as HTMLElement | null;
-        if (target?.closest('button, input, textarea')) return;
-        lpStartX = ev.clientX;
-        lpStartY = ev.clientY;
-        longPressTimer = window.setTimeout(() => {
-          longPressTimer = null;
-          handleSystemMenuOrBack();
-        }, 520);
-      },
-      { signal }
-    );
-    viewportEl?.addEventListener(
-      'pointermove',
-      (ev: PointerEvent) => {
-        if (longPressTimer !== null && Math.hypot(ev.clientX - lpStartX, ev.clientY - lpStartY) > 12) {
-          window.clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      },
-      { signal }
-    );
-    viewportEl?.addEventListener(
-      'pointerup',
-      () => {
-        if (longPressTimer !== null) {
-          window.clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      },
-      { signal }
-    );
-    viewportEl?.addEventListener(
-      'pointercancel',
-      () => {
-        if (longPressTimer !== null) {
-          window.clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      },
-      { signal }
-    );
-
-    bindPointerTap(btnContinue, () => openCampaignMenu('squad'), signal);
-    bindPointerTap(btnNewGame, () => startNewGame(), signal);
-    bindPointerTap(btnEmptyCreateSave, () => startNewGame(), signal);
+    bindPointerTap(btnContinue, () => openCampaignMenu('squad'), { signal });
+    bindPointerTap(btnNewGame, () => startNewGame(), { signal });
+    bindPointerTap(btnEmptyCreateSave, () => startNewGame(), { signal });
 
     // OAuth popup buttons use pointer `click` activation so iOS Safari & Android Chrome permit `signInWithPopup`
     btnCloudSync?.addEventListener(
@@ -778,19 +881,19 @@ import Footer from '../../components/Footer.astro';
       { signal }
     );
 
-    document.querySelectorAll<HTMLElement>('.pmd-tab-btn').forEach((tabBtn) => {
+    document.querySelectorAll<HTMLElement>('#pmd-campaign-menu .pmd-tab-btn').forEach((tabBtn) => {
       bindPointerTap(
         tabBtn,
         () => {
           const t = tabBtn.dataset.tab as 'squad' | 'sync' | undefined;
           if (t) switchTab(t);
         },
-        signal
+        { signal }
       );
     });
 
     // Nickname Modal Controls
-    document.querySelectorAll<HTMLElement>('.pmd-chip-btn').forEach((chip) => {
+    document.querySelectorAll<HTMLElement>('.pmd-chip-btn[data-preset]').forEach((chip) => {
       bindPointerTap(
         chip,
         () => {
@@ -798,7 +901,7 @@ import Footer from '../../components/Footer.astro';
             nicknameInput.value = chip.dataset.preset;
           }
         },
-        signal
+        { signal }
       );
     });
 
@@ -809,7 +912,7 @@ import Footer from '../../components/Footer.astro';
         manager.renamePokemon(editingUnitId, nicknameInput.value);
         closeNicknameModal();
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
@@ -819,10 +922,10 @@ import Footer from '../../components/Footer.astro';
         manager.renamePokemon(editingUnitId, '');
         closeNicknameModal();
       },
-      signal
+      { signal }
     );
 
-    bindPointerTap(btnCancelNickname, () => closeNicknameModal(), signal);
+    bindPointerTap(btnCancelNickname, () => closeNicknameModal(), { signal });
 
     // Cloud & Save Backup Controls
     btnGoogleAuthToggle?.addEventListener(
@@ -846,7 +949,7 @@ import Footer from '../../components/Footer.astro';
       () => {
         void manager.reconcileWithCloud();
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
@@ -859,8 +962,9 @@ import Footer from '../../components/Footer.astro';
         btnConfirmImport.hidden = true;
         btnDownloadJson.hidden = false;
         jsonIoBox.hidden = false;
+        backStack.syncButtonLabel();
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
@@ -875,7 +979,7 @@ import Footer from '../../components/Footer.astro';
         a.click();
         URL.revokeObjectURL(url);
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
@@ -888,8 +992,9 @@ import Footer from '../../components/Footer.astro';
         btnConfirmImport.hidden = false;
         btnDownloadJson.hidden = true;
         jsonIoBox.hidden = false;
+        backStack.syncButtonLabel();
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
@@ -900,21 +1005,23 @@ import Footer from '../../components/Footer.astro';
           manager.importSaveJson(jsonIoTextarea.value);
           jsonIoBox.hidden = true;
           switchTab('squad');
+          backStack.syncButtonLabel();
         } catch (err) {
           if (jsonIoTitle) {
             jsonIoTitle.textContent = err instanceof Error ? `Invalid Backup: ${err.message}` : 'Invalid Backup File';
           }
         }
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
       btnCloseJsonBox,
       () => {
         if (jsonIoBox) jsonIoBox.hidden = true;
+        backStack.syncButtonLabel();
       },
-      signal
+      { signal }
     );
 
     bindPointerTap(
@@ -922,7 +1029,7 @@ import Footer from '../../components/Footer.astro';
       () => {
         manager.clearLocalSave();
       },
-      signal
+      { signal }
     );
 
     renderRegistryAudit();
@@ -948,7 +1055,7 @@ import Footer from '../../components/Footer.astro';
   .pmd-viewport {
     position: relative;
     width: 100%;
-    min-height: 560px;
+    min-height: 540px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -961,21 +1068,6 @@ import Footer from '../../components/Footer.astro';
     touch-action: manipulation;
   }
 
-  /* Authentic PMD: Explorers of Sky Double-Layered Window Frame (Rule 3) */
-  .pmd-window {
-    background: rgba(16, 24, 40, 0.94);
-    border: 3px solid #48b8e8;
-    outline: 2px solid #f8d048;
-    outline-offset: -6px;
-    border-radius: 6px;
-    box-shadow:
-      0 0 0 2px #102038,
-      0 8px 28px rgba(0, 0, 0, 0.75),
-      inset 0 0 18px rgba(72, 184, 232, 0.12);
-    color: #f8f8f8;
-    text-shadow: 1px 1px 0 #081020;
-  }
-
   .pmd-corner-btn {
     position: absolute;
     top: 0.9rem;
@@ -985,7 +1077,7 @@ import Footer from '../../components/Footer.astro';
     font-size: 0.8rem;
     color: #f8d048;
     cursor: pointer;
-    z-index: 20;
+    z-index: 95;
     transition: transform 0.15s, background-color 0.15s;
   }
 
@@ -1059,45 +1151,6 @@ import Footer from '../../components/Footer.astro';
     margin-top: 0.4rem;
   }
 
-  .pmd-btn {
-    min-height: 46px;
-    min-width: 46px;
-    padding: 0.55rem 1rem;
-    background: rgba(24, 40, 68, 0.95);
-    border: 2px solid #48b8e8;
-    border-radius: 4px;
-    color: #f8f8f8;
-    font-size: 0.84rem;
-    cursor: pointer;
-    text-shadow: 1px 1px 0 #081020;
-    transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
-  }
-
-  .pmd-btn:hover:not(:disabled),
-  .pmd-btn:active:not(:disabled) {
-    background: rgba(44, 76, 124, 0.98);
-    border-color: #f8d048;
-    color: #f8d048;
-    transform: translateY(-1px);
-  }
-
-  .pmd-btn-primary,
-  .pmd-tab-btn.is-active {
-    border-color: #f8d048;
-    color: #f8d048;
-    background: rgba(36, 58, 96, 0.98);
-  }
-
-  .pmd-btn-danger {
-    border-color: #f07878;
-    color: #ffd0d0;
-  }
-
-  .pmd-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
   .pmd-status {
     margin-top: 0.35rem;
     font-size: 0.76rem;
@@ -1115,6 +1168,7 @@ import Footer from '../../components/Footer.astro';
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    overflow-x: hidden;
   }
 
   .pmd-panel-title {
@@ -1135,7 +1189,7 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-tab-btn {
-    flex: 1 1 160px;
+    flex: 1 1 150px;
   }
 
   .pmd-tab-panel {
@@ -1157,7 +1211,7 @@ import Footer from '../../components/Footer.astro';
 
   .pmd-squad-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
     gap: 0.85rem;
   }
 
@@ -1178,14 +1232,15 @@ import Footer from '../../components/Footer.astro';
   }
 
   :global(.pmd-unit-sprite) {
-    min-width: 52px;
-    min-height: 52px;
+    min-width: 56px;
+    min-height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(24, 40, 68, 0.6);
     border-radius: 4px;
     border: 1px solid rgba(72, 184, 232, 0.35);
+    overflow: hidden;
   }
 
   :global(.pmd-unit-id) {
@@ -1256,7 +1311,7 @@ import Footer from '../../components/Footer.astro';
     background: rgba(24, 68, 48, 0.85);
   }
 
-  /* Dev Tools Audit */
+  /* Dev Tools Audit & Step 2 Harnesses */
   .pmd-audit-banner {
     padding: 0.65rem 0.9rem;
     border-radius: 4px;
@@ -1278,7 +1333,7 @@ import Footer from '../../components/Footer.astro';
 
   .pmd-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
     gap: 0.65rem;
   }
 
@@ -1311,10 +1366,76 @@ import Footer from '../../components/Footer.astro';
     border-radius: 4px;
   }
 
+  .pmd-devtools-sprite-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 0.85rem;
+  }
+
+  .pmd-devtools-sprite-stage {
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(28, 52, 92, 0.65) 0%, rgba(8, 14, 26, 0.9) 100%);
+    border: 1px solid rgba(72, 184, 232, 0.4);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .pmd-devtools-row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pmd-devtools-portrait-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 0.6rem;
+  }
+
+  :global(.pmd-devtools-portrait-cell) {
+    background: rgba(8, 14, 26, 0.88);
+    border: 1px solid rgba(72, 184, 232, 0.45);
+    border-radius: 5px;
+    padding: 0.45rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.22rem;
+  }
+
+  :global(.pmd-devtools-portrait-label) {
+    font-size: 0.7rem;
+    color: #f8d048;
+  }
+
+  :global(.pmd-devtools-portrait-sub) {
+    font-size: 0.62rem;
+    color: #90d8f8;
+  }
+
+  .pmd-devtools-roster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  :global(.pmd-devtools-roster-row) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(72, 184, 232, 0.2);
+  }
+
   /* Sync & Backup */
   .pmd-sync-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 0.85rem;
   }
 
@@ -1347,23 +1468,26 @@ import Footer from '../../components/Footer.astro';
   }
 
   .pmd-textarea,
-  .pmd-text-input {
+  .pmd-text-input,
+  .pmd-select {
     width: 100%;
-    padding: 0.65rem 0.75rem;
+    padding: 0.6rem 0.75rem;
     background: rgba(6, 12, 24, 0.95);
     border: 2px solid #48b8e8;
     border-radius: 4px;
     color: #f8f8f8;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     user-select: text;
   }
 
-  .pmd-text-input {
+  .pmd-text-input,
+  .pmd-select {
     min-height: 46px;
   }
 
   .pmd-textarea:focus,
-  .pmd-text-input:focus {
+  .pmd-text-input:focus,
+  .pmd-select:focus {
     outline: 2px solid #f8d048;
     border-color: #f8d048;
   }
@@ -1383,6 +1507,8 @@ import Footer from '../../components/Footer.astro';
   .pmd-nickname-dialog {
     width: 100%;
     max-width: 440px;
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
     padding: 1.5rem 1.35rem;
     display: flex;
     flex-direction: column;
@@ -1401,7 +1527,7 @@ import Footer from '../../components/Footer.astro';
     color: #90d8f8;
   }
 
-  .pmd-chip-btn {
+  :global(.pmd-chip-btn) {
     min-height: 44px;
     padding: 0.35rem 0.7rem;
     font-size: 0.75rem;
@@ -1413,21 +1539,62 @@ import Footer from '../../components/Footer.astro';
 
   @media (max-width: 640px) {
     .mystery-emblem-shell {
-      padding: 0.6rem 0.45rem;
+      padding: 0.55rem 0.45rem;
     }
 
     .pmd-viewport {
-      min-height: 500px;
-      padding: 4.35rem 0.65rem 1.25rem;
+      min-height: 480px;
+      padding: 4.2rem 0.65rem 1.15rem;
     }
 
     .pmd-title-card,
     .pmd-panel {
-      padding: 1.35rem 0.95rem;
+      padding: 1.25rem 0.9rem;
     }
 
     .pmd-title {
       font-size: 1.65rem;
+    }
+  }
+
+  /* Short Mobile Landscape (e.g., 844x390) — compact spacing so windows fit cleanly without clipping */
+  @media (max-height: 500px) {
+    .mystery-emblem-shell {
+      padding: 0.4rem 0.6rem;
+    }
+
+    .pmd-viewport {
+      min-height: 290px;
+      padding: 3.45rem 0.85rem 0.75rem;
+    }
+
+    .pmd-corner-btn {
+      top: 0.55rem;
+      min-height: 44px;
+    }
+
+    .pmd-title-card {
+      max-width: 680px;
+      padding: 0.95rem 1.25rem;
+      gap: 0.45rem;
+    }
+
+    .pmd-title {
+      font-size: 1.45rem;
+    }
+
+    .pmd-actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 100%;
+      margin-top: 0.15rem;
+      gap: 0.5rem;
+    }
+
+    .pmd-nickname-dialog {
+      padding: 0.9rem 1.05rem;
+      gap: 0.5rem;
     }
   }
 </style>

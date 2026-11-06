@@ -32,6 +32,19 @@ export const PERSONAL_SKILL_MAP: ReadonlyMap<string, PersonalSkillDefinition> = 
   PERSONAL_SKILLS_LIST.map((sk) => [sk.id, sk])
 );
 
+const LINE_SPECIES_MAP: ReadonlyMap<string, PokemonSpeciesDefinition[]> = (() => {
+  const map = new Map<string, PokemonSpeciesDefinition[]>();
+  for (const sp of POKEMON_SPECIES_LIST) {
+    const list = map.get(sp.lineId) ?? [];
+    list.push(sp);
+    map.set(sp.lineId, list);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => a.stage - b.stage || a.dexNumber - b.dexNumber || a.id.localeCompare(b.id));
+  }
+  return map;
+})();
+
 let cachedValidation: RegistryValidationSummary | null = null;
 
 export function getRegistryValidationSummary(): RegistryValidationSummary {
@@ -48,6 +61,10 @@ export function getRegistryValidationSummary(): RegistryValidationSummary {
 
 export function getSpeciesById(id: string): PokemonSpeciesDefinition | undefined {
   return SPECIES_MAP.get(id);
+}
+
+export function getSpeciesByLineId(lineId: string): PokemonSpeciesDefinition[] {
+  return [...(LINE_SPECIES_MAP.get(lineId) ?? [])];
 }
 
 export function getMoveById(id: string): MoveDefinition | undefined {

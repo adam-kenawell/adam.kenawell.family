@@ -52,8 +52,8 @@ The LLM agent must implement *Mystery Emblem* in the following 10 sequential ste
   * Build the reusable PMD UI Window component (translucent navy background, double-layered cyan/gold pixel borders, bitmap font) and the persistent mobile **Menu / Back** corner button.
   * Build the `DIALOGUE_OVERLAY` engine that displays character portraits on the left/right, shows the speaking Pokémon's custom nickname and species name, swaps facial expressions per line, and advances on click/tap.
 * **Step 2 Verification Checklist:**
-  * [ ] Confirm PMD sprites and emotion portraits render sharply with `image-rendering: pixelated` and automatically update when a unit's evolution stage changes.
-  * [ ] Confirm dialogue boxes and UI windows scale without clipping on both `1920x1080` desktop and `390x844` / `844x390` mobile viewports using only click/tap inputs.
+  * [x] Confirm PMD sprites and emotion portraits render sharply with `image-rendering: pixelated` and automatically update when a unit's evolution stage changes.
+  * [x] Confirm dialogue boxes and UI windows scale without clipping on both `1920x1080` desktop and `390x844` / `844x390` mobile viewports using only click/tap inputs.
 
 ### Step 3: Starting Personality Quiz, Partner Select, Nickname Modal & New Game Plus Selector
 

@@ -1,7 +1,9 @@
 import { ITEM_MAP, MOVE_MAP, SPECIES_MAP } from '../data/index';
 import {
   CURRENT_SAVE_SCHEMA_VERSION,
+  type EvolutionBranch,
   type OwnedPokemonInstance,
+  type PokemonSpeciesDefinition,
   type QuizRecruitSeeds,
   type SaveData,
   type SupportLevel,
@@ -88,6 +90,28 @@ export function computeSupportLevel(points: number): SupportLevel {
 export function sanitizeNickname(rawNickname: string | undefined, fallbackSpeciesName: string): string {
   const trimmed = (rawNickname ?? '').trim().slice(0, 16);
   return trimmed.length > 0 ? trimmed : fallbackSpeciesName;
+}
+
+function findForwardEvolutionPath(
+  fromSp: PokemonSpeciesDefinition,
+  targetSpeciesId: string,
+  visited = new Set<string>()
+): EvolutionBranch[] | null {
+  if (visited.has(fromSp.id)) return null;
+  visited.add(fromSp.id);
+  for (const branch of fromSp.evolutions) {
+    if (branch.targetSpeciesId === targetSpeciesId) {
+      return [branch];
+    }
+    const nextSp = SPECIES_MAP.get(branch.targetSpeciesId);
+    if (nextSp) {
+      const rest = findForwardEvolutionPath(nextSp, targetSpeciesId, new Set(visited));
+      if (rest) {
+        return [branch, ...rest];
+      }
+    }
+  }
+  return null;
 }
 
 export interface CreatePokemonOptions {
@@ -325,6 +349,77 @@ export class SaveStateManager {
     }
     const sp = SPECIES_MAP.get(unit.speciesId);
     unit.nickname = sanitizeNickname(newNickname, sp?.name ?? unit.speciesId);
+    this.commitSave(save);
+    return JSON.parse(JSON.stringify(unit)) as OwnedPokemonInstance;
+  }
+
+  /**
+   * Transitions an owned Pokémon within its evolutionary line (e.g., Stage 1 -> 2 -> 3 or Eevee branching).
+   * Applies manual `promotionBonuses` when advancing along an evolution branch, preserves custom nicknames
+   * and continuous level, and triggers immediate UI + cloud save updates.
+   */
+  public evolveUnitToSpecies(instanceId: string, targetSpeciesId: string): OwnedPokemonInstance {
+    const save = this.requireActiveSave();
+    const unit = save.roster.find((u) => u.instanceId === instanceId);
+    if (!unit) {
+      throw new Error(`Pokémon instance "${instanceId}" not found in roster.`);
+    }
+    const currentSp = SPECIES_MAP.get(unit.speciesId);
+    const targetSp = SPECIES_MAP.get(targetSpeciesId);
+    if (!currentSp || !targetSp) {
+      throw new Error(`Unknown species transition "${unit.speciesId}" -> "${targetSpeciesId}".`);
+    }
+    if (targetSp.faction === 'enemy') {
+      throw new Error(`Rule 5 violation: Cannot evolve player unit into enemy-only species "${targetSp.name}".`);
+    }
+    if (currentSp.lineId !== targetSp.lineId) {
+      throw new Error(
+        `Invalid evolution line mismatch: "${currentSp.id}" (${currentSp.lineId}) cannot become "${targetSp.id}" (${targetSp.lineId}).`
+      );
+    }
+    if (unit.speciesId === targetSp.id) {
+      return JSON.parse(JSON.stringify(unit)) as OwnedPokemonInstance;
+    }
+
+    const forwardPath = findForwardEvolutionPath(currentSp, targetSp.id);
+    if (forwardPath && forwardPath.length > 0) {
+      for (const branch of forwardPath) {
+        unit.currentStats.hp += branch.promotionBonuses.hp;
+        unit.currentStats.atk += branch.promotionBonuses.atk;
+        unit.currentStats.def += branch.promotionBonuses.def;
+        unit.currentStats.spa += branch.promotionBonuses.spa;
+        unit.currentStats.spd += branch.promotionBonuses.spd;
+        unit.currentStats.spe += branch.promotionBonuses.spe;
+      }
+      unit.currentStats.mov = targetSp.baseStats.mov;
+    } else {
+      // Sideways branch preview (e.g., Vaporeon -> Sylveon) or Dev Tools stage reset (Stage 3 -> Stage 1)
+      unit.currentStats = { ...targetSp.baseStats };
+    }
+
+    // Preserve custom nicknames across evolutions; only update if still using the uncustomized species name
+    if (unit.nickname === currentSp.name) {
+      unit.nickname = targetSp.name;
+    }
+
+    unit.speciesId = targetSp.id;
+
+    for (const entry of targetSp.learnset) {
+      if (entry.level <= unit.level && !unit.unlockedMoveIds.includes(entry.moveId)) {
+        unit.unlockedMoveIds.push(entry.moveId);
+        if (unit.activeMoveIds.length < 4) {
+          unit.activeMoveIds.push(entry.moveId);
+        }
+      }
+    }
+    if (!unit.equippedMoveId) {
+      const firstOffensive = unit.activeMoveIds.find((mId) => {
+        const mv = MOVE_MAP.get(mId);
+        return mv && (mv.category === 'Physical' || mv.category === 'Special');
+      });
+      unit.equippedMoveId = firstOffensive ?? null;
+    }
+
     this.commitSave(save);
     return JSON.parse(JSON.stringify(unit)) as OwnedPokemonInstance;
   }
