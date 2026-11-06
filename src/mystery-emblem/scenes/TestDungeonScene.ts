@@ -17,6 +17,7 @@
  */
 
 import {
+  computePmdTileSpritePlacement,
   loadSpeciesSpriteBundle,
   type LoadedSpriteBundle,
   type PmdDirection,
@@ -76,6 +77,18 @@ export const BATTLE_TILE_DISPLAY_PX = PMD_TILE_NATIVE_PX * BATTLE_TILE_SCALE; //
 const DRAG_THRESHOLD_PX = 8;
 const LONG_PRESS_MS = 520;
 const WALK_MS_PER_TILE = 85;
+const RANGE_PULSE_PERIOD_MS = 1500;
+
+type RgbaTuple = readonly [number, number, number, number];
+
+function lerpChannel(a: number, b: number, t: number): number {
+  return Math.round(a + (b - a) * t);
+}
+
+function lerpRgba(from: RgbaTuple, to: RgbaTuple, t: number): string {
+  const alpha = (from[3] + (to[3] - from[3]) * t).toFixed(3);
+  return `rgba(${lerpChannel(from[0], to[0], t)}, ${lerpChannel(from[1], to[1], t)}, ${lerpChannel(from[2], to[2], t)}, ${alpha})`;
+}
 
 export interface TestDungeonUnit {
   id: string;
@@ -172,6 +185,11 @@ export interface TestDungeonSnapshot {
     types: ReadonlyArray<PokemonType>;
     heldItemId: string | null;
     waited: boolean;
+    frameWidth: number;
+    frameHeight: number;
+    drawOffsetX: number;
+    drawOffsetY: number;
+    shadowOffsetY: number;
   }>;
   reachableCoords: string[];
   attackBorderCoords: string[];
@@ -276,13 +294,15 @@ export class TestDungeonScene {
   private activeSandboxSlot = 0;
   private paintMode = false;
   private brushTilesetId = '142';
-  private brushChunkIndex = 58;
+  private brushChunkIndex = 59;
   private brushTerrainType: TerrainType = 'floor';
 
   // Loaded caches
   private readonly tilesetSheets = new Map<string, LoadedTilesetSheet>();
   private readonly spriteBundles = new Map<string, LoadedSpriteBundle>();
   private phaseBannerTimer: number | null = null;
+  private selectionPulseStartMs = 0;
+  private rangePulseOverride: number | null = null;
 
   constructor(options: TestDungeonSceneOptions) {
     this.viewportEl = options.viewportEl;
@@ -563,20 +583,32 @@ export class TestDungeonScene {
         width: this.map.width,
         height: this.map.height,
       },
-      units: activeUnits.map((u) => ({
-        id: u.id,
-        faction: u.faction,
-        speciesId: u.speciesId,
-        nickname: u.nickname,
-        x: u.x,
-        y: u.y,
-        mov: u.mov,
-        effectiveMov: getEffectiveMovementPoints(u),
-        traversalClass: u.traversalClass,
-        types: u.types,
-        heldItemId: u.heldItemId,
-        waited: u.waited,
-      })),
+      units: activeUnits.map((u) => {
+        const bundle = this.spriteBundles.get(u.speciesId);
+        const anim = bundle ? (bundle.actions[u.action] ?? bundle.actions.Idle) : undefined;
+        const fw = anim?.frameWidth ?? PMD_TILE_NATIVE_PX;
+        const fh = anim?.frameHeight ?? PMD_TILE_NATIVE_PX;
+        const placement = computePmdTileSpritePlacement(0, 0, fw, fh, PMD_TILE_NATIVE_PX);
+        return {
+          id: u.id,
+          faction: u.faction,
+          speciesId: u.speciesId,
+          nickname: u.nickname,
+          x: u.x,
+          y: u.y,
+          mov: u.mov,
+          effectiveMov: getEffectiveMovementPoints(u),
+          traversalClass: u.traversalClass,
+          types: u.types,
+          heldItemId: u.heldItemId,
+          waited: u.waited,
+          frameWidth: anim?.frameWidth ?? 0,
+          frameHeight: anim?.frameHeight ?? 0,
+          drawOffsetX: placement.drawX,
+          drawOffsetY: placement.drawY,
+          shadowOffsetY: placement.shadowCenterY,
+        };
+      }),
       reachableCoords: this.currentRange ? [...this.currentRange.reachableTiles.keys()] : [],
       attackBorderCoords: this.currentRange ? [...this.currentRange.attackBorderTiles] : [],
       supportBorderCoords: this.currentRange ? [...this.currentRange.supportBorderTiles] : [],
@@ -602,6 +634,24 @@ export class TestDungeonScene {
     const targetWorldX = tx * PMD_TILE_NATIVE_PX + PMD_TILE_NATIVE_PX / 2 - this.bufferWidth / 2;
     const targetWorldY = ty * PMD_TILE_NATIVE_PX + PMD_TILE_NATIVE_PX / 2 - this.bufferHeight / 2;
     this.setCameraPosition(targetWorldX, targetWorldY);
+  }
+
+  /**
+   * Returns synchronized `[0..1]` pulse phase (`0` = darker trough, `1` = lighter peak)
+   * used to breathe selected-unit Blue/Red/Green range overlays together in unison.
+   */
+  public getSelectionRangePulse(now = performance.now()): number {
+    if (this.rangePulseOverride !== null) {
+      return Math.max(0, Math.min(1, this.rangePulseOverride));
+    }
+    const elapsedMs = Math.max(0, now - this.selectionPulseStartMs);
+    const angle = (elapsedMs / RANGE_PULSE_PERIOD_MS) * Math.PI * 2 + Math.PI * 0.25;
+    return 0.5 + 0.5 * Math.sin(angle);
+  }
+
+  public setRangePulseOverride(pulse01: number | null): void {
+    this.rangePulseOverride = pulse01 === null ? null : Math.max(0, Math.min(1, pulse01));
+    this.renderFrame(performance.now());
   }
 
   public async swapPlayerSlotSpecies(
@@ -1474,7 +1524,9 @@ export class TestDungeonScene {
   }
 
   private selectUnit(unit: TestDungeonUnit): void {
+    const now = performance.now();
     this.selectedUnitId = unit.id;
+    this.selectionPulseStartMs = now;
     this.interactionState = 'unit_selected';
     this.inspectedTile = { x: unit.x, y: unit.y };
     this.previewPath = [{ x: unit.x, y: unit.y, cumulativeCost: 0 }];
@@ -1482,7 +1534,7 @@ export class TestDungeonScene {
     this.audioManager.playSfx('select');
     this.updateInfoStrip();
     this.onLayerStateChanged();
-    this.renderFrame(performance.now());
+    this.renderFrame(now);
   }
 
   private clearSelection(): void {
@@ -1639,6 +1691,7 @@ export class TestDungeonScene {
 
     if (unit) {
       this.interactionState = 'unit_selected';
+      this.selectionPulseStartMs = performance.now();
       this.recomputeSelectedUnitRange();
       this.previewPath = [{ x: unit.x, y: unit.y, cumulativeCost: 0 }];
     } else {
@@ -1945,7 +1998,7 @@ export class TestDungeonScene {
     }
   }
 
-  private renderFrame(_now: number): void {
+  private renderFrame(now: number): void {
     const ctx = this.ctx;
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#080e1c';
@@ -1962,7 +2015,7 @@ export class TestDungeonScene {
       Math.ceil((this.cameraY + this.bufferHeight) / PMD_TILE_NATIVE_PX) + 1
     );
 
-    // 1. Render PMD 24x24 Dungeon Chunks + Stairs / Wonder Tile / Barrier Overlays
+    // 1. Render Seamless PMD 24x24 Dungeon Chunks + Stairs / Wonder Tile / Barrier Overlays (zero grid lines)
     for (let y = startRow; y <= endRow; y++) {
       const row = this.map.tiles[y];
       if (!row) continue;
@@ -1988,71 +2041,91 @@ export class TestDungeonScene {
           drawY,
           PMD_TILE_NATIVE_PX
         );
-
-        // Subtle tactical grid hairline
-        ctx.strokeStyle = 'rgba(8, 16, 32, 0.22)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(drawX + 0.5, drawY + 0.5, PMD_TILE_NATIVE_PX - 1, PMD_TILE_NATIVE_PX - 1);
       }
     }
 
-    // 2. Render Enemy Danger Area Overlay (Purple/Crimson, Fire Emblem Awakening style)
+    const visibleBounds = { startCol, endCol, startRow, endRow };
+
+    // 2. Render Enemy Danger Area Overlay (Modern Contiguous Perimeter + Slight Interior Fill)
     if (this.currentDanger.combinedDangerTiles.size > 0) {
-      for (const key of this.currentDanger.combinedDangerTiles) {
-        const { x, y } = parseCoordKey(key);
-        if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
-        const drawX = x * PMD_TILE_NATIVE_PX - this.cameraX;
-        const drawY = y * PMD_TILE_NATIVE_PX - this.cameraY;
-        const isIndividual = this.currentDanger.individualDangerTiles.has(key);
+      this.drawConnectedRangeZone(
+        ctx,
+        this.currentDanger.combinedDangerTiles,
+        this.currentDanger.combinedDangerTiles,
+        {
+          fillRgba: 'rgba(188, 68, 248, 0.10)',
+          outerBorderRgba: 'rgba(216, 120, 255, 0.88)',
+          innerGlowRgba: 'rgba(188, 76, 248, 0.28)',
+        },
+        visibleBounds
+      );
 
-        ctx.fillStyle = isIndividual
-          ? 'rgba(232, 56, 148, 0.42)'
-          : 'rgba(168, 56, 224, 0.36)';
-        ctx.fillRect(drawX + 1, drawY + 1, PMD_TILE_NATIVE_PX - 2, PMD_TILE_NATIVE_PX - 2);
-        ctx.strokeStyle = isIndividual
-          ? 'rgba(255, 136, 208, 0.85)'
-          : 'rgba(208, 120, 255, 0.72)';
-        ctx.strokeRect(drawX + 0.5, drawY + 0.5, PMD_TILE_NATIVE_PX - 1, PMD_TILE_NATIVE_PX - 1);
+      if (this.currentDanger.individualDangerTiles.size > 0) {
+        this.drawConnectedRangeZone(
+          ctx,
+          this.currentDanger.individualDangerTiles,
+          this.currentDanger.individualDangerTiles,
+          {
+            fillRgba: 'rgba(248, 64, 148, 0.12)',
+            outerBorderRgba: 'rgba(255, 128, 196, 0.95)',
+            innerGlowRgba: 'rgba(248, 76, 156, 0.32)',
+          },
+          visibleBounds
+        );
       }
     }
 
-    // 3. Render Selected Unit Range Overlays (Blue Move, Red Attack, Green Support)
+    // 3. Render Selected Unit Range Overlays (Synchronized Pulsating Blue Move, Red Attack, Green Support)
     if (
       this.currentRange &&
       (this.interactionState === 'unit_selected' || this.interactionState === 'walking')
     ) {
-      for (const [key] of this.currentRange.reachableTiles) {
-        const { x, y } = parseCoordKey(key);
-        if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
-        const drawX = x * PMD_TILE_NATIVE_PX - this.cameraX;
-        const drawY = y * PMD_TILE_NATIVE_PX - this.cameraY;
-        ctx.fillStyle = 'rgba(56, 152, 248, 0.44)';
-        ctx.fillRect(drawX + 1, drawY + 1, PMD_TILE_NATIVE_PX - 2, PMD_TILE_NATIVE_PX - 2);
-        ctx.strokeStyle = 'rgba(152, 224, 255, 0.88)';
-        ctx.strokeRect(drawX + 0.5, drawY + 0.5, PMD_TILE_NATIVE_PX - 1, PMD_TILE_NATIVE_PX - 1);
+      const pulse = this.getSelectionRangePulse(now);
+      const reachableSet = new Set<string>(this.currentRange.reachableTiles.keys());
+
+      if (this.currentRange.supportBorderTiles.size > 0) {
+        const supportUnion = new Set<string>(reachableSet);
+        for (const k of this.currentRange.supportBorderTiles) supportUnion.add(k);
+        this.drawConnectedRangeZone(
+          ctx,
+          this.currentRange.supportBorderTiles,
+          supportUnion,
+          {
+            fillRgba: lerpRgba([28, 184, 96, 0.15], [132, 255, 188, 0.36], pulse),
+            outerBorderRgba: lerpRgba([72, 228, 140, 0.88], [212, 255, 232, 1.0], pulse),
+            innerGlowRgba: lerpRgba([48, 212, 120, 0.28], [168, 255, 208, 0.6], pulse),
+          },
+          visibleBounds
+        );
       }
 
-      for (const key of this.currentRange.attackBorderTiles) {
-        const { x, y } = parseCoordKey(key);
-        if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
-        const drawX = x * PMD_TILE_NATIVE_PX - this.cameraX;
-        const drawY = y * PMD_TILE_NATIVE_PX - this.cameraY;
-        ctx.fillStyle = 'rgba(240, 64, 72, 0.44)';
-        ctx.fillRect(drawX + 1, drawY + 1, PMD_TILE_NATIVE_PX - 2, PMD_TILE_NATIVE_PX - 2);
-        ctx.strokeStyle = 'rgba(255, 152, 152, 0.88)';
-        ctx.strokeRect(drawX + 0.5, drawY + 0.5, PMD_TILE_NATIVE_PX - 1, PMD_TILE_NATIVE_PX - 1);
+      if (this.currentRange.attackBorderTiles.size > 0) {
+        const attackUnion = new Set<string>(reachableSet);
+        for (const k of this.currentRange.attackBorderTiles) attackUnion.add(k);
+        this.drawConnectedRangeZone(
+          ctx,
+          this.currentRange.attackBorderTiles,
+          attackUnion,
+          {
+            fillRgba: lerpRgba([212, 36, 56, 0.16], [255, 132, 144, 0.38], pulse),
+            outerBorderRgba: lerpRgba([244, 80, 96, 0.88], [255, 208, 214, 1.0], pulse),
+            innerGlowRgba: lerpRgba([232, 56, 76, 0.3], [255, 168, 178, 0.62], pulse),
+          },
+          visibleBounds
+        );
       }
 
-      for (const key of this.currentRange.supportBorderTiles) {
-        const { x, y } = parseCoordKey(key);
-        if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
-        const drawX = x * PMD_TILE_NATIVE_PX - this.cameraX;
-        const drawY = y * PMD_TILE_NATIVE_PX - this.cameraY;
-        ctx.fillStyle = 'rgba(64, 216, 120, 0.40)';
-        ctx.fillRect(drawX + 1, drawY + 1, PMD_TILE_NATIVE_PX - 2, PMD_TILE_NATIVE_PX - 2);
-        ctx.strokeStyle = 'rgba(160, 255, 192, 0.85)';
-        ctx.strokeRect(drawX + 0.5, drawY + 0.5, PMD_TILE_NATIVE_PX - 1, PMD_TILE_NATIVE_PX - 1);
-      }
+      this.drawConnectedRangeZone(
+        ctx,
+        reachableSet,
+        reachableSet,
+        {
+          fillRgba: lerpRgba([24, 128, 236, 0.16], [132, 232, 255, 0.38], pulse),
+          outerBorderRgba: lerpRgba([64, 184, 252, 0.88], [216, 252, 255, 1.0], pulse),
+          innerGlowRgba: lerpRgba([44, 156, 248, 0.3], [164, 242, 255, 0.62], pulse),
+        },
+        visibleBounds
+      );
     }
 
     // 4. Render A* Path Preview Line & Destination Reticle
@@ -2097,7 +2170,7 @@ export class TestDungeonScene {
       ctx.fillRect(cx + PMD_TILE_NATIVE_PX - 2, cy + PMD_TILE_NATIVE_PX - 5, 2, 5);
     }
 
-    // 6. Render Units (Y-sorted so tall PMD sprites overlap cleanly)
+    // 6. Render Units (Y-sorted & anchored via PMD2 frame-center / ground-shadow geometry)
     const sortedUnits = [...this.getActiveUnits()].sort(
       (a, b) => a.renderWorldY - b.renderWorldY || a.renderWorldX - b.renderWorldX
     );
@@ -2105,29 +2178,28 @@ export class TestDungeonScene {
     for (const unit of sortedUnits) {
       const tileScreenX = unit.renderWorldX - this.cameraX;
       const tileScreenY = unit.renderWorldY - this.cameraY;
-
-      // Faction ring under unit's feet
-      ctx.fillStyle =
-        unit.faction === 'player'
-          ? unit.waited
-            ? 'rgba(128, 144, 168, 0.55)'
-            : 'rgba(56, 184, 248, 0.72)'
-          : this.trackedEnemyIds.has(unit.id)
-            ? 'rgba(255, 96, 176, 0.85)'
-            : 'rgba(232, 72, 72, 0.75)';
-      ctx.fillRect(tileScreenX + 5, tileScreenY + 17, 14, 4);
-
       const bundle = this.spriteBundles.get(unit.speciesId);
-      if (bundle) {
-        const anim = bundle.actions[unit.action] ?? bundle.actions.Idle;
+      const anim = bundle ? (bundle.actions[unit.action] ?? bundle.actions.Idle) : undefined;
+      const placement = computePmdTileSpritePlacement(
+        tileScreenX,
+        tileScreenY,
+        anim?.frameWidth ?? PMD_TILE_NATIVE_PX,
+        anim?.frameHeight ?? PMD_TILE_NATIVE_PX,
+        PMD_TILE_NATIVE_PX
+      );
+
+      this.drawUnitGroundShadow(
+        ctx,
+        placement.shadowCenterX,
+        placement.shadowCenterY,
+        bundle?.shadowSize ?? 1,
+        unit
+      );
+
+      if (bundle && anim) {
         const frameIdx = unit.frameIndex % Math.max(1, anim.frameCount);
         const rowIdx = anim.rowCount >= 8 ? unit.direction : unit.direction % anim.rowCount;
-        const drawX = Math.round(
-          tileScreenX + (PMD_TILE_NATIVE_PX - anim.frameWidth) / 2
-        );
-        const drawY = Math.round(
-          tileScreenY + PMD_TILE_NATIVE_PX - anim.frameHeight - 1
-        );
+        const { drawX, drawY } = placement;
 
         if (unit.waited) {
           // Rested/dimmed state rendered via 1:1 nearest-neighbor scratch canvas
@@ -2191,5 +2263,149 @@ export class TestDungeonScene {
         ctx.fillRect(tileScreenX + 19, tileScreenY + 2, 3, 3);
       }
     }
+  }
+
+  /**
+   * Renders a modern contiguous range overlay with a very slight seamless interior fill,
+   * zero interior grid lines, a soft `1px` inner rim glow, and a crisp `1px` outer perimeter
+   * (including watertight concave corner pixels).
+   */
+  private drawConnectedRangeZone(
+    ctx: CanvasRenderingContext2D,
+    zoneTiles: ReadonlySet<string>,
+    boundaryMask: ReadonlySet<string>,
+    style: {
+      fillRgba: string;
+      outerBorderRgba: string;
+      innerGlowRgba: string;
+    },
+    bounds: {
+      startCol: number;
+      endCol: number;
+      startRow: number;
+      endRow: number;
+    }
+  ): void {
+    if (zoneTiles.size === 0) return;
+    const S = PMD_TILE_NATIVE_PX;
+    const { startCol, endCol, startRow, endRow } = bounds;
+
+    // Pass 1: Subtle full-tile interior wash (zero gaps between adjacent tiles)
+    ctx.fillStyle = style.fillRgba;
+    for (const key of zoneTiles) {
+      const { x, y } = parseCoordKey(key);
+      if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
+      ctx.fillRect(x * S - this.cameraX, y * S - this.cameraY, S, S);
+    }
+
+    // Pass 2: Soft 1px inner rim glow along exposed boundary edges
+    ctx.fillStyle = style.innerGlowRgba;
+    for (const key of zoneTiles) {
+      const { x, y } = parseCoordKey(key);
+      if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
+      const drawX = x * S - this.cameraX;
+      const drawY = y * S - this.cameraY;
+
+      const hasN = boundaryMask.has(coordKey(x, y - 1));
+      const hasS = boundaryMask.has(coordKey(x, y + 1));
+      const hasW = boundaryMask.has(coordKey(x - 1, y));
+      const hasE = boundaryMask.has(coordKey(x + 1, y));
+
+      const x0 = !hasW ? 1 : 0;
+      const x1 = !hasE ? S - 1 : S;
+      if (!hasN && x1 > x0) ctx.fillRect(drawX + x0, drawY + 1, x1 - x0, 1);
+      if (!hasS && x1 > x0) ctx.fillRect(drawX + x0, drawY + S - 2, x1 - x0, 1);
+
+      const y0 = !hasN ? 2 : 0;
+      const y1 = !hasS ? S - 2 : S;
+      if (!hasW && y1 > y0) ctx.fillRect(drawX + 1, drawY + y0, 1, y1 - y0);
+      if (!hasE && y1 > y0) ctx.fillRect(drawX + S - 2, drawY + y0, 1, y1 - y0);
+
+      if (hasN && hasW && !boundaryMask.has(coordKey(x - 1, y - 1))) {
+        ctx.fillRect(drawX + 1, drawY, 1, 2);
+        ctx.fillRect(drawX, drawY + 1, 1, 1);
+      }
+      if (hasN && hasE && !boundaryMask.has(coordKey(x + 1, y - 1))) {
+        ctx.fillRect(drawX + S - 2, drawY, 1, 2);
+        ctx.fillRect(drawX + S - 1, drawY + 1, 1, 1);
+      }
+      if (hasS && hasW && !boundaryMask.has(coordKey(x - 1, y + 1))) {
+        ctx.fillRect(drawX + 1, drawY + S - 2, 1, 2);
+        ctx.fillRect(drawX, drawY + S - 2, 1, 1);
+      }
+      if (hasS && hasE && !boundaryMask.has(coordKey(x + 1, y + 1))) {
+        ctx.fillRect(drawX + S - 2, drawY + S - 2, 1, 2);
+        ctx.fillRect(drawX + S - 1, drawY + S - 2, 1, 1);
+      }
+    }
+
+    // Pass 3: Crisp 1px outer perimeter outline (with concave 1x1 corner seals)
+    ctx.fillStyle = style.outerBorderRgba;
+    for (const key of zoneTiles) {
+      const { x, y } = parseCoordKey(key);
+      if (x < startCol || x > endCol || y < startRow || y > endRow) continue;
+      const drawX = x * S - this.cameraX;
+      const drawY = y * S - this.cameraY;
+
+      const hasN = boundaryMask.has(coordKey(x, y - 1));
+      const hasS = boundaryMask.has(coordKey(x, y + 1));
+      const hasW = boundaryMask.has(coordKey(x - 1, y));
+      const hasE = boundaryMask.has(coordKey(x + 1, y));
+
+      if (!hasN) ctx.fillRect(drawX, drawY, S, 1);
+      if (!hasS) ctx.fillRect(drawX, drawY + S - 1, S, 1);
+
+      const oy0 = !hasN ? 1 : 0;
+      const oy1 = !hasS ? S - 1 : S;
+      if (!hasW && oy1 > oy0) ctx.fillRect(drawX, drawY + oy0, 1, oy1 - oy0);
+      if (!hasE && oy1 > oy0) ctx.fillRect(drawX + S - 1, drawY + oy0, 1, oy1 - oy0);
+
+      if (hasN && hasW && !boundaryMask.has(coordKey(x - 1, y - 1))) {
+        ctx.fillRect(drawX, drawY, 1, 1);
+      }
+      if (hasN && hasE && !boundaryMask.has(coordKey(x + 1, y - 1))) {
+        ctx.fillRect(drawX + S - 1, drawY, 1, 1);
+      }
+      if (hasS && hasW && !boundaryMask.has(coordKey(x - 1, y + 1))) {
+        ctx.fillRect(drawX, drawY + S - 1, 1, 1);
+      }
+      if (hasS && hasE && !boundaryMask.has(coordKey(x + 1, y + 1))) {
+        ctx.fillRect(drawX + S - 1, drawY + S - 1, 1, 1);
+      }
+    }
+  }
+
+  /**
+   * Renders a crisp pixel-art oval ground shadow & faction ring anchored at `(shadowCenterX, shadowCenterY)`
+   * (`(12, 20)` in native `24x24` PMD tile space).
+   */
+  private drawUnitGroundShadow(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    shadowSize: number,
+    unit: TestDungeonUnit
+  ): void {
+    const halfW = shadowSize <= 0 ? 5 : shadowSize === 1 ? 6 : 8;
+    const innerSpan = (halfW - 2) * 2;
+
+    // Soft dark ground shadow interior
+    ctx.fillStyle = 'rgba(6, 12, 24, 0.42)';
+    ctx.fillRect(cx - halfW + 2, cy - 1, innerSpan, 3);
+
+    // Crisp 1px faction ring rim around the shadow oval
+    ctx.fillStyle =
+      unit.faction === 'player'
+        ? unit.waited
+          ? 'rgba(136, 152, 176, 0.50)'
+          : 'rgba(72, 204, 255, 0.82)'
+        : this.trackedEnemyIds.has(unit.id)
+          ? 'rgba(255, 112, 196, 0.90)'
+          : 'rgba(248, 84, 92, 0.82)';
+
+    ctx.fillRect(cx - halfW + 2, cy - 2, innerSpan, 1);
+    ctx.fillRect(cx - halfW + 2, cy + 2, innerSpan, 1);
+    ctx.fillRect(cx - halfW, cy - 1, 2, 3);
+    ctx.fillRect(cx + halfW - 2, cy - 1, 2, 3);
   }
 }

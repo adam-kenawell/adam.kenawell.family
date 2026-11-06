@@ -21,12 +21,12 @@ import type {
 export const DEFAULT_TERRAIN_PALETTE: Readonly<
   Record<TerrainType, { tilesetId: string; chunkIndex: number }>
 > = {
-  floor: { tilesetId: '142', chunkIndex: 58 },
-  trees: { tilesetId: '142', chunkIndex: 22 },
-  stairs: { tilesetId: '142', chunkIndex: 58 },
+  floor: { tilesetId: '142', chunkIndex: 59 },
+  trees: { tilesetId: '142', chunkIndex: 1 },
+  stairs: { tilesetId: '142', chunkIndex: 59 },
   water: { tilesetId: '142', chunkIndex: 88 },
   lava: { tilesetId: '110', chunkIndex: 106 },
-  mountain: { tilesetId: '110', chunkIndex: 23 },
+  mountain: { tilesetId: '110', chunkIndex: 1 },
   void: { tilesetId: '061', chunkIndex: 100 },
   wonder_tile: { tilesetId: '142', chunkIndex: 59 },
   wall: { tilesetId: '001', chunkIndex: 1 },
@@ -94,13 +94,13 @@ function tileFromAscii(ch: string, x: number, y: number): DungeonMapTileCell {
   const parity = (x * 7 + y * 13) % 3;
   switch (ch) {
     case '#':
-      return cell('wall', '001', parity === 0 ? 1 : parity === 1 ? 25 : 26);
+      return cell('wall', '001', parity === 0 ? 1 : 19);
     case '.': {
-      const grassChunks = [58, 59, 60] as const;
+      const grassChunks = [27, 59, 138] as const;
       return cell('floor', '142', grassChunks[parity]);
     }
     case ',': {
-      const stoneChunks = [58, 59, 60] as const;
+      const stoneChunks = [25, 59, 96] as const;
       return cell('floor', '110', stoneChunks[parity]);
     }
     case '_': {
@@ -108,33 +108,31 @@ function tileFromAscii(ch: string, x: number, y: number): DungeonMapTileCell {
       return cell('floor', '061', darkChunks[parity]);
     }
     case 'T': {
-      const treeChunks = [21, 22, 24] as const;
+      const treeChunks = [1, 10, 15] as const;
       return cell('trees', '142', treeChunks[parity]);
     }
-    case '~': {
-      const waterChunks = [88, 101, 102] as const;
-      return cell('water', '142', waterChunks[parity]);
-    }
+    case '~':
+      return cell('water', '142', 88);
     case 'M': {
-      const mtChunks = [22, 23, 24] as const;
+      const mtChunks = [1, 36, 1] as const;
       return cell('mountain', '110', mtChunks[parity]);
     }
     case 'L': {
-      const lavaChunks = [106, 108, 110] as const;
+      const lavaChunks = [98, 106, 98] as const;
       return cell('lava', '110', lavaChunks[parity]);
     }
     case 'V': {
-      const voidChunks = [100, 102, 104] as const;
+      const voidChunks = [86, 100, 104] as const;
       return cell('void', '061', voidChunks[parity]);
     }
     case 'B':
       return cell('barrier', '080', parity === 0 ? 15 : 26);
     case 'S':
-      return cell('stairs', x >= 18 ? '110' : y >= 14 ? '061' : '142', 58);
+      return cell('stairs', x >= 18 ? '110' : y >= 14 ? '061' : '142', 59);
     case 'W':
       return cell('wonder_tile', x >= 18 ? '110' : y >= 14 ? '061' : '142', 59);
     default:
-      return cell('floor', '142', 58);
+      return cell('floor', '142', 59);
   }
 }
 

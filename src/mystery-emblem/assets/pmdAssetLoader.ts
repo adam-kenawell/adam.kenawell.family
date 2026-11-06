@@ -105,6 +105,42 @@ export interface LoadedPortraitAsset {
   synthesizedFallback: boolean;
 }
 
+export interface PmdTileSpritePlacement {
+  /** Top-left X where the animation frame should be drawn in native pixel coordinates */
+  drawX: number;
+  /** Top-left Y where the animation frame should be drawn in native pixel coordinates */
+  drawY: number;
+  /** Ground-shadow / tile-foot center X (`tileScreenX + 12` for a `24x24` PMD tile) */
+  shadowCenterX: number;
+  /** Ground-shadow / tile-foot center Y (`tileScreenY + 20` for a `24x24` PMD tile) */
+  shadowCenterY: number;
+}
+
+/**
+ * Computes exact PMD: Explorers of Sky / PMDCollab tile-space sprite placement.
+ *
+ * In PMDCollab (`SpriteCollab`), every action frame (`Idle`, `Walk`, `Attack`, `Special`, `Hurt`)
+ * anchors the Pokémon's ground shadow (`*-Shadow.png` white pixel) at `(frameWidth / 2, frameHeight / 2 + 4)`.
+ * Placing that ground-shadow anchor on the `24x24` tile's lower footline `(12, 20)` centers grounded
+ * and floating Pokémon cleanly inside their `24x24` tile with zero vertical drift across actions.
+ */
+export function computePmdTileSpritePlacement(
+  tileScreenX: number,
+  tileScreenY: number,
+  frameWidth: number,
+  frameHeight: number,
+  tileSizePx = 24
+): PmdTileSpritePlacement {
+  const halfTile = Math.floor(tileSizePx / 2);
+  const footlineY = tileSizePx - 4; // 20 inside a 0..23 PMD tile
+  return {
+    drawX: Math.round(tileScreenX + (tileSizePx - frameWidth) / 2),
+    drawY: Math.round(tileScreenY + footlineY - (frameHeight / 2 + 4)),
+    shadowCenterX: Math.round(tileScreenX + halfTile),
+    shadowCenterY: Math.round(tileScreenY + footlineY),
+  };
+}
+
 const ACTION_CANDIDATE_CHAINS: Record<PmdSpriteAction, readonly string[]> = {
   Idle: ['Idle', 'Walk'],
   Walk: ['Walk', 'Idle'],
@@ -238,13 +274,13 @@ function synthesizeSpriteSheetFromPortrait(
         oy = f === 1 ? 1 : 0;
       }
 
-      // Crisp pixel shadow oval beneath the sprite token
-      ctx.fillStyle = 'rgba(8, 14, 26, 0.55)';
-      ctx.fillRect(cellX + 8, cellY + 26, 16, 4);
+      // Crisp pixel shadow oval anchored at `(frameW / 2, frameH / 2 + 4)` = `(16, 20)`
+      ctx.fillStyle = 'rgba(8, 14, 26, 0.45)';
+      ctx.fillRect(cellX + 9, cellY + 18, 14, 4);
 
-      const tokenSize = 22;
+      const tokenSize = 20;
       const drawX = cellX + Math.floor((frameW - tokenSize) / 2) + ox;
-      const drawY = cellY + 4 + oy;
+      const drawY = cellY + 3 + oy;
 
       ctx.save();
       if (flipWest) {
