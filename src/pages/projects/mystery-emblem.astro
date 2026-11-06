@@ -1,17 +1,28 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
+import '@fontsource/fusion-pixel-12px-proportional-kr';
 import '../../mystery-emblem/ui/pmdWindow.css';
+
+const title = 'Mystery Emblem — Tactical RPG';
+const description =
+  'A browser-based tactical RPG combining Fire Emblem Awakening gameplay systems with Pokémon Mystery Dungeon: Explorers of Sky visuals.';
+const canonicalUrl = Astro.url.href;
 ---
 
-<Layout
-  title="Mystery Emblem — Tactical RPG"
-  description="A browser-based tactical RPG combining Fire Emblem Awakening gameplay systems with Pokémon Mystery Dungeon: Explorers of Sky visuals."
->
-  <div class="page">
-    <Header />
-
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <title>{title}</title>
+  </head>
+  <body>
     <main class="mystery-emblem-shell">
       <div id="mystery-emblem-root" class="pmd-viewport">
         <!-- Admin-Only Dev Tools Button (Top-Left, strictly visible ONLY for adam.kenawell.family@gmail.com) -->
@@ -44,8 +55,19 @@ import '../../mystery-emblem/ui/pmdWindow.css';
           </p>
 
           <div class="pmd-actions">
-            <button class="pmd-btn pmd-btn-primary" id="btn-continue" type="button" disabled>
-              Continue
+            <button
+              class="pmd-btn pmd-btn-primary pmd-continue-btn"
+              id="btn-continue"
+              type="button"
+              disabled
+            >
+              <span id="btn-continue-label">Continue</span>
+              <span
+                id="btn-continue-sprite"
+                class="pmd-continue-sprite"
+                data-testid="continue-lord-sprite-slot"
+                hidden
+              ></span>
             </button>
             <button class="pmd-btn" id="btn-new-game" type="button">
               New Game
@@ -210,6 +232,14 @@ import '../../mystery-emblem/ui/pmdWindow.css';
               data-testid="devtools-tab-dialogue"
             >
               Dialogue &amp; Audio
+            </button>
+            <button
+              type="button"
+              class="pmd-btn pmd-tab-btn"
+              data-devtab-btn="skirmish"
+              data-testid="devtools-tab-skirmish"
+            >
+              Test Dungeon
             </button>
           </nav>
 
@@ -388,6 +418,29 @@ import '../../mystery-emblem/ui/pmdWindow.css';
               </div>
             </div>
           </div>
+
+          <!-- DEV TAB 4: TEST DUNGEON / SKIRMISH BATTLEFIELD SANDBOX (Step 5) -->
+          <div class="pmd-tab-panel" data-devtab-panel="skirmish" hidden>
+            <div class="pmd-subcard">
+              <h3 class="pmd-subcard-title">Test Dungeon (Skirmish) — Convergence Ruins</h3>
+              <p class="pmd-subcard-text">
+                Full-viewport tactical grid rendered from flat <em>Explorers of Sky</em> 24×24px tilesets at crisp 2× pixel scale across all 10 PMD terrain types (<em>Floor</em>, <em>Trees</em>, <em>Stairs</em>, <em>Water</em>, <em>Lava</em>, <em>Mountain</em>, <em>Void / Chasm</em>, <em>Wonder Tile</em>, <em>Low Barrier</em>, and <em>Wall</em>).
+              </p>
+              <p class="pmd-subcard-text">
+                Spawns 3 test Pokémon covering all 3 traversal classes — <strong>Bahamut</strong> (Dratini · Grounded), <strong>Zephyr</strong> (Pidgey · Flying), and <strong>Wisp</strong> (Duskull · Levitate) — plus 2 stationary dummy enemies for Danger Area testing, species/Heavy-Duty Boots sandbox controls, and a live 144-sheet 24×24 chunk brush with JSON export.
+              </p>
+              <div class="pmd-inline-btns">
+                <button
+                  type="button"
+                  id="devtools-launch-test-dungeon"
+                  class="pmd-btn pmd-btn-primary"
+                  data-testid="devtools-launch-test-dungeon"
+                >
+                  Launch Test Dungeon (Skirmish)
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Reusable PMD Nickname Modal (Pointer-driven, PC + Mobile) -->
@@ -432,10 +485,8 @@ import '../../mystery-emblem/ui/pmdWindow.css';
         </div>
       </div>
     </main>
-
-    <Footer />
-  </div>
-</Layout>
+  </body>
+</html>
 
 <script>
   import { resetSpriteWidgets } from '../../utils/sprite-utils';
@@ -446,6 +497,11 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     loadSpeciesPortrait,
     loadSpeciesSpriteBundle,
   } from '../../mystery-emblem/assets/pmdAssetLoader';
+  import {
+    PMD_TILESET_LIST,
+    clearTilesetCache,
+    loadTilesetSheet,
+  } from '../../mystery-emblem/assets/tilesetLoader';
   import { getAudioManager } from '../../mystery-emblem/audio/AudioManager';
   import {
     getItemById,
@@ -454,6 +510,14 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     getRegistryValidationSummary,
     getSpeciesById,
   } from '../../mystery-emblem/data/index';
+  import {
+    computeEnemyDangerArea,
+    computeUnitMovementAndAttackRange,
+    findShortestPathAStar,
+    getTerrainBonuses,
+    getTerrainMoveCost,
+  } from '../../mystery-emblem/engine/terrainAndPathfinding';
+  import { TestDungeonScene } from '../../mystery-emblem/scenes/TestDungeonScene';
   import {
     InMemoryCloudSyncAdapter,
     type CloudSyncAdapter,
@@ -489,6 +553,9 @@ import '../../mystery-emblem/ui/pmdWindow.css';
   let currentManager: SaveStateManager | null = null;
   let currentDialogueOverlay: DialogueOverlay | null = null;
   let currentDevToolsHarness: DevToolsHarness | null = null;
+  let currentTestDungeonScene: TestDungeonScene | null = null;
+  let continueLordActor: PmdSpriteActor | null = null;
+  let continueLordSpeciesId: string | null = null;
   let uiAbortController: AbortController | null = null;
   const squadSpriteActors: PmdSpriteActor[] = [];
 
@@ -501,7 +568,12 @@ import '../../mystery-emblem/ui/pmdWindow.css';
   async function initMysteryEmblemApp() {
     resetSpriteWidgets();
     clearSquadActors();
+    continueLordActor?.destroy();
+    continueLordActor = null;
+    continueLordSpeciesId = null;
     destroyAllPmdSpriteActors();
+    currentTestDungeonScene?.destroy();
+    currentTestDungeonScene = null;
     currentDevToolsHarness?.destroy();
     currentDevToolsHarness = null;
     currentDialogueOverlay?.destroy();
@@ -535,6 +607,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     const statusMsgEl = document.getElementById('pmd-status-msg');
 
     const btnContinue = document.getElementById('btn-continue') as HTMLButtonElement | null;
+    const continueSpriteSlot = document.getElementById('btn-continue-sprite');
     const btnNewGame = document.getElementById('btn-new-game');
     const btnCloudSync = document.getElementById('btn-cloud-sync');
     const btnEmptyCreateSave = document.getElementById('btn-empty-create-save');
@@ -571,8 +644,13 @@ import '../../mystery-emblem/ui/pmdWindow.css';
 
     let activeTab: 'squad' | 'sync' = 'squad';
     let editingUnitId: string | null = null;
+    let testDungeonScene: TestDungeonScene | null = null;
 
     const backStack = new BackStackController(cornerMenuBtn, () => {
+      if (testDungeonScene?.isOpen()) {
+        testDungeonScene.handleMenuOrBack();
+        return;
+      }
       openCampaignMenu(activeTab);
     });
 
@@ -584,12 +662,44 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       : null;
     currentDialogueOverlay = dialogueOverlay;
 
+    async function openTestDungeon(): Promise<void> {
+      if (!testDungeonScene || !isAdminSignedIn()) return;
+      if (titleScreen) titleScreen.hidden = true;
+      if (campaignMenu) campaignMenu.hidden = true;
+      if (devToolsModal) devToolsModal.hidden = true;
+      await testDungeonScene.open();
+      backStack.syncButtonLabel();
+    }
+
+    if (viewportEl) {
+      testDungeonScene = new TestDungeonScene({
+        viewportEl,
+        audioManager,
+        onExit: () => {
+          if (isAdminSignedIn() && devToolsModal) {
+            if (titleScreen) titleScreen.hidden = true;
+            if (campaignMenu) campaignMenu.hidden = true;
+            devToolsModal.hidden = false;
+            currentDevToolsHarness?.onSaveChanged();
+            backStack.syncButtonLabel();
+          } else {
+            showTitleScreen();
+          }
+        },
+        onLayerStateChanged: () => backStack.syncButtonLabel(),
+      });
+      currentTestDungeonScene = testDungeonScene;
+    }
+
     if (devToolsModal && dialogueOverlay) {
       currentDevToolsHarness = new DevToolsHarness({
         modalEl: devToolsModal,
         saveManager: manager,
         dialogueOverlay,
         audioManager,
+        onLaunchTestDungeon: () => {
+          void openTestDungeon();
+        },
         signal,
       });
     }
@@ -602,11 +712,21 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       audioManager,
       dialogueOverlay,
       devToolsHarness: currentDevToolsHarness,
+      testDungeonScene,
+      openTestDungeon,
       loadSpeciesSpriteBundle,
       loadSpeciesPortrait,
       clearPmdAssetCache,
       PMD_SPRITE_ACTIONS,
       PMD_PORTRAIT_EMOTIONS,
+      PMD_TILESET_LIST,
+      loadTilesetSheet,
+      clearTilesetCache,
+      getTerrainMoveCost,
+      getTerrainBonuses,
+      computeUnitMovementAndAttackRange,
+      findShortestPathAStar,
+      computeEnemyDangerArea,
     };
 
     function isAdminSignedIn(): boolean {
@@ -638,6 +758,10 @@ import '../../mystery-emblem/ui/pmdWindow.css';
 
     function toggleDevTools(): void {
       if (!isAdminSignedIn() || !devToolsModal) return;
+      if (testDungeonScene?.isOpen()) {
+        testDungeonScene.close();
+        return;
+      }
       if (!devToolsModal.hidden) {
         showTitleScreen();
         return;
@@ -697,6 +821,11 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       onBack: () => {
         if (jsonIoBox) jsonIoBox.hidden = true;
       },
+    });
+    backStack.registerLayer({
+      id: 'test-dungeon-sublayer',
+      isActive: () => Boolean(testDungeonScene?.isOpen() && testDungeonScene.hasActiveSubLayer()),
+      onBack: () => testDungeonScene?.handleMenuOrBack(),
     });
     backStack.registerLayer({
       id: 'dialogue-overlay',
@@ -882,9 +1011,12 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       const sync = manager.getSyncStatus();
       const adminActive = isAdminSignedIn();
 
-      // Strictly gate Top-Left Dev Tools button & modal to adam.kenawell.family@gmail.com
+      // Strictly gate Top-Left Dev Tools button, modal & Test Dungeon to adam.kenawell.family@gmail.com
       if (devToolsBtn) {
         devToolsBtn.hidden = !adminActive;
+      }
+      if (!adminActive && testDungeonScene?.isOpen()) {
+        testDungeonScene.close();
       }
       if (!adminActive && devToolsModal && !devToolsModal.hidden) {
         showTitleScreen();
@@ -897,7 +1029,25 @@ import '../../mystery-emblem/ui/pmdWindow.css';
 
         if (btnContinue) {
           btnContinue.disabled = false;
-          btnContinue.textContent = `Continue (${lordUnit?.nickname ?? 'Campaign'})`;
+        }
+        if (continueSpriteSlot && lordUnit) {
+          continueSpriteSlot.hidden = false;
+          if (!continueLordActor) {
+            continueLordActor = new PmdSpriteActor({
+              speciesIdOrAssetId: lordUnit.speciesId,
+              initialAction: 'Idle',
+              initialDirection: 0,
+              testId: 'continue-lord-sprite',
+            });
+            continueLordActor.canvas.style.pointerEvents = 'none';
+            continueLordSpeciesId = lordUnit.speciesId;
+            continueSpriteSlot.innerHTML = '';
+            continueSpriteSlot.appendChild(continueLordActor.canvas);
+            void continueLordActor.ready();
+          } else if (continueLordSpeciesId !== lordUnit.speciesId) {
+            continueLordSpeciesId = lordUnit.speciesId;
+            void continueLordActor.setSpecies(lordUnit.speciesId);
+          }
         }
         if (saveSummaryEl) {
           saveSummaryEl.textContent = `Lord ${lordUnit?.nickname ?? '—'} (${lordSp?.name ?? '—'}) · Party: ${save.roster.length} · ${save.gold.toLocaleString()}G`;
@@ -910,8 +1060,14 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       } else {
         if (btnContinue) {
           btnContinue.disabled = true;
-          btnContinue.textContent = 'Continue';
         }
+        if (continueSpriteSlot) {
+          continueSpriteSlot.hidden = true;
+          continueSpriteSlot.innerHTML = '';
+        }
+        continueLordActor?.destroy();
+        continueLordActor = null;
+        continueLordSpeciesId = null;
         if (saveSummaryEl) {
           saveSummaryEl.textContent =
             'Command your Pokémon squad across five kingdoms in a tactical RPG adventure.';
@@ -1224,36 +1380,51 @@ import '../../mystery-emblem/ui/pmdWindow.css';
 </script>
 
 <style>
-  .mystery-emblem-shell {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1.25rem 1rem;
+  :global(*, *::before, *::after) {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :global(html, body) {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
+    min-height: 100%;
+    background-color: #080e1c;
+    color: #f8f8f8;
+    font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  :global(button, input, select, textarea) {
+    font-family: inherit;
+  }
+
+  .mystery-emblem-shell {
+    width: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #080e1c;
   }
 
   .pmd-viewport {
     position: relative;
+    flex: 1;
     width: 100%;
-    min-height: 540px;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 4.35rem 1.25rem 2rem;
-    border-radius: 8px;
-    background: radial-gradient(circle at center, rgba(24, 40, 72, 0.78) 0%, rgba(10, 14, 24, 0.94) 100%);
-    border: 2px solid rgba(88, 200, 248, 0.35);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
+    padding: 4.5rem 1.25rem 2rem;
+    background: radial-gradient(circle at center, #1a2d54 0%, #0a1020 68%, #060a14 100%);
     user-select: none;
     touch-action: manipulation;
   }
 
   .pmd-corner-btn {
-    position: absolute;
-    top: 0.9rem;
+    position: fixed;
+    top: max(0.85rem, env(safe-area-inset-top));
     min-height: 46px;
     min-width: 108px;
     padding: 0.45rem 0.95rem;
@@ -1265,12 +1436,12 @@ import '../../mystery-emblem/ui/pmdWindow.css';
   }
 
   .pmd-corner-left {
-    left: 0.9rem;
+    left: max(0.85rem, env(safe-area-inset-left));
     color: #90d8f8;
   }
 
   .pmd-corner-right {
-    right: 0.9rem;
+    right: max(0.85rem, env(safe-area-inset-right));
   }
 
   .pmd-corner-btn:hover,
@@ -1290,6 +1461,21 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     gap: 1rem;
   }
 
+  .pmd-continue-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+
+  .pmd-continue-sprite {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    pointer-events: none;
+  }
+
   .pmd-corner-btn[hidden],
   .pmd-title-card[hidden],
   .pmd-panel[hidden],
@@ -1299,6 +1485,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
   .pmd-json-box[hidden],
   .pmd-errors-box[hidden],
   .pmd-status[hidden],
+  .pmd-continue-sprite[hidden],
   .pmd-btn[hidden] {
     display: none !important;
   }
@@ -1738,13 +1925,9 @@ import '../../mystery-emblem/ui/pmdWindow.css';
   }
 
   @media (max-width: 640px) {
-    .mystery-emblem-shell {
-      padding: 0.55rem 0.45rem;
-    }
-
     .pmd-viewport {
-      min-height: 480px;
-      padding: 4.2rem 0.65rem 1.15rem;
+      min-height: 100dvh;
+      padding: 4.3rem 0.65rem 1.15rem;
     }
 
     .pmd-title-card,
@@ -1759,17 +1942,13 @@ import '../../mystery-emblem/ui/pmdWindow.css';
 
   /* Short Mobile Landscape (e.g., 844x390) — compact spacing so windows fit cleanly without clipping */
   @media (max-height: 500px) {
-    .mystery-emblem-shell {
-      padding: 0.4rem 0.6rem;
-    }
-
     .pmd-viewport {
-      min-height: 290px;
+      min-height: 100dvh;
       padding: 3.45rem 0.85rem 0.75rem;
     }
 
     .pmd-corner-btn {
-      top: 0.55rem;
+      top: max(0.55rem, env(safe-area-inset-top));
       min-height: 44px;
     }
 
@@ -1786,6 +1965,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     .pmd-actions {
       flex-direction: row;
       flex-wrap: wrap;
+      align-items: center;
       justify-content: center;
       max-width: 100%;
       margin-top: 0.15rem;

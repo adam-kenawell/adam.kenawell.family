@@ -396,3 +396,477 @@
     line-height: 1.38;
   }
 }
+
+
+/* ==========================================================================
+   STEP 5: TACTICAL BATTLEFIELD GRID RENDERER & SKIRMISH SANDBOX
+   Strictly enforces:
+   - Exact 2x integer pixel scaling (`24px` native -> `48px` CSS)
+   - `touch-action: none` on battlefield stage for unified drag-panning
+   - >= 44x44px touch targets & zero horizontal/vertical clipping across
+     1920x1080, 390x844, and 844x390 viewports
+   ========================================================================== */
+
+.pmd-viewport.is-battle-active {
+  padding: 0 !important;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.pmd-battle-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  overflow: hidden;
+  background: #080e1c;
+  user-select: none;
+}
+
+.pmd-battle-scene[hidden],
+.pmd-battle-action-menu[hidden],
+.pmd-battle-sandbox-drawer[hidden],
+.pmd-battle-modal-backdrop[hidden],
+.pmd-battle-phase-banner[hidden] {
+  display: none !important;
+}
+
+.pmd-battle-canvas-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  background: #080e1c;
+}
+
+.pmd-battle-canvas-stage:active {
+  cursor: grabbing;
+}
+
+.pmd-battle-canvas {
+  display: block;
+  touch-action: none;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Shared typography & form controls inside dynamic battle overlays */
+.pmd-battle-scene .pmd-panel-title {
+  font-size: 1.08rem;
+  color: #f8d048;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.pmd-battle-scene .pmd-panel-sub {
+  font-size: 0.74rem;
+  color: #90d8f8;
+  margin: 0;
+}
+
+.pmd-battle-scene .pmd-subcard-title {
+  font-size: 0.86rem;
+  color: #f8d048;
+  margin: 0;
+}
+
+.pmd-battle-scene .pmd-subcard-text {
+  font-size: 0.72rem;
+  color: rgba(248, 248, 248, 0.9);
+  line-height: 1.45;
+  margin: 0;
+  word-break: break-word;
+}
+
+.pmd-battle-scene .pmd-preset-label {
+  font-size: 0.72rem;
+  color: #90d8f8;
+  font-weight: bold;
+}
+
+.pmd-battle-scene .pmd-devtools-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.pmd-battle-scene .pmd-inline-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pmd-battle-scene .pmd-chip-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.32rem 0.62rem;
+  font-size: 0.72rem;
+}
+
+.pmd-battle-scene .pmd-select,
+.pmd-battle-scene .pmd-textarea {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  background: rgba(6, 12, 24, 0.96);
+  border: 2px solid #48b8e8;
+  border-radius: 4px;
+  color: #f8f8f8;
+  font-family: 'Fusion Pixel 12px Proportional KR', sans-serif;
+  font-size: 0.78rem;
+  user-select: text;
+}
+
+.pmd-battle-scene .pmd-select {
+  min-height: 44px;
+}
+
+/* Top Tactical HUD Bar */
+.pmd-battle-hud-top {
+  position: absolute;
+  top: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  pointer-events: none;
+  max-width: calc(100% - 260px);
+}
+
+.pmd-battle-pill {
+  min-height: 46px;
+  padding: 0.4rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  color: #f8d048;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.pmd-battle-hud-btn {
+  min-height: 46px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+/* Phase Transition Toast Banner */
+.pmd-battle-phase-banner {
+  position: absolute;
+  top: 4.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.92rem;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  color: #f8d048;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Bottom Terrain & Unit Info Strip */
+.pmd-battle-info-strip {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.65rem;
+  z-index: 55;
+  padding: 0.48rem 0.8rem;
+  font-size: 0.74rem;
+  line-height: 1.38;
+  color: #e8f6ff;
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Floating Uncommitted Action Menu (`Wait` / `Cancel`) */
+.pmd-battle-action-menu {
+  position: absolute;
+  z-index: 68;
+  width: 136px;
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+}
+
+.pmd-battle-cmd-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.38rem 0.6rem;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Collapsible Dev Sandbox Drawer */
+.pmd-battle-sandbox-drawer {
+  position: absolute;
+  top: 4.1rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: min(430px, calc(100% - 1.5rem));
+  z-index: 78;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+}
+
+.pmd-battle-sandbox-section {
+  background: rgba(8, 14, 28, 0.85);
+  border: 1px solid rgba(72, 184, 232, 0.42);
+  border-radius: 5px;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pmd-battle-chunk-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 4px;
+  max-height: 196px;
+  overflow-y: auto;
+  padding: 4px;
+  background: rgba(4, 8, 18, 0.92);
+  border: 1px solid rgba(72, 184, 232, 0.35);
+  border-radius: 4px;
+  touch-action: pan-y;
+}
+
+.pmd-chunk-cell {
+  position: relative;
+  min-width: 50px;
+  min-height: 50px;
+  padding: 1px;
+  background: rgba(16, 28, 48, 0.9);
+  border: 2px solid rgba(72, 184, 232, 0.35);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pmd-chunk-cell:hover,
+.pmd-chunk-cell.is-active {
+  border-color: #f8d048;
+  box-shadow: 0 0 8px rgba(248, 208, 72, 0.45);
+}
+
+.pmd-chunk-thumb {
+  width: 48px;
+  height: 48px;
+  display: block;
+}
+
+.pmd-chunk-idx {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  padding: 0 3px;
+  font-size: 0.56rem;
+  line-height: 1.15;
+  background: rgba(4, 8, 18, 0.82);
+  color: #f8d048;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Battlefield System Menu & Export Map JSON Modals */
+.pmd-battle-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 86;
+  background: rgba(4, 8, 18, 0.74);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.9rem 0.85rem 0.85rem;
+}
+
+.pmd-battle-system-dialog {
+  width: 100%;
+  max-width: 380px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1.1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pmd-battle-system-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+}
+
+.pmd-battle-export-dialog {
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Narrow Mobile Portrait (e.g., 390x844) — place HUD bar below corner buttons so nothing collides */
+@media (max-width: 720px) {
+  .pmd-viewport.is-battle-active {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .pmd-battle-hud-top {
+    top: 4.05rem;
+    left: 0.45rem;
+    right: 0.45rem;
+    transform: none;
+    max-width: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .pmd-battle-pill,
+  .pmd-battle-hud-btn {
+    min-height: 44px;
+    padding: 0.32rem 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .pmd-battle-phase-banner {
+    top: 7.1rem;
+    font-size: 0.8rem;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .pmd-battle-sandbox-drawer {
+    top: 3.95rem;
+    left: 0.45rem;
+    right: 0.45rem;
+    bottom: 0.45rem;
+    width: auto;
+    padding: 0.7rem;
+  }
+
+  .pmd-battle-info-strip {
+    left: 0.45rem;
+    right: 0.45rem;
+    bottom: 0.45rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.68rem;
+  }
+}
+
+/* Short Mobile Landscape (e.g., 844x390) — maximize vertical canvas area & zero clipping */
+@media (max-height: 500px) {
+  .pmd-viewport.is-battle-active {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .pmd-battle-hud-top {
+    top: 0.55rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: calc(100% - 240px);
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+  }
+
+  .pmd-battle-pill,
+  .pmd-battle-hud-btn {
+    min-height: 44px;
+    padding: 0.28rem 0.58rem;
+    font-size: 0.7rem;
+  }
+
+  .pmd-battle-phase-banner {
+    top: 3.55rem;
+    font-size: 0.78rem;
+    padding: 0.38rem 0.85rem;
+  }
+
+  .pmd-battle-sandbox-drawer {
+    top: 3.45rem;
+    right: 0.55rem;
+    left: auto;
+    bottom: 0.4rem;
+    width: min(460px, calc(100% - 1.1rem));
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .pmd-battle-chunk-palette {
+    max-height: 120px;
+  }
+
+  .pmd-battle-info-strip {
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.66rem;
+    -webkit-line-clamp: 1;
+  }
+
+  .pmd-battle-modal-backdrop {
+    padding: 3.35rem 0.65rem 0.45rem;
+  }
+
+  .pmd-battle-system-dialog {
+    max-width: 540px;
+    padding: 0.7rem 0.9rem;
+    gap: 0.45rem;
+  }
+
+  .pmd-battle-system-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .pmd-battle-export-dialog {
+    padding: 0.65rem 0.85rem;
+    gap: 0.4rem;
+  }
+
+  .pmd-battle-export-dialog .pmd-textarea {
+    height: 80px;
+    max-height: 92px;
+  }
+}

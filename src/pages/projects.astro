@@ -23,7 +23,7 @@ const projects: { title: string; description: string; tech: string[]; url: strin
     <main>
       {projects.length > 0 ? (
         projects.map((project) => (
-          <a class="project-card" href={project.url}>
+          <a class="project-card" href={project.url} data-astro-reload>
             <h2>{project.title}</h2>
             <p>{project.description}</p>
             <div class="tech-tags">

@@ -387,3 +387,61 @@ export interface SaveData {
     nodes: Record<string, OverworldNodeState>;
   };
 }
+
+
+// ============================================================================
+// 6. PMD Dungeon Terrain & Tactical Battlefield Grid Schemas (Step 5)
+// ============================================================================
+
+export const TERRAIN_TYPES = [
+  'floor',
+  'trees',
+  'stairs',
+  'water',
+  'lava',
+  'mountain',
+  'void',
+  'wonder_tile',
+  'wall',
+  'barrier',
+] as const;
+
+export type TerrainType = (typeof TERRAIN_TYPES)[number];
+
+export interface TerrainBonuses {
+  defBonus: number;
+  spdBonus: number;
+  avoidBonus: number;
+  healPercentPerTurn: number;
+  clearsDebuffs: boolean;
+  spawnsReinforcements: boolean;
+}
+
+export interface DungeonMapTileCell {
+  terrainType: TerrainType;
+  /** 3-digit PMD EoS tileset identifier (`"000"`..`"143"`) */
+  tilesetId: string;
+  /** 24x24 chunk index (`1..399`) inside the 16x25 `384x600` sheet */
+  chunkIndex: number;
+}
+
+export interface DungeonUnitSpawn {
+  x: number;
+  y: number;
+  speciesId: string;
+  level: number;
+  nickname?: string;
+  heldItemId?: string | null;
+}
+
+export interface DungeonMapDefinition {
+  id: string;
+  name: string;
+  bgmCue?: string;
+  width: number;
+  height: number;
+  /** Row-major `[y][x]` grid of dimensions `height` x `width` */
+  tiles: DungeonMapTileCell[][];
+  playerSpawns: DungeonUnitSpawn[];
+  enemySpawns: DungeonUnitSpawn[];
+}

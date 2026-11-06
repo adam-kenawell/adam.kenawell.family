@@ -32,7 +32,7 @@ import { PmdPortraitView, PmdSpriteActor } from './PmdSpriteCanvas';
 import { bindPointerTap } from './pointerControls';
 import { PROLOGUE_AWAKENING_TEST_SCRIPT } from './sampleDialogueScripts';
 
-export type DevToolsSubTab = 'audit' | 'sprites' | 'dialogue';
+export type DevToolsSubTab = 'audit' | 'sprites' | 'dialogue' | 'skirmish';
 
 const QUICK_LINE_PRESETS: ReadonlyArray<{ label: string; speciesId: string }> = [
   { label: 'Dratini Line', speciesId: 'dratini' },
@@ -48,6 +48,7 @@ export interface DevToolsHarnessOptions {
   saveManager: SaveStateManager;
   dialogueOverlay: DialogueOverlay;
   audioManager?: AudioManager;
+  onLaunchTestDungeon?: () => void;
   signal: AbortSignal;
 }
 
@@ -56,6 +57,7 @@ export class DevToolsHarness {
   private readonly saveManager: SaveStateManager;
   private readonly dialogueOverlay: DialogueOverlay;
   private readonly audioManager: AudioManager;
+  private readonly onLaunchTestDungeon?: () => void;
   private readonly signal: AbortSignal;
 
   private activeSubTab: DevToolsSubTab = 'audit';
@@ -81,6 +83,7 @@ export class DevToolsHarness {
     this.saveManager = options.saveManager;
     this.dialogueOverlay = options.dialogueOverlay;
     this.audioManager = options.audioManager ?? getAudioManager();
+    this.onLaunchTestDungeon = options.onLaunchTestDungeon;
     this.signal = options.signal;
 
     this.mountControls();
@@ -484,6 +487,19 @@ export class DevToolsHarness {
         bgmSelectEl.value = snap.currentTrack.id;
       }
     });
+
+    // --- TAB 4: TEST DUNGEON (SKIRMISH) LAUNCHER ---
+    const btnLaunchDungeon = this.modalEl.querySelector<HTMLButtonElement>(
+      '#devtools-launch-test-dungeon'
+    );
+    bindPointerTap(
+      btnLaunchDungeon,
+      () => {
+        this.audioManager.playSfx('select');
+        this.onLaunchTestDungeon?.();
+      },
+      { signal: this.signal }
+    );
 
     this.renderStageButtons();
   }

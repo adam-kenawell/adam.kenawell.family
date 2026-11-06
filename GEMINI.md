@@ -88,8 +88,8 @@ The LLM agent must implement *Mystery Emblem* in the following 10 sequential ste
     * `Flying` (1 Mov across Trees, Water, Lava, Mountains; 0 terrain bonuses; blocked by Void/Chasm and Walls).
     * `Levitate` (1 Mov across Void/Chasm, Lava, Water, Trees, Mountains, and low Barriers; 0 terrain bonuses except on Wonder Tiles and Stairs).
 * **Step 5 Verification Checklist:**
-  * [ ] Confirm Grounded, Flying, and Levitate units highlight the exact legal movement tiles across every PMD terrain type (especially verifying that only Levitate units can cross Void/Chasm tiles).
-  * [ ] Confirm click-and-drag and touch-drag pan the battle camera without accidentally selecting or moving units.
+  * [x] Confirm Grounded, Flying, and Levitate units highlight the exact legal movement tiles across every PMD terrain type (especially verifying that only Levitate units can cross Void/Chasm tiles).
+  * [x] Confirm click-and-drag and touch-drag pan the battle camera without accidentally selecting or moving units.
 
 ### Step 6: Pre-Battle Sequence (`PREP_SCENE`) & Loadout Manager
 
