@@ -432,7 +432,8 @@
 .pmd-battle-action-menu[hidden],
 .pmd-battle-sandbox-drawer[hidden],
 .pmd-battle-modal-backdrop[hidden],
-.pmd-battle-phase-banner[hidden] {
+.pmd-battle-phase-banner[hidden],
+.pmd-battle-scene [hidden] {
   display: none !important;
 }
 
@@ -868,5 +869,394 @@
   .pmd-battle-export-dialog .pmd-textarea {
     height: 80px;
     max-height: 92px;
+  }
+}
+
+
+/* ==========================================================================
+   Playable Dungeon Modals: Dungeon Start, Victory, Defeat & Combat Forecast
+   ========================================================================== */
+
+.pmd-battle-outcome-dialog {
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+}
+
+.pmd-battle-outcome-dialog.is-defeat-window {
+  border-color: #ff6478;
+  box-shadow:
+    inset 0 0 0 2px #140812,
+    inset 0 0 0 4px rgba(255, 100, 120, 0.55),
+    0 10px 28px rgba(0, 0, 0, 0.78);
+}
+
+.pmd-battle-scene .pmd-panel-title.is-danger-title {
+  color: #ff7888;
+}
+
+.pmd-battle-kicker {
+  display: inline-block;
+  padding: 0.16rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  background: rgba(72, 184, 232, 0.18);
+  border: 1px solid rgba(72, 184, 232, 0.55);
+  color: #90d8f8;
+}
+
+.pmd-battle-kicker.is-victory {
+  background: rgba(88, 232, 144, 0.18);
+  border-color: rgba(88, 232, 144, 0.65);
+  color: #78f8a8;
+}
+
+.pmd-battle-kicker.is-defeat {
+  background: rgba(255, 92, 108, 0.2);
+  border-color: rgba(255, 100, 120, 0.65);
+  color: #ff8c9a;
+}
+
+.pmd-battle-brief-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pmd-battle-brief-item {
+  background: rgba(6, 12, 24, 0.85);
+  border: 1px solid rgba(72, 184, 232, 0.4);
+  border-radius: 4px;
+  padding: 0.45rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pmd-battle-brief-label {
+  font-size: 0.64rem;
+  color: #90d8f8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pmd-battle-brief-val {
+  font-size: 0.76rem;
+  color: #f8f8f8;
+}
+
+.pmd-battle-brief-val.is-danger {
+  color: #ff8c9a;
+}
+
+.pmd-battle-outcome-actions {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.pmd-battle-outcome-actions .pmd-btn {
+  min-height: 46px;
+  min-width: 138px;
+}
+
+/* Fire Emblem Combat Forecast Modal */
+.pmd-battle-forecast-dialog {
+  width: 100%;
+  max-width: 660px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 0.9rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.58rem;
+}
+
+.pmd-forecast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.pmd-forecast-eff-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.24rem 0.58rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 4px;
+  background: rgba(24, 42, 72, 0.9);
+  border: 1px solid rgba(144, 216, 248, 0.55);
+  color: #e8f6ff;
+}
+
+.pmd-forecast-eff-badge.is-super {
+  background: rgba(24, 72, 48, 0.92);
+  border-color: #68f098;
+  color: #88ffae;
+}
+
+.pmd-forecast-eff-badge.is-resisted {
+  background: rgba(68, 44, 24, 0.92);
+  border-color: #f8b858;
+  color: #ffd088;
+}
+
+.pmd-forecast-selector-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.pmd-forecast-versus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.pmd-forecast-side {
+  border-radius: 5px;
+  padding: 0.6rem 0.68rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: rgba(8, 16, 34, 0.9);
+  border: 2px solid rgba(72, 184, 232, 0.65);
+}
+
+.pmd-forecast-side.is-attacker {
+  background: linear-gradient(180deg, rgba(16, 42, 82, 0.88) 0%, rgba(8, 18, 38, 0.94) 100%);
+  border-color: #48b8e8;
+}
+
+.pmd-forecast-side.is-defender {
+  background: linear-gradient(180deg, rgba(72, 20, 36, 0.88) 0%, rgba(28, 10, 20, 0.94) 100%);
+  border-color: #f06478;
+}
+
+.pmd-forecast-side.is-ally-heal {
+  background: linear-gradient(180deg, rgba(16, 68, 48, 0.88) 0%, rgba(8, 28, 22, 0.94) 100%);
+  border-color: #58e890;
+}
+
+.pmd-forecast-unit-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pmd-forecast-portrait-slot {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background: rgba(4, 8, 18, 0.92);
+  border: 2px solid rgba(248, 208, 72, 0.65);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pmd-forecast-portrait-slot canvas {
+  width: 40px !important;
+  height: 40px !important;
+  display: block;
+}
+
+.pmd-forecast-unit-id {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.pmd-forecast-unit-name {
+  font-size: 0.84rem;
+  color: #f8d048;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pmd-forecast-unit-meta {
+  font-size: 0.67rem;
+  color: #b8dcff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pmd-forecast-move-line {
+  font-size: 0.7rem;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pmd-forecast-hp-bar-track {
+  position: relative;
+  width: 100%;
+  height: 7px;
+  background: rgba(4, 8, 18, 0.95);
+  border: 1px solid rgba(144, 216, 248, 0.4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pmd-forecast-hp-bar-ghost {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(248, 208, 72, 0.42);
+}
+
+.pmd-forecast-hp-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #58e890;
+}
+
+.pmd-forecast-hp-bar-fill.is-enemy {
+  background: #ff6478;
+}
+
+.pmd-forecast-hp-bar-fill.is-heal {
+  background: #68f8a8;
+}
+
+.pmd-forecast-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.32rem;
+}
+
+.pmd-forecast-stat {
+  background: rgba(4, 8, 18, 0.78);
+  border: 1px solid rgba(144, 216, 248, 0.28);
+  border-radius: 3px;
+  padding: 0.25rem 0.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pmd-forecast-stat span {
+  font-size: 0.58rem;
+  color: #90d8f8;
+  letter-spacing: 0.04em;
+}
+
+.pmd-forecast-stat strong {
+  font-size: 0.74rem;
+  color: #f8f8f8;
+  white-space: nowrap;
+}
+
+.pmd-forecast-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pmd-forecast-actions .pmd-btn {
+  min-height: 46px;
+  min-width: 124px;
+}
+
+/* Mobile Portrait (`390x844`) Forecast & Outcome Layout */
+@media (max-width: 600px) {
+  .pmd-forecast-versus-grid {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .pmd-battle-forecast-dialog {
+    padding: 0.75rem 0.8rem;
+    gap: 0.45rem;
+  }
+
+  .pmd-forecast-actions {
+    justify-content: stretch;
+  }
+
+  .pmd-forecast-actions .pmd-btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pmd-battle-brief-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Short Mobile Landscape (`844x390`) Compact Zero-Clip Forecast & Outcome Layout */
+@media (max-height: 500px) {
+  .pmd-battle-outcome-dialog {
+    max-width: 560px;
+    padding: 0.62rem 0.9rem;
+    gap: 0.35rem;
+  }
+
+  .pmd-battle-outcome-actions .pmd-btn {
+    min-height: 44px;
+    padding: 0.3rem 0.75rem;
+  }
+
+  .pmd-battle-forecast-dialog {
+    max-width: 720px;
+    padding: 0.52rem 0.75rem;
+    gap: 0.34rem;
+  }
+
+  .pmd-forecast-versus-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .pmd-forecast-side {
+    padding: 0.38rem 0.5rem;
+    gap: 0.28rem;
+  }
+
+  .pmd-forecast-portrait-slot {
+    width: 36px;
+    height: 36px;
+  }
+
+  .pmd-forecast-portrait-slot canvas {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .pmd-forecast-stat {
+    padding: 0.16rem 0.22rem;
+  }
+
+  .pmd-forecast-stat strong {
+    font-size: 0.68rem;
+  }
+
+  .pmd-forecast-actions .pmd-btn {
+    min-height: 44px;
+    padding: 0.28rem 0.75rem;
   }
 }

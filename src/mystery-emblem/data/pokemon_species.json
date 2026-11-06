@@ -35,11 +35,11 @@
     "learnset": [
       {
         "level": 1,
-        "moveId": "tackle"
+        "moveId": "wrap"
       },
       {
-        "level": 3,
-        "moveId": "dragon_tail"
+        "level": 1,
+        "moveId": "dragon_breath"
       },
       {
         "level": 8,
@@ -124,11 +124,11 @@
     "learnset": [
       {
         "level": 1,
-        "moveId": "tackle"
+        "moveId": "wrap"
       },
       {
-        "level": 3,
-        "moveId": "dragon_tail"
+        "level": 1,
+        "moveId": "dragon_breath"
       },
       {
         "level": 8,
@@ -214,11 +214,11 @@
     "learnset": [
       {
         "level": 1,
-        "moveId": "tackle"
+        "moveId": "wrap"
       },
       {
-        "level": 3,
-        "moveId": "dragon_tail"
+        "level": 1,
+        "moveId": "dragon_breath"
       },
       {
         "level": 8,
@@ -2131,16 +2131,16 @@
         "moveId": "tackle"
       },
       {
-        "level": 3,
+        "level": 1,
+        "moveId": "razor_leaf"
+      },
+      {
+        "level": 5,
         "moveId": "vine_whip"
       },
       {
-        "level": 7,
+        "level": 9,
         "moveId": "acid_spray"
-      },
-      {
-        "level": 12,
-        "moveId": "razor_leaf"
       },
       {
         "level": 17,
@@ -2221,16 +2221,16 @@
         "moveId": "tackle"
       },
       {
-        "level": 3,
+        "level": 1,
+        "moveId": "razor_leaf"
+      },
+      {
+        "level": 5,
         "moveId": "vine_whip"
       },
       {
-        "level": 7,
+        "level": 9,
         "moveId": "acid_spray"
-      },
-      {
-        "level": 12,
-        "moveId": "razor_leaf"
       },
       {
         "level": 17,
@@ -2311,16 +2311,16 @@
         "moveId": "tackle"
       },
       {
-        "level": 3,
+        "level": 1,
+        "moveId": "razor_leaf"
+      },
+      {
+        "level": 5,
         "moveId": "vine_whip"
       },
       {
-        "level": 7,
+        "level": 9,
         "moveId": "acid_spray"
-      },
-      {
-        "level": 12,
-        "moveId": "razor_leaf"
       },
       {
         "level": 17,
@@ -8868,11 +8868,11 @@
     "learnset": [
       {
         "level": 1,
-        "moveId": "tackle"
+        "moveId": "soft_boiled"
       },
       {
         "level": 1,
-        "moveId": "heal_pulse"
+        "moveId": "pound"
       },
       {
         "level": 6,
@@ -8880,7 +8880,7 @@
       },
       {
         "level": 11,
-        "moveId": "soft_boiled"
+        "moveId": "heal_pulse"
       },
       {
         "level": 17,
@@ -8950,11 +8950,11 @@
     "learnset": [
       {
         "level": 1,
-        "moveId": "tackle"
+        "moveId": "soft_boiled"
       },
       {
         "level": 1,
-        "moveId": "heal_pulse"
+        "moveId": "pound"
       },
       {
         "level": 6,
@@ -8962,7 +8962,7 @@
       },
       {
         "level": 11,
-        "moveId": "soft_boiled"
+        "moveId": "heal_pulse"
       },
       {
         "level": 17,
@@ -9032,11 +9032,11 @@
     "learnset": [
       {
         "level": 1,
-        "moveId": "tackle"
+        "moveId": "soft_boiled"
       },
       {
         "level": 1,
-        "moveId": "heal_pulse"
+        "moveId": "pound"
       },
       {
         "level": 6,
@@ -9044,7 +9044,7 @@
       },
       {
         "level": 11,
-        "moveId": "soft_boiled"
+        "moveId": "heal_pulse"
       },
       {
         "level": 17,

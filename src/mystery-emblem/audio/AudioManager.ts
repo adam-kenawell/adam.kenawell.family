@@ -14,7 +14,19 @@ import { PMD_BGM_TRACKS, resolveBgmTrack, type PmdBgmTrack } from './audioTracks
 
 export const AUDIO_SETTINGS_STORAGE_KEY = 'mystery_emblem_audio_v1';
 
-export type PmdUiSfxId = 'select' | 'cancel' | 'dialogue_advance' | 'typewriter_blip';
+export type PmdUiSfxId =
+  | 'select'
+  | 'cancel'
+  | 'dialogue_advance'
+  | 'typewriter_blip'
+  | 'attack_hit'
+  | 'critical_hit'
+  | 'attack_miss'
+  | 'unit_ko'
+  | 'phase_change'
+  | 'victory_fanfare'
+  | 'game_over'
+  | 'heal';
 
 export interface AudioSettings {
   muted: boolean;
@@ -255,6 +267,36 @@ export class AudioManager {
         this.scheduleTone(ctx, 'sine', 784, 1046, now, 0.055, masterGain * 0.72);
       } else if (sfxId === 'typewriter_blip') {
         this.scheduleTone(ctx, 'triangle', 540, 560, now, 0.022, masterGain * 0.32);
+      } else if (sfxId === 'attack_hit') {
+        this.scheduleTone(ctx, 'square', 220, 95, now, 0.085, masterGain * 1.15);
+        this.scheduleTone(ctx, 'triangle', 420, 140, now, 0.06, masterGain * 0.9);
+      } else if (sfxId === 'critical_hit') {
+        this.scheduleTone(ctx, 'sawtooth', 880, 320, now, 0.075, masterGain * 1.1);
+        this.scheduleTone(ctx, 'square', 1175, 180, now + 0.045, 0.11, masterGain * 1.25);
+        this.scheduleTone(ctx, 'triangle', 523, 1046, now + 0.085, 0.12, masterGain * 0.95);
+      } else if (sfxId === 'attack_miss') {
+        this.scheduleTone(ctx, 'sine', 620, 290, now, 0.11, masterGain * 0.7);
+      } else if (sfxId === 'unit_ko') {
+        this.scheduleTone(ctx, 'triangle', 440, 330, now, 0.09, masterGain * 1.0);
+        this.scheduleTone(ctx, 'triangle', 330, 220, now + 0.08, 0.11, masterGain * 0.95);
+        this.scheduleTone(ctx, 'sawtooth', 220, 110, now + 0.17, 0.18, masterGain * 0.85);
+      } else if (sfxId === 'phase_change') {
+        this.scheduleTone(ctx, 'triangle', 523, 523, now, 0.06, masterGain * 0.85);
+        this.scheduleTone(ctx, 'triangle', 659, 659, now + 0.055, 0.06, masterGain * 0.9);
+        this.scheduleTone(ctx, 'triangle', 784, 784, now + 0.11, 0.11, masterGain * 0.95);
+      } else if (sfxId === 'victory_fanfare') {
+        this.scheduleTone(ctx, 'triangle', 523, 523, now, 0.09, masterGain);
+        this.scheduleTone(ctx, 'triangle', 659, 659, now + 0.09, 0.09, masterGain);
+        this.scheduleTone(ctx, 'triangle', 784, 784, now + 0.18, 0.09, masterGain);
+        this.scheduleTone(ctx, 'triangle', 1046, 1046, now + 0.27, 0.28, masterGain * 1.15);
+      } else if (sfxId === 'game_over') {
+        this.scheduleTone(ctx, 'triangle', 392, 370, now, 0.14, masterGain * 0.95);
+        this.scheduleTone(ctx, 'triangle', 349, 311, now + 0.14, 0.16, masterGain * 0.95);
+        this.scheduleTone(ctx, 'sawtooth', 294, 196, now + 0.3, 0.32, masterGain * 0.85);
+      } else if (sfxId === 'heal') {
+        this.scheduleTone(ctx, 'sine', 523, 659, now, 0.08, masterGain * 0.9);
+        this.scheduleTone(ctx, 'sine', 659, 880, now + 0.075, 0.09, masterGain * 0.95);
+        this.scheduleTone(ctx, 'triangle', 880, 1046, now + 0.155, 0.16, masterGain * 1.0);
       }
     } catch {
       // Safely ignore Web Audio scheduling edge cases in restricted headless contexts

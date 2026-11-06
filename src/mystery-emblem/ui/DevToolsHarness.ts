@@ -49,6 +49,7 @@ export interface DevToolsHarnessOptions {
   dialogueOverlay: DialogueOverlay;
   audioManager?: AudioManager;
   onLaunchTestDungeon?: () => void;
+  onLaunchBattle?: () => void;
   signal: AbortSignal;
 }
 
@@ -58,6 +59,7 @@ export class DevToolsHarness {
   private readonly dialogueOverlay: DialogueOverlay;
   private readonly audioManager: AudioManager;
   private readonly onLaunchTestDungeon?: () => void;
+  private readonly onLaunchBattle?: () => void;
   private readonly signal: AbortSignal;
 
   private activeSubTab: DevToolsSubTab = 'audit';
@@ -84,6 +86,7 @@ export class DevToolsHarness {
     this.dialogueOverlay = options.dialogueOverlay;
     this.audioManager = options.audioManager ?? getAudioManager();
     this.onLaunchTestDungeon = options.onLaunchTestDungeon;
+    this.onLaunchBattle = options.onLaunchBattle;
     this.signal = options.signal;
 
     this.mountControls();
@@ -489,6 +492,18 @@ export class DevToolsHarness {
     });
 
     // --- TAB 4: TEST DUNGEON (SKIRMISH) LAUNCHER ---
+    const btnLaunchBattle = this.modalEl.querySelector<HTMLButtonElement>(
+      '#devtools-launch-battle'
+    );
+    bindPointerTap(
+      btnLaunchBattle,
+      () => {
+        this.audioManager.playSfx('select');
+        this.onLaunchBattle?.();
+      },
+      { signal: this.signal }
+    );
+
     const btnLaunchDungeon = this.modalEl.querySelector<HTMLButtonElement>(
       '#devtools-launch-test-dungeon'
     );

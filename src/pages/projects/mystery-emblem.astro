@@ -106,6 +106,24 @@ const canonicalUrl = Astro.url.href;
                 New Game
               </button>
             </div>
+            <div id="squad-dungeon-banner" class="pmd-subcard pmd-dungeon-cta-card" hidden>
+              <div class="pmd-devtools-row-between">
+                <div>
+                  <h3 class="pmd-subcard-title">Drenched Bluff — Vanguard Skirmish</h3>
+                  <p class="pmd-subcard-text">
+                    Deploy your party into a tactical dungeon battle and rout all enemy forces!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  id="btn-enter-dungeon"
+                  class="pmd-btn pmd-btn-primary"
+                  data-testid="btn-enter-dungeon"
+                >
+                  Enter Dungeon
+                </button>
+              </div>
+            </div>
             <div id="squad-cards-grid" class="pmd-squad-grid"></div>
           </div>
 
@@ -422,6 +440,22 @@ const canonicalUrl = Astro.url.href;
           <!-- DEV TAB 4: TEST DUNGEON / SKIRMISH BATTLEFIELD SANDBOX (Step 5) -->
           <div class="pmd-tab-panel" data-devtab-panel="skirmish" hidden>
             <div class="pmd-subcard">
+              <h3 class="pmd-subcard-title">Playable Dungeon Battle — Drenched Bluff</h3>
+              <p class="pmd-subcard-text">
+                Full Turn-Based Player &amp; Enemy Phase dungeon battle flow with <strong>DUNGEON START</strong>, Fire Emblem <strong>Combat Forecast</strong>, 8-directional attack/hurt animations, active pursue-and-attack Enemy AI, <strong>VICTORY!</strong>, and Dragon Lord <strong>DEFEAT / Restart Match</strong>.
+              </p>
+              <div class="pmd-inline-btns">
+                <button
+                  type="button"
+                  id="devtools-launch-battle"
+                  class="pmd-btn pmd-btn-primary"
+                  data-testid="devtools-launch-battle"
+                >
+                  Play Dungeon Battle
+                </button>
+              </div>
+            </div>
+            <div class="pmd-subcard">
               <h3 class="pmd-subcard-title">Test Dungeon (Skirmish) — Convergence Ruins</h3>
               <p class="pmd-subcard-text">
                 Full-viewport tactical grid rendered from flat <em>Explorers of Sky</em> 24×24px tilesets at crisp 2× pixel scale across all 10 PMD terrain types (<em>Floor</em>, <em>Trees</em>, <em>Stairs</em>, <em>Water</em>, <em>Lava</em>, <em>Mountain</em>, <em>Void / Chasm</em>, <em>Wonder Tile</em>, <em>Low Barrier</em>, and <em>Wall</em>).
@@ -517,6 +551,14 @@ const canonicalUrl = Astro.url.href;
     getTerrainBonuses,
     getTerrainMoveCost,
   } from '../../mystery-emblem/engine/terrainAndPathfinding';
+  import {
+    computeCombatForecast,
+    computeHealForecast,
+    getTypeEffectiveness,
+    resolveCombatExchange,
+  } from '../../mystery-emblem/engine/combatEngine';
+  import { chooseEnemyAction } from '../../mystery-emblem/engine/enemyAi';
+  import { BattleScene } from '../../mystery-emblem/scenes/BattleScene';
   import { TestDungeonScene } from '../../mystery-emblem/scenes/TestDungeonScene';
   import {
     InMemoryCloudSyncAdapter,
@@ -553,6 +595,7 @@ const canonicalUrl = Astro.url.href;
   let currentManager: SaveStateManager | null = null;
   let currentDialogueOverlay: DialogueOverlay | null = null;
   let currentDevToolsHarness: DevToolsHarness | null = null;
+  let currentBattleScene: BattleScene | null = null;
   let currentTestDungeonScene: TestDungeonScene | null = null;
   let continueLordActor: PmdSpriteActor | null = null;
   let continueLordSpeciesId: string | null = null;
@@ -572,6 +615,8 @@ const canonicalUrl = Astro.url.href;
     continueLordActor = null;
     continueLordSpeciesId = null;
     destroyAllPmdSpriteActors();
+    currentBattleScene?.destroy();
+    currentBattleScene = null;
     currentTestDungeonScene?.destroy();
     currentTestDungeonScene = null;
     currentDevToolsHarness?.destroy();
@@ -612,6 +657,8 @@ const canonicalUrl = Astro.url.href;
     const btnCloudSync = document.getElementById('btn-cloud-sync');
     const btnEmptyCreateSave = document.getElementById('btn-empty-create-save');
 
+    const squadDungeonBanner = document.getElementById('squad-dungeon-banner');
+    const btnEnterDungeon = document.getElementById('btn-enter-dungeon');
     const squadEmptyState = document.getElementById('squad-empty-state');
     const squadCardsGrid = document.getElementById('squad-cards-grid');
 
@@ -644,9 +691,15 @@ const canonicalUrl = Astro.url.href;
 
     let activeTab: 'squad' | 'sync' = 'squad';
     let editingUnitId: string | null = null;
+    let battleScene: BattleScene | null = null;
+    let battleReturnTarget: 'campaign' | 'devtools' | 'title' = 'campaign';
     let testDungeonScene: TestDungeonScene | null = null;
 
     const backStack = new BackStackController(cornerMenuBtn, () => {
+      if (battleScene?.isOpen()) {
+        battleScene.handleMenuOrBack();
+        return;
+      }
       if (testDungeonScene?.isOpen()) {
         testDungeonScene.handleMenuOrBack();
         return;
@@ -662,6 +715,17 @@ const canonicalUrl = Astro.url.href;
       : null;
     currentDialogueOverlay = dialogueOverlay;
 
+    async function openBattleScene(source: 'campaign' | 'devtools' = 'campaign'): Promise<void> {
+      if (!battleScene) return;
+      if (source === 'devtools' && !isAdminSignedIn()) return;
+      battleReturnTarget = source;
+      if (titleScreen) titleScreen.hidden = true;
+      if (campaignMenu) campaignMenu.hidden = true;
+      if (devToolsModal) devToolsModal.hidden = true;
+      await battleScene.open();
+      backStack.syncButtonLabel();
+    }
+
     async function openTestDungeon(): Promise<void> {
       if (!testDungeonScene || !isAdminSignedIn()) return;
       if (titleScreen) titleScreen.hidden = true;
@@ -672,6 +736,27 @@ const canonicalUrl = Astro.url.href;
     }
 
     if (viewportEl) {
+      battleScene = new BattleScene({
+        viewportEl,
+        saveManager: manager,
+        audioManager,
+        onExit: () => {
+          if (battleReturnTarget === 'devtools' && isAdminSignedIn() && devToolsModal) {
+            if (titleScreen) titleScreen.hidden = true;
+            if (campaignMenu) campaignMenu.hidden = true;
+            devToolsModal.hidden = false;
+            currentDevToolsHarness?.onSaveChanged();
+            backStack.syncButtonLabel();
+          } else if (manager.getSave()) {
+            openCampaignMenu('squad');
+          } else {
+            showTitleScreen();
+          }
+        },
+        onLayerStateChanged: () => backStack.syncButtonLabel(),
+      });
+      currentBattleScene = battleScene;
+
       testDungeonScene = new TestDungeonScene({
         viewportEl,
         audioManager,
@@ -697,6 +782,9 @@ const canonicalUrl = Astro.url.href;
         saveManager: manager,
         dialogueOverlay,
         audioManager,
+        onLaunchBattle: () => {
+          void openBattleScene('devtools');
+        },
         onLaunchTestDungeon: () => {
           void openTestDungeon();
         },
@@ -712,7 +800,14 @@ const canonicalUrl = Astro.url.href;
       audioManager,
       dialogueOverlay,
       devToolsHarness: currentDevToolsHarness,
+      battleScene,
+      openBattleScene,
       testDungeonScene,
+      computeCombatForecast,
+      computeHealForecast,
+      resolveCombatExchange,
+      getTypeEffectiveness,
+      chooseEnemyAction,
       openTestDungeon,
       loadSpeciesSpriteBundle,
       loadSpeciesPortrait,
@@ -758,6 +853,15 @@ const canonicalUrl = Astro.url.href;
 
     function toggleDevTools(): void {
       if (!isAdminSignedIn() || !devToolsModal) return;
+      if (battleScene?.isOpen()) {
+        battleReturnTarget = 'devtools';
+        battleScene.close();
+        return;
+      }
+      if (battleScene?.isOpen()) {
+        battleScene.handleMenuOrBack();
+        return;
+      }
       if (testDungeonScene?.isOpen()) {
         testDungeonScene.close();
         return;
@@ -821,6 +925,11 @@ const canonicalUrl = Astro.url.href;
       onBack: () => {
         if (jsonIoBox) jsonIoBox.hidden = true;
       },
+    });
+    backStack.registerLayer({
+      id: 'battle-scene-sublayer',
+      isActive: () => Boolean(battleScene?.isOpen() && battleScene.hasActiveSubLayer()),
+      onBack: () => battleScene?.handleMenuOrBack(),
     });
     backStack.registerLayer({
       id: 'test-dungeon-sublayer',
@@ -889,9 +998,11 @@ const canonicalUrl = Astro.url.href;
 
       if (!save || save.roster.length === 0) {
         squadEmptyState.hidden = false;
+        if (squadDungeonBanner) squadDungeonBanner.hidden = true;
         return;
       }
       squadEmptyState.hidden = true;
+      if (squadDungeonBanner) squadDungeonBanner.hidden = false;
 
       save.roster.forEach((unit, slotIdx) => {
         const sp = getSpeciesById(unit.speciesId);
@@ -1149,6 +1260,7 @@ const canonicalUrl = Astro.url.href;
     bindPointerTap(btnContinue, () => openCampaignMenu('squad'), { signal });
     bindPointerTap(btnNewGame, () => startNewGame(), { signal });
     bindPointerTap(btnEmptyCreateSave, () => startNewGame(), { signal });
+    bindPointerTap(btnEnterDungeon, () => void openBattleScene('campaign'), { signal });
 
     // OAuth popup buttons use pointer `click` activation so iOS Safari & Android Chrome permit `signInWithPopup`
     btnCloudSync?.addEventListener(
@@ -1486,6 +1598,7 @@ const canonicalUrl = Astro.url.href;
   .pmd-errors-box[hidden],
   .pmd-status[hidden],
   .pmd-continue-sprite[hidden],
+  .pmd-subcard[hidden],
   .pmd-btn[hidden] {
     display: none !important;
   }
