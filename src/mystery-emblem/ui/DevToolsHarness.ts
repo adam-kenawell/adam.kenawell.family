@@ -18,6 +18,10 @@ import {
   type PmdSpriteAction,
 } from '../assets/pmdAssetLoader';
 import {
+  getAudioManager,
+  type AudioManager,
+} from '../audio/AudioManager';
+import {
   POKEMON_SPECIES_LIST,
   getSpeciesById,
   getSpeciesByLineId,
@@ -43,6 +47,7 @@ export interface DevToolsHarnessOptions {
   modalEl: HTMLElement;
   saveManager: SaveStateManager;
   dialogueOverlay: DialogueOverlay;
+  audioManager?: AudioManager;
   signal: AbortSignal;
 }
 
@@ -50,6 +55,7 @@ export class DevToolsHarness {
   private readonly modalEl: HTMLElement;
   private readonly saveManager: SaveStateManager;
   private readonly dialogueOverlay: DialogueOverlay;
+  private readonly audioManager: AudioManager;
   private readonly signal: AbortSignal;
 
   private activeSubTab: DevToolsSubTab = 'audit';
@@ -62,6 +68,7 @@ export class DevToolsHarness {
   private previewSpriteActor: PmdSpriteActor | null = null;
   private readonly portraitViews = new Map<PmdPortraitEmotion, PmdPortraitView>();
   private readonly portraitMetaEls = new Map<PmdPortraitEmotion, HTMLElement>();
+  private unsubscribeAudio: (() => void) | null = null;
 
   private speciesSelectEl: HTMLSelectElement | null = null;
   private stageButtonsRow: HTMLElement | null = null;
@@ -73,6 +80,7 @@ export class DevToolsHarness {
     this.modalEl = options.modalEl;
     this.saveManager = options.saveManager;
     this.dialogueOverlay = options.dialogueOverlay;
+    this.audioManager = options.audioManager ?? getAudioManager();
     this.signal = options.signal;
 
     this.mountControls();
@@ -81,6 +89,10 @@ export class DevToolsHarness {
   public destroy(): void {
     this.previewSpriteActor?.destroy();
     this.previewSpriteActor = null;
+    if (this.unsubscribeAudio) {
+      this.unsubscribeAudio();
+      this.unsubscribeAudio = null;
+    }
     this.portraitViews.clear();
     this.portraitMetaEls.clear();
   }
@@ -356,6 +368,122 @@ export class DevToolsHarness {
       },
       { signal: this.signal }
     );
+
+    // --- AUDIO ENGINE & JUKEBOX HARNESS ---
+    const bgmSelectEl = this.modalEl.querySelector<HTMLSelectElement>('#devtools-bgm-select');
+    const audioStatusEl = this.modalEl.querySelector<HTMLElement>('#devtools-audio-status');
+    const btnBgmPlay = this.modalEl.querySelector<HTMLButtonElement>('#devtools-bgm-play');
+    const btnBgmStop = this.modalEl.querySelector<HTMLButtonElement>('#devtools-bgm-stop');
+    const btnAudioMute = this.modalEl.querySelector<HTMLButtonElement>('#devtools-audio-mute');
+    const btnSfxSelect = this.modalEl.querySelector<HTMLButtonElement>('#devtools-sfx-select');
+    const btnSfxCancel = this.modalEl.querySelector<HTMLButtonElement>('#devtools-sfx-cancel');
+    const btnSfxAdvance = this.modalEl.querySelector<HTMLButtonElement>('#devtools-sfx-advance');
+    const bgmVolInput = this.modalEl.querySelector<HTMLInputElement>('#devtools-bgm-volume');
+    const sfxVolInput = this.modalEl.querySelector<HTMLInputElement>('#devtools-sfx-volume');
+
+    if (bgmSelectEl) {
+      bgmSelectEl.innerHTML = '';
+      for (const track of this.audioManager.getAvailableTracks()) {
+        const opt = document.createElement('option');
+        opt.value = track.id;
+        opt.textContent = track.trackNumber
+          ? `#${track.trackNumber} · ${track.title}${track.loop ? '' : ' (Fanfare)'}`
+          : track.title;
+        bgmSelectEl.appendChild(opt);
+      }
+      const curId = this.audioManager.getCurrentTrackId();
+      if (curId) bgmSelectEl.value = curId;
+    }
+
+    bindPointerTap(
+      btnBgmPlay,
+      () => {
+        const chosen = bgmSelectEl?.value;
+        if (chosen) {
+          this.audioManager.playSfx('select');
+          this.audioManager.playBgm(chosen, { fadeMs: 250, restart: true });
+        }
+      },
+      { signal: this.signal }
+    );
+
+    bindPointerTap(
+      btnBgmStop,
+      () => {
+        this.audioManager.playSfx('cancel');
+        this.audioManager.stopBgm({ fadeMs: 250 });
+      },
+      { signal: this.signal }
+    );
+
+    bindPointerTap(
+      btnAudioMute,
+      () => {
+        const nowMuted = this.audioManager.toggleMute();
+        if (!nowMuted) {
+          this.audioManager.playSfx('select');
+        }
+      },
+      { signal: this.signal }
+    );
+
+    bindPointerTap(btnSfxSelect, () => this.audioManager.playSfx('select'), { signal: this.signal });
+    bindPointerTap(btnSfxCancel, () => this.audioManager.playSfx('cancel'), { signal: this.signal });
+    bindPointerTap(btnSfxAdvance, () => this.audioManager.playSfx('dialogue_advance'), {
+      signal: this.signal,
+    });
+
+    bgmVolInput?.addEventListener(
+      'input',
+      () => {
+        this.audioManager.setBgmVolume(Number(bgmVolInput.value) / 100);
+      },
+      { signal: this.signal }
+    );
+
+    sfxVolInput?.addEventListener(
+      'input',
+      () => {
+        this.audioManager.setSfxVolume(Number(sfxVolInput.value) / 100);
+      },
+      { signal: this.signal }
+    );
+
+    this.unsubscribeAudio = this.audioManager.subscribe((snap) => {
+      if (audioStatusEl) {
+        const trackLabel = snap.currentTrack
+          ? `#${snap.currentTrack.trackNumber ?? snap.currentTrack.id} · ${snap.currentTrack.title}`
+          : 'None';
+        const stateLabel = snap.settings.muted
+          ? 'Muted'
+          : snap.isPlaying
+            ? 'Playing'
+            : snap.awaitingUserUnlock
+              ? 'Armed (Tap to unlock)'
+              : snap.currentTrack
+                ? 'Paused'
+                : 'Stopped';
+        audioStatusEl.textContent = [
+          `Tracks in assets/audio: ${snap.discoveredTrackCount}`,
+          `Now Playing: ${trackLabel}`,
+          `State: ${stateLabel}`,
+          `BGM: ${Math.round(snap.settings.bgmVolume * 100)}% · SFX: ${Math.round(snap.settings.sfxVolume * 100)}%`,
+        ].join(' · ');
+      }
+      if (btnAudioMute) {
+        btnAudioMute.textContent = snap.settings.muted ? 'Unmute Audio' : 'Mute Audio';
+        btnAudioMute.classList.toggle('is-active', snap.settings.muted);
+      }
+      if (bgmVolInput && document.activeElement !== bgmVolInput) {
+        bgmVolInput.value = String(Math.round(snap.settings.bgmVolume * 100));
+      }
+      if (sfxVolInput && document.activeElement !== sfxVolInput) {
+        sfxVolInput.value = String(Math.round(snap.settings.sfxVolume * 100));
+      }
+      if (bgmSelectEl && snap.currentTrack && document.activeElement !== bgmSelectEl) {
+        bgmSelectEl.value = snap.currentTrack.id;
+      }
+    });
 
     this.renderStageButtons();
   }

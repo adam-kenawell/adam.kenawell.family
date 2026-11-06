@@ -1,15 +1,21 @@
 /**
- * Portrait Dialogue Engine (`DIALOGUE_OVERLAY`) — Step 2
+ * Portrait Dialogue Engine (`DIALOGUE_OVERLAY`) — Step 2 + Audio Cues
  *
  * Authentic Pokémon Mystery Dungeon: Explorers of Sky cutscene & conversation engine:
  * - Left & Right double-bordered character portrait slots (`image-rendering: pixelated`)
  * - Dynamic custom nickname + species name resolution from `SaveStateManager`
  * - Per-line facial expression swapping across all 8 PMD emotions
+ * - Per-script & per-line PMD BGM crossfading + subtle UI/typewriter chimes via `AudioManager`
  * - Automatic live portrait & species-name updates when a unit's evolution stage changes
  * - 100% Unified Pointer Event driven (click/tap to reveal/advance, Skip & Back controls; zero keyboard listeners)
  */
 
 import { type PmdPortraitEmotion } from '../assets/pmdAssetLoader';
+import {
+  getAudioManager,
+  type AudioManager,
+  type PmdUiSfxId,
+} from '../audio/AudioManager';
 import { getSpeciesById } from '../data/index';
 import type { SaveStateManager } from '../state/SaveStateManager';
 import type { OwnedPokemonInstance, SaveData } from '../types/schemas';
@@ -35,11 +41,19 @@ export interface DialogueLine {
   text: string;
   /** If true, hides the opposite portrait slot on this line instead of keeping the listener visible */
   clearOppositePortrait?: boolean;
+  /** Optional BGM track ID or alias to crossfade to on this line (`null` = fade to silence) */
+  bgm?: string | null;
+  /** Optional UI/scene SFX cue triggered when this line begins */
+  sfx?: PmdUiSfxId;
 }
 
 export interface DialogueScript {
   id: string;
   title?: string;
+  /** Optional default BGM track ID or alias when the script opens */
+  bgm?: string | null;
+  /** Defaults to `true`: restores whatever BGM was playing prior to opening this script */
+  restorePreviousBgmOnClose?: boolean;
   lines: DialogueLine[];
 }
 
@@ -75,17 +89,22 @@ export class DialogueOverlay {
   private readonly boxEl: HTMLElement;
   private readonly nicknameEl: HTMLElement;
   private readonly speciesBadgeEl: HTMLElement;
+  private readonly bgmBadgeEl: HTMLElement;
   private readonly progressEl: HTMLElement;
   private readonly skipBtn: HTMLButtonElement;
   private readonly textEl: HTMLElement;
   private readonly advanceBtn: HTMLButtonElement;
 
-  private saveManager: SaveStateManager;
+  private readonly saveManager: SaveStateManager;
+  private readonly audioManager: AudioManager;
   private unsubscribeSave: (() => void) | null = null;
+  private unsubscribeAudio: (() => void) | null = null;
   private readonly uiAbort = new AbortController();
 
   private activeScript: DialogueScript | null = null;
   private currentLineIndex = 0;
+  private savedPreCutsceneBgmId: string | null = null;
+  private cutsceneChangedBgm = false;
   private activeSides: Record<DialogueSide, SideSlotState | null> = {
     left: null,
     right: null,
@@ -101,9 +120,10 @@ export class DialogueOverlay {
   constructor(
     mountParent: HTMLElement,
     saveManager: SaveStateManager,
-    options?: { onStateChange?: () => void }
+    options?: { onStateChange?: () => void; audioManager?: AudioManager }
   ) {
     this.saveManager = saveManager;
+    this.audioManager = options?.audioManager ?? getAudioManager();
     this.onStateChange = options?.onStateChange;
 
     this.rootEl = document.createElement('div');
@@ -125,32 +145,26 @@ export class DialogueOverlay {
       testId: 'dialogue-portrait-left',
     });
     this.leftSlotEl.hidden = true;
-    this.leftPortrait = new PmdPortraitView({
-      pixelScale: 2,
-      testId: 'dialogue-portrait-left-canvas',
-    });
+    this.leftPortrait = new PmdPortraitView({ testId: 'dialogue-portrait-left-canvas' });
     this.leftEmotionEl = document.createElement('span');
     this.leftEmotionEl.className = 'pmd-dialogue-emotion-pill';
     this.leftEmotionEl.dataset.testid = 'dialogue-emotion-left';
     this.leftSlotEl.append(this.leftPortrait.canvas, this.leftEmotionEl);
 
-    // Right Portrait Frame
+    // Right Portrait Frame (horizontally mirrored inward toward center)
     this.rightSlotEl = createPmdWindow({
       variant: 'compact',
       className: 'pmd-dialogue-portrait-slot pmd-dialogue-portrait-slot--right',
       testId: 'dialogue-portrait-right',
     });
     this.rightSlotEl.hidden = true;
-    this.rightPortrait = new PmdPortraitView({
-      pixelScale: 2,
-      testId: 'dialogue-portrait-right-canvas',
-    });
+    this.rightPortrait = new PmdPortraitView({ testId: 'dialogue-portrait-right-canvas' });
     this.rightEmotionEl = document.createElement('span');
     this.rightEmotionEl.className = 'pmd-dialogue-emotion-pill';
     this.rightEmotionEl.dataset.testid = 'dialogue-emotion-right';
     this.rightSlotEl.append(this.rightPortrait.canvas, this.rightEmotionEl);
 
-    // Main Bottom PMD Dialogue Box
+    // Main PMD Dialogue Window
     this.boxEl = createPmdWindow({
       className: 'pmd-dialogue-box',
       testId: 'dialogue-box',
@@ -162,7 +176,7 @@ export class DialogueOverlay {
     const speakerGroup = document.createElement('div');
     speakerGroup.className = 'pmd-dialogue-speaker-group';
 
-    this.nicknameEl = document.createElement('strong');
+    this.nicknameEl = document.createElement('span');
     this.nicknameEl.className = 'pmd-dialogue-nickname';
     this.nicknameEl.dataset.testid = 'dialogue-speaker-nickname';
 
@@ -175,6 +189,11 @@ export class DialogueOverlay {
     const controlsGroup = document.createElement('div');
     controlsGroup.className = 'pmd-dialogue-controls';
 
+    this.bgmBadgeEl = document.createElement('span');
+    this.bgmBadgeEl.className = 'pmd-dialogue-bgm-badge';
+    this.bgmBadgeEl.dataset.testid = 'dialogue-bgm-badge';
+    this.bgmBadgeEl.hidden = true;
+
     this.progressEl = document.createElement('span');
     this.progressEl.className = 'pmd-dialogue-progress';
     this.progressEl.dataset.testid = 'dialogue-progress';
@@ -184,11 +203,14 @@ export class DialogueOverlay {
       className: 'pmd-dialogue-skip-btn',
       testId: 'dialogue-skip-btn',
       ariaLabel: 'Skip dialogue',
-      onTap: () => this.close('skipped'),
+      onTap: () => {
+        this.audioManager.playSfx('cancel');
+        this.close('skipped');
+      },
       tapOptions: { signal: this.uiAbort.signal, stopPropagation: true },
     });
 
-    controlsGroup.append(this.progressEl, this.skipBtn);
+    controlsGroup.append(this.bgmBadgeEl, this.progressEl, this.skipBtn);
     headerEl.append(speakerGroup, controlsGroup);
 
     const bodyEl = document.createElement('div');
@@ -242,14 +264,31 @@ export class DialogueOverlay {
     );
 
     // PC Right-Click or Mobile Long-Press on overlay closes/cancels back cleanly
-    bindBackGestureSurface(this.rootEl, () => this.close('cancelled'), {
-      signal: this.uiAbort.signal,
-    });
+    bindBackGestureSurface(
+      this.rootEl,
+      () => {
+        this.audioManager.playSfx('cancel');
+        this.close('cancelled');
+      },
+      { signal: this.uiAbort.signal }
+    );
 
     // Reactively stay in sync whenever SaveStateManager updates nicknames or evolution stages!
     this.unsubscribeSave = this.saveManager.subscribe(() => {
       if (this.isOpen()) {
         void this.renderCurrentLine({ preserveTypewriterProgress: true });
+      }
+    });
+
+    this.unsubscribeAudio = this.audioManager.subscribe((snap) => {
+      if (snap.currentTrack && !snap.settings.muted) {
+        this.bgmBadgeEl.textContent = `♪ ${snap.currentTrack.title}`;
+        this.bgmBadgeEl.dataset.trackId = snap.currentTrack.id;
+        this.bgmBadgeEl.hidden = false;
+      } else {
+        this.bgmBadgeEl.textContent = '';
+        this.bgmBadgeEl.dataset.trackId = '';
+        this.bgmBadgeEl.hidden = true;
       }
     });
   }
@@ -286,6 +325,9 @@ export class DialogueOverlay {
     this.typewriterMsPerChar =
       options?.typewriterMsPerChar ?? (prefersReducedMotion ? 0 : 10);
 
+    this.savedPreCutsceneBgmId = this.audioManager.getCurrentTrackId();
+    this.cutsceneChangedBgm = false;
+
     this.activeScript = script;
     this.currentLineIndex = 0;
     this.activeSides = { left: null, right: null };
@@ -293,6 +335,11 @@ export class DialogueOverlay {
     this.rightSlotEl.hidden = true;
     this.rootEl.hidden = false;
     this.onStateChange?.();
+
+    if (script.bgm !== undefined && script.lines[0]?.bgm === undefined) {
+      this.cutsceneChangedBgm = true;
+      this.audioManager.playBgm(script.bgm, { fadeMs: 320 });
+    }
 
     await this.renderCurrentLine({ preserveTypewriterProgress: false });
 
@@ -302,11 +349,27 @@ export class DialogueOverlay {
   }
 
   public close(reason: DialogueFinishReason = 'cancelled'): void {
+    const closingScript = this.activeScript;
+    const shouldRestoreBgm =
+      closingScript !== null &&
+      this.cutsceneChangedBgm &&
+      closingScript.restorePreviousBgmOnClose !== false;
+    const restoreId = this.savedPreCutsceneBgmId;
+
     this.clearTypewriter();
     this.activeScript = null;
+    this.cutsceneChangedBgm = false;
     this.activeSides = { left: null, right: null };
     this.rootEl.hidden = true;
     this.onStateChange?.();
+
+    if (shouldRestoreBgm) {
+      if (restoreId) {
+        this.audioManager.playBgm(restoreId, { fadeMs: 320 });
+      } else {
+        this.audioManager.stopBgm({ fadeMs: 320 });
+      }
+    }
 
     if (this.finishResolver) {
       const resolve = this.finishResolver;
@@ -321,6 +384,10 @@ export class DialogueOverlay {
     if (this.unsubscribeSave) {
       this.unsubscribeSave();
       this.unsubscribeSave = null;
+    }
+    if (this.unsubscribeAudio) {
+      this.unsubscribeAudio();
+      this.unsubscribeAudio = null;
     }
     this.rootEl.remove();
   }
@@ -337,7 +404,7 @@ export class DialogueOverlay {
       if (speaker.kind === 'partner') {
         const unit =
           save?.roster.find((u) => u.instanceId === save.campaign.partnerInstanceId) ??
-          save?.roster[1];
+          save?.roster.find((_, idx) => idx === 1);
         return { unit, fallbackSpeciesId: speaker.fallbackSpeciesId ?? 'bulbasaur' };
       }
       if (speaker.kind === 'healer') {
@@ -422,6 +489,8 @@ export class DialogueOverlay {
       return;
     }
 
+    this.audioManager.playSfx('dialogue_advance');
+
     const nextIdx = this.currentLineIndex + 1;
     if (nextIdx >= this.activeScript.lines.length) {
       this.close('completed');
@@ -450,6 +519,16 @@ export class DialogueOverlay {
     if (!this.activeScript) return;
     const line = this.activeScript.lines[this.currentLineIndex];
     if (!line) return;
+
+    if (!opts.preserveTypewriterProgress) {
+      if (line.bgm !== undefined) {
+        this.cutsceneChangedBgm = true;
+        this.audioManager.playBgm(line.bgm, { fadeMs: 320 });
+      }
+      if (line.sfx) {
+        this.audioManager.playSfx(line.sfx);
+      }
+    }
 
     const save = this.saveManager.getSave();
     const oppositeSide: DialogueSide = line.side === 'left' ? 'right' : 'left';
@@ -483,6 +562,7 @@ export class DialogueOverlay {
         this.typewriterTimer = window.setInterval(() => {
           this.revealedChars = Math.min(this.fullLineText.length, this.revealedChars + 2);
           this.textEl.textContent = this.fullLineText.slice(0, this.revealedChars);
+          this.audioManager.playSfx('typewriter_blip');
           if (this.revealedChars >= this.fullLineText.length) {
             this.clearTypewriter();
           }

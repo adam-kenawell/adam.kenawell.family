@@ -116,6 +116,43 @@ import '../../mystery-emblem/ui/pmdWindow.css';
                   </button>
                 </div>
               </div>
+
+              <div class="pmd-subcard">
+                <div class="pmd-devtools-row-between">
+                  <h3 class="pmd-subcard-title">Audio</h3>
+                  <button
+                    type="button"
+                    id="btn-player-mute-toggle"
+                    class="pmd-btn pmd-chip-btn"
+                    data-testid="btn-player-mute-toggle"
+                  >
+                    Mute Audio
+                  </button>
+                </div>
+                <p id="player-audio-status" class="pmd-subcard-text">Music: 65% · SFX: 70%</p>
+                <label class="pmd-slider-row" for="player-bgm-volume">
+                  <span>Music</span>
+                  <input
+                    id="player-bgm-volume"
+                    class="pmd-range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="65"
+                  />
+                </label>
+                <label class="pmd-slider-row" for="player-sfx-volume">
+                  <span>SFX</span>
+                  <input
+                    id="player-sfx-volume"
+                    class="pmd-range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="70"
+                  />
+                </label>
+              </div>
             </div>
 
             <div id="json-io-box" class="pmd-subcard pmd-json-box" hidden>
@@ -172,7 +209,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
               data-devtab-btn="dialogue"
               data-testid="devtools-tab-dialogue"
             >
-              Dialogue Test
+              Dialogue &amp; Audio
             </button>
           </nav>
 
@@ -236,11 +273,14 @@ import '../../mystery-emblem/ui/pmdWindow.css';
             </div>
           </div>
 
-          <!-- DEV TAB 3: PORTRAIT DIALOGUE OVERLAY HARNESS (Step 2) -->
+          <!-- DEV TAB 3: PORTRAIT DIALOGUE OVERLAY & AUDIO JUKEBOX HARNESS -->
           <div class="pmd-tab-panel" data-devtab-panel="dialogue" hidden>
             <div class="pmd-subcard">
               <h3 class="pmd-subcard-title">Portrait Dialogue Engine (`DIALOGUE_OVERLAY`)</h3>
               <p id="devtools-dialogue-cast" class="pmd-subcard-text">—</p>
+              <p class="pmd-subcard-text">
+                Sample cutscene cues: <em>#004 On the Beach at Dusk</em> → <em>#016 Growing Anxiety</em> → <em>#017 Oh No!</em> → <em>#019 Boss Battle!</em> → <em>#020 Time Gear Remix</em>.
+              </p>
               <div class="pmd-inline-btns">
                 <button
                   type="button"
@@ -268,6 +308,84 @@ import '../../mystery-emblem/ui/pmdWindow.css';
                 </button>
               </div>
               <p id="devtools-dialogue-status" class="pmd-subcard-text">Ready.</p>
+            </div>
+
+            <div class="pmd-subcard">
+              <div class="pmd-devtools-row-between">
+                <h3 class="pmd-subcard-title">Explorers of Sky Audio Engine &amp; BGM Jukebox</h3>
+                <button
+                  type="button"
+                  id="devtools-audio-mute"
+                  class="pmd-btn pmd-chip-btn"
+                  data-testid="devtools-audio-mute"
+                >
+                  Mute Audio
+                </button>
+              </div>
+              <p
+                id="devtools-audio-status"
+                class="pmd-subcard-text"
+                data-testid="devtools-audio-status"
+              >
+                —
+              </p>
+              <select
+                id="devtools-bgm-select"
+                class="pmd-select"
+                data-testid="devtools-bgm-select"
+                aria-label="Select Explorers of Sky BGM Track"
+              ></select>
+              <div class="pmd-inline-btns">
+                <button
+                  type="button"
+                  id="devtools-bgm-play"
+                  class="pmd-btn pmd-btn-primary"
+                  data-testid="devtools-bgm-play"
+                >
+                  Play Selected Track
+                </button>
+                <button
+                  type="button"
+                  id="devtools-bgm-stop"
+                  class="pmd-btn"
+                  data-testid="devtools-bgm-stop"
+                >
+                  Stop BGM
+                </button>
+                <button type="button" id="devtools-sfx-select" class="pmd-btn pmd-chip-btn">
+                  SFX: Confirm
+                </button>
+                <button type="button" id="devtools-sfx-cancel" class="pmd-btn pmd-chip-btn">
+                  SFX: Cancel
+                </button>
+                <button type="button" id="devtools-sfx-advance" class="pmd-btn pmd-chip-btn">
+                  SFX: Advance
+                </button>
+              </div>
+              <div class="pmd-sync-grid">
+                <label class="pmd-slider-row" for="devtools-bgm-volume">
+                  <span>BGM Vol</span>
+                  <input
+                    id="devtools-bgm-volume"
+                    class="pmd-range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="65"
+                  />
+                </label>
+                <label class="pmd-slider-row" for="devtools-sfx-volume">
+                  <span>SFX Vol</span>
+                  <input
+                    id="devtools-sfx-volume"
+                    class="pmd-range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="70"
+                  />
+                </label>
+              </div>
             </div>
           </div>
         </section>
@@ -328,6 +446,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     loadSpeciesPortrait,
     loadSpeciesSpriteBundle,
   } from '../../mystery-emblem/assets/pmdAssetLoader';
+  import { getAudioManager } from '../../mystery-emblem/audio/AudioManager';
   import {
     getItemById,
     getMoveById,
@@ -397,6 +516,12 @@ import '../../mystery-emblem/ui/pmdWindow.css';
 
     const manager = new SaveStateManager(undefined, injectedAdapter);
     currentManager = manager;
+    const audioManager = getAudioManager();
+
+    // Arm Top Menu Theme (`002`) as the default Title / Menu soundtrack
+    if (!audioManager.getCurrentTrackId()) {
+      audioManager.playBgm('top_menu', { fadeMs: 350 });
+    }
 
     const validation = getRegistryValidationSummary();
 
@@ -454,6 +579,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
     const dialogueOverlay = viewportEl
       ? new DialogueOverlay(viewportEl, manager, {
           onStateChange: () => backStack.syncButtonLabel(),
+          audioManager,
         })
       : null;
     currentDialogueOverlay = dialogueOverlay;
@@ -463,6 +589,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
         modalEl: devToolsModal,
         saveManager: manager,
         dialogueOverlay,
+        audioManager,
         signal,
       });
     }
@@ -472,6 +599,7 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       SaveStateManager,
       InMemoryCloudSyncAdapter,
       getRegistryValidationSummary,
+      audioManager,
       dialogueOverlay,
       devToolsHarness: currentDevToolsHarness,
       loadSpeciesSpriteBundle,
@@ -1031,6 +1159,62 @@ import '../../mystery-emblem/ui/pmdWindow.css';
       { signal }
     );
 
+    // Player Audio Settings Card (Campaign Menu -> Cloud & Save)
+    const btnPlayerMuteToggle = document.getElementById(
+      'btn-player-mute-toggle'
+    ) as HTMLButtonElement | null;
+    const playerAudioStatus = document.getElementById('player-audio-status');
+    const playerBgmVolume = document.getElementById('player-bgm-volume') as HTMLInputElement | null;
+    const playerSfxVolume = document.getElementById('player-sfx-volume') as HTMLInputElement | null;
+
+    bindPointerTap(
+      btnPlayerMuteToggle,
+      () => {
+        const nowMuted = audioManager.toggleMute();
+        if (!nowMuted) audioManager.playSfx('select');
+      },
+      { signal }
+    );
+
+    playerBgmVolume?.addEventListener(
+      'input',
+      () => {
+        audioManager.setBgmVolume(Number(playerBgmVolume.value) / 100);
+      },
+      { signal }
+    );
+
+    playerSfxVolume?.addEventListener(
+      'input',
+      () => {
+        audioManager.setSfxVolume(Number(playerSfxVolume.value) / 100);
+      },
+      { signal }
+    );
+
+    const unsubscribePlayerAudio = audioManager.subscribe((snap) => {
+      if (btnPlayerMuteToggle) {
+        btnPlayerMuteToggle.textContent = snap.settings.muted ? 'Unmute Audio' : 'Mute Audio';
+        btnPlayerMuteToggle.classList.toggle('is-active', snap.settings.muted);
+      }
+      if (playerAudioStatus) {
+        const bgmPct = Math.round(snap.settings.bgmVolume * 100);
+        const sfxPct = Math.round(snap.settings.sfxVolume * 100);
+        const trackPart = snap.currentTrack ? ` · ♪ ${snap.currentTrack.title}` : '';
+        playerAudioStatus.textContent = snap.settings.muted
+          ? 'Audio Muted'
+          : `Music: ${bgmPct}% · SFX: ${sfxPct}%${trackPart}`;
+      }
+      if (playerBgmVolume && document.activeElement !== playerBgmVolume) {
+        playerBgmVolume.value = String(Math.round(snap.settings.bgmVolume * 100));
+      }
+      if (playerSfxVolume && document.activeElement !== playerSfxVolume) {
+        playerSfxVolume.value = String(Math.round(snap.settings.sfxVolume * 100));
+      }
+    });
+
+    signal.addEventListener('abort', () => unsubscribePlayerAudio(), { once: true });
+
     renderRegistryAudit();
     manager.subscribe(() => renderAll());
   }
@@ -1482,6 +1666,23 @@ import '../../mystery-emblem/ui/pmdWindow.css';
   .pmd-text-input,
   .pmd-select {
     min-height: 46px;
+  }
+
+  .pmd-slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 44px;
+    font-size: 0.76rem;
+    color: #90d8f8;
+  }
+
+  .pmd-range {
+    flex: 1;
+    min-height: 44px;
+    accent-color: #f8d048;
+    cursor: pointer;
   }
 
   .pmd-textarea:focus,
